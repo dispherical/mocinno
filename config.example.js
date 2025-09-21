@@ -19,6 +19,7 @@ module.exports = {
   is_production: false,
   new_user_script: "",
   disable_signups: false,
+  port: 2222,
   smtp: {
     host: 'hackclub.app',
     port: 587,

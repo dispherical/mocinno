@@ -786,6 +786,6 @@ Your password has been successfully changed. If you did not make this change, pl
     }
   }).on('error', (err) => {
   });
-}).listen(2222, function () {
+}).listen(config.port, function () {
   console.log('Listening on port ' + this.address().port);
 });
