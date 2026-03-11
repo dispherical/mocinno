@@ -1,6 +1,6 @@
 {
   "name": "nest-prov",
-  "module": "index.ts",
+  "module": "index.js",
   "type": "module",
   "private": true,
   "scripts": {
@@ -14,6 +14,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "hono": "^4.12.7",
     "hono-sessions": "^0.8.1",
     "liquidjs": "^10.24.0",
     "ssh2": "^1.17.0"

@@ -280,7 +280,7 @@ app.get('/api/username/check', async (c) => {
 
 app.post('/api/application/submit', async (c) => {
   const profile = c.get('session').get('profile');
-  
+
   if (!profile) { c.status(401); return c.json({ error: 'Unauthorized' }) }
 
   const existing = await db.findUserBySub(profile.sub);
@@ -746,4 +746,18 @@ app.post('/api/admin/users/update', async (c) => {
   return c.json({ message: 'Updated' });
 });
 
-export default app
+const serve = Bun.serve({
+  fetch: app.fetch,
+  port: process.env.MOCINNO_PORT || 3000,
+  maxRequestBodySize: process.env.MOCINNO_MAX_BODY_REQUEST_SIZE || 1024 * 1024 * 128,
+  hostname: process.env.MOCINNO_HOSTNAME || "127.0.0.1"
+});
+
+console.log('Mocinno is running on port %s (%s)', serve.port, serve.hostname);
+process.on('uncaughtException', (error) => {
+  console.error(error);
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error(error);
+});
