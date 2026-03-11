@@ -290,7 +290,7 @@ app.post('/api/application/submit', async (c) => {
   if (pendingApp?.status === 'pending') { c.status(400); return c.json({ error: 'You already have a pending application' }) }
 
   const eligible = profile.verification_status === "verified_eligible"
-  if (!eligible) { c.status(403); return c.json({ error: 'You are not eligible. You must be verified on identity.hackclub.com.' }) }
+  if (!eligible) { c.status(403); return c.json({ error: 'You are not eligible. You must be verified on auth.hackclub.com.' }) }
 
   const body = await c.req.json();
   const username = body.username?.toLowerCase();
