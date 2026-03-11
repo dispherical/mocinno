@@ -261,7 +261,6 @@ app.get('/flow/authorization/goalpost', async (c) => {
 
   if (!profile) return c.redirect("/flow/authorization/login/start");
 
-  console.log(profile)
   session.set("profile", profile);
 
   // this allows one destructive action per 2fa login
