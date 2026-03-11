@@ -15,16 +15,7 @@ function generateState(length = 16) {
     .slice(0, length);
 }
 
-async function checkEligibility(email) {
-  try {
-    const res = await fetch(`https://identity.hackclub.com/api/external/check?email=${encodeURIComponent(email)}`);
-    if (!res.ok) return false;
-    const data = await res.json();
-    return data.result === 'verified_eligible';
-  } catch {
-    return false;
-  }
-}
+
 
 async function getContainerConfig(vmid) {
   const node = process.env.PVE_NODE;
@@ -94,7 +85,7 @@ function isFQDN(domain) {
 }
 
 function isWhitelisted(domain, username) {
-  return domain === `${username}.hackclub.app` || domain.endsWith(`.${username}.hackclub.app`)|| domain.endsWith(`.${username}.localhost`)|| domain.endsWith(`${username}.localhost`);
+  return domain === `${username}.hackclub.app` || domain.endsWith(`.${username}.hackclub.app`) || domain.endsWith(`.${username}.localhost`) || domain.endsWith(`${username}.localhost`);
 }
 
 async function checkDNSVerification(domain, username) {
@@ -104,14 +95,14 @@ async function checkDNSVerification(domain, username) {
       const txt = record.join('');
       if (txt === `domain-verification=${username}`) return true;
     }
-  } catch {}
+  } catch { }
 
   try {
     const cnames = await resolve(domain, 'CNAME');
     for (const cname of cnames) {
       if (cname === `${username}.hackclub.app` || cname === `${username}.hackclub.app.`) return true;
     }
-  } catch {}
+  } catch { }
 
   return false;
 }
@@ -168,8 +159,9 @@ const engine = new Liquid({
 
 app.use('*', async (c, next) => {
   c.set('engine', engine)
-    const session = c.get('session');
+  const session = c.get('session');
 
+  // allowing sudo mode in development without 2fa
   if (process.env.NODE_ENV !== "production") session.flash("sudo", true);
   await next()
 })
@@ -199,7 +191,7 @@ app.get('/dashboard', async (c) => {
   } else if (!user) {
     application = await db.getApplicationBySub(profile.sub);
     if (!application) {
-      eligible = await checkEligibility(profile.email);
+      eligible = profile.verification_status === "verified_eligible"
     }
   }
 
@@ -248,7 +240,7 @@ app.get('/flow/authorization/:mode/start', async (c) => {
     client_id: process.env.OAUTH_CLIENT_ID,
     redirect_uri: process.env.OAUTH_CLIENT_REDIRECT_URI,
     response_type: "code",
-    scope: "openid profile email",
+    scope: "openid profile email verification_status",
     state: state
   });
 
@@ -269,8 +261,10 @@ app.get('/flow/authorization/goalpost', async (c) => {
 
   if (!profile) return c.redirect("/flow/authorization/login/start");
 
+  console.log(profile)
   session.set("profile", profile);
 
+  // this allows one destructive action per 2fa login
   if (stored.mode === 'sudo') session.flash("sudo", true);
 
   return c.redirect("/dashboard")
@@ -287,6 +281,7 @@ app.get('/api/username/check', async (c) => {
 
 app.post('/api/application/submit', async (c) => {
   const profile = c.get('session').get('profile');
+  
   if (!profile) { c.status(401); return c.json({ error: 'Unauthorized' }) }
 
   const existing = await db.findUserBySub(profile.sub);
@@ -295,7 +290,7 @@ app.post('/api/application/submit', async (c) => {
   const pendingApp = await db.getApplicationBySub(profile.sub);
   if (pendingApp?.status === 'pending') { c.status(400); return c.json({ error: 'You already have a pending application' }) }
 
-  const eligible = await checkEligibility(profile.email);
+  const eligible = profile.verification_status === "verified_eligible"
   if (!eligible) { c.status(403); return c.json({ error: 'You are not eligible. You must be verified on identity.hackclub.com.' }) }
 
   const body = await c.req.json();
@@ -694,7 +689,7 @@ app.post('/api/admin/users/suspend', async (c) => {
       const stopResult = await pveFetch(`/nodes/${node}/lxc/${vmid}/status/stop`, 'POST');
       await waitForTask(node, stopResult.data);
     }
-  } catch {}
+  } catch { }
 
   return c.json({ message: `Container ${vmid} suspended` });
 });
