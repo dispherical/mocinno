@@ -1,0 +1,306 @@
+{% layout 'parent.liquid' %}
+
+{% block body -%}
+<h1>Admin Panel</h1>
+<p><a href="/dashboard">&larr; Back to Dashboard</a></p>
+
+<hr>
+
+<h2>Pending Applications ({{ applications.size }})</h2>
+{% if applications.size > 0 %}
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Username</th>
+        <th>Reason</th>
+        <th>Submitted</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in applications %}
+        <tr id="app-{{ app.id }}">
+          <td>{{ app.email }}</td>
+          <td>{{ app.username }}</td>
+          <td style="max-width: 300px; word-wrap: break-word;">{{ app.reason }}</td>
+          <td>{{ app.created_at }}</td>
+          <td style="white-space: nowrap;">
+            <button class="approve-btn" data-id="{{ app.id }}">Approve</button>
+            <button class="reject-btn" data-id="{{ app.id }}">Reject</button>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No pending applications.</p>
+{% endif %}
+
+<hr>
+
+<h2>Users</h2>
+<div>
+  <input
+    type="text"
+    id="user-search"
+    placeholder="Search by username, VMID, or IP..."
+    style="width:100%;padding:6px;margin-bottom:8px;box-sizing:border-box;"
+  >
+</div>
+<div id="users-table-wrap">
+  <p>Loading...</p>
+</div>
+<div id="users-paging" style="margin-top:8px;display:flex;gap:8px;align-items:center;"></div>
+
+<hr>
+
+<h2>All Applications</h2>
+{% if allApplications.size > 0 %}
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Username</th>
+        <th>Status</th>
+        <th>Reviewed By</th>
+        <th>Submitted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in allApplications %}
+        <tr>
+          <td>{{ app.email }}</td>
+          <td>{{ app.username }}</td>
+          <td>{{ app.status }}</td>
+          <td>{{ app.reviewed_by }}</td>
+          <td>{{ app.created_at }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No applications yet.</p>
+{% endif %}
+
+<p id="admin-message"></p>
+
+<script>
+  const adminMsg = document.getElementById('admin-message');
+
+  let usersPage = 1;
+  let usersQuery = '';
+  let usersDebounce = null;
+
+  document.getElementById('user-search').addEventListener('input', (e) => {
+    clearTimeout(usersDebounce);
+    usersDebounce = setTimeout(() => {
+      usersQuery = e.target.value;
+      usersPage = 1;
+      loadUsers();
+    }, 300);
+  });
+
+  async function loadUsers() {
+    const wrap = document.getElementById('users-table-wrap');
+    const params = new URLSearchParams({ page: usersPage, limit: 50 });
+    if (usersQuery) params.set('q', usersQuery);
+    try {
+      const res = await fetch('/api/admin/users?' + params);
+      const data = await res.json();
+      if (!data.users?.length) {
+        wrap.innerHTML = '<p>No users found.</p>';
+        document.getElementById('users-paging').innerHTML = '';
+        return;
+      }
+      let html =
+        '<table><thead><tr><th>Username</th><th>VMID</th><th>IP</th><th>Status</th><th>Susp</th><th>Cores</th><th>Mem</th><th>Created</th><th></th></tr></thead><tbody>';
+      for (const u of data.users) {
+        const status = u.container ? u.container.status : 'unknown';
+        const cores = u.container?.cpus ?? '?';
+        const mem = u.container?.maxmem ? Math.round(u.container.maxmem / 1048576) : '?';
+        html += `<tr data-vmid="${u.vmid}" data-username="${u.username}">`;
+        html += `<td>${esc(u.username)}</td><td>${u.vmid}</td><td>${esc(u.ip || '')}</td>`;
+        html += `<td>${esc(status)}</td><td>${u.suspended ? 'Yes' : 'No'}</td>`;
+        html += `<td>${cores}</td><td>${mem} MB</td>`;
+        html += `<td>${esc(u.created_at || '')}</td>`;
+        html += `<td style="white-space:nowrap;">`;
+        html += `<button onclick="editUser(${u.vmid},'${esc(u.username)}',${cores === '?' ? 1 : cores},${
+          mem === '?' ? 512 : mem
+        })">Edit</button> `;
+        if (u.suspended) html += `<button onclick="unsuspendUser(${u.vmid})">Unsuspend</button>`;
+        else html += `<button onclick="suspendUser(${u.vmid},'${esc(u.username)}')">Suspend</button>`;
+        html += `</td></tr>`;
+      }
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+      let paging = `<span>Page ${data.page} of ${data.pages} (${data.total} users)</span>`;
+      if (data.page > 1) paging += ` <button onclick="usersPage--;loadUsers()">Prev</button>`;
+      if (data.page < data.pages) paging += ` <button onclick="usersPage++;loadUsers()">Next</button>`;
+      document.getElementById('users-paging').innerHTML = paging;
+    } catch {
+      wrap.innerHTML = '<p>Failed to load users.</p>';
+    }
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function editUser(vmid, username, cores, mem) {
+    const newUsername = prompt('Username:', username);
+    if (newUsername === null) return;
+    const newCores = prompt('CPU Cores:', cores);
+    if (newCores === null) return;
+    const newMem = prompt('Memory (MB):', mem);
+    if (newMem === null) return;
+    const body = { vmid };
+    if (newUsername !== username) body.username = newUsername;
+    if (parseInt(newCores) !== cores) body.cores = parseInt(newCores);
+    if (parseInt(newMem) !== mem) body.memory = parseInt(newMem);
+    if (Object.keys(body).length <= 1) {
+      adminMsg.innerText = 'No changes.';
+      return;
+    }
+    adminMsg.innerText = 'Updating...';
+    adminMsg.style.color = '';
+    try {
+      const res = await fetch('/api/admin/users/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        adminMsg.innerText = data.message;
+        adminMsg.style.color = 'green';
+        loadUsers();
+      } else {
+        adminMsg.innerText = 'Error: ' + data.error;
+        adminMsg.style.color = 'red';
+      }
+    } catch {
+      adminMsg.innerText = 'Failed to connect.';
+      adminMsg.style.color = 'red';
+    }
+  }
+
+  async function suspendUser(vmid, username) {
+    const reason = prompt(`Reason for suspending ${username}?`);
+    if (!reason) return;
+    adminMsg.innerText = 'Suspending...';
+    adminMsg.style.color = '';
+    try {
+      const res = await fetch('/api/admin/users/suspend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vmid, reason }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        adminMsg.innerText = data.message;
+        adminMsg.style.color = 'green';
+        loadUsers();
+      } else {
+        adminMsg.innerText = 'Error: ' + data.error;
+        adminMsg.style.color = 'red';
+      }
+    } catch {
+      adminMsg.innerText = 'Failed to connect.';
+      adminMsg.style.color = 'red';
+    }
+  }
+
+  async function unsuspendUser(vmid) {
+    if (!confirm('Unsuspend this container?')) return;
+    adminMsg.innerText = 'Unsuspending...';
+    adminMsg.style.color = '';
+    try {
+      const res = await fetch('/api/admin/users/unsuspend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vmid }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        adminMsg.innerText = data.message;
+        adminMsg.style.color = 'green';
+        loadUsers();
+      } else {
+        adminMsg.innerText = 'Error: ' + data.error;
+        adminMsg.style.color = 'red';
+      }
+    } catch {
+      adminMsg.innerText = 'Failed to connect.';
+      adminMsg.style.color = 'red';
+    }
+  }
+
+  document.querySelectorAll('.approve-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!confirm('Approve this application? A container will be created.')) return;
+      btn.disabled = true;
+      adminMsg.innerText = 'Approving and creating container...';
+      adminMsg.style.color = '';
+      try {
+        const res = await fetch('/api/admin/applications/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: parseInt(id) }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          adminMsg.innerText = `Approved! VMID: ${data.vmid}, Password: ${data.password}`;
+          adminMsg.style.color = 'green';
+          document.getElementById(`app-${id}`)?.remove();
+          loadUsers();
+        } else {
+          adminMsg.innerText = 'Error: ' + data.error;
+          adminMsg.style.color = 'red';
+          btn.disabled = false;
+        }
+      } catch {
+        adminMsg.innerText = 'Failed to connect to API.';
+        adminMsg.style.color = 'red';
+        btn.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll('.reject-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!confirm('Reject this application?')) return;
+      btn.disabled = true;
+      adminMsg.innerText = 'Rejecting...';
+      adminMsg.style.color = '';
+      try {
+        const res = await fetch('/api/admin/applications/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: parseInt(id) }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          adminMsg.innerText = 'Application rejected.';
+          adminMsg.style.color = 'green';
+          document.getElementById(`app-${id}`)?.remove();
+        } else {
+          adminMsg.innerText = 'Error: ' + data.error;
+          adminMsg.style.color = 'red';
+          btn.disabled = false;
+        }
+      } catch {
+        adminMsg.innerText = 'Failed to connect to API.';
+        adminMsg.style.color = 'red';
+        btn.disabled = false;
+      }
+    });
+  });
+
+  loadUsers();
+</script>
+{%- endblock %}

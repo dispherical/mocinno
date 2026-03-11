@@ -1,0 +1,372 @@
+{% layout 'parent.liquid' %}
+
+{% block body -%}
+<h1>Nest</h1>
+<p>Hello {{ profile.name }}!</p>
+
+{% if admin %}
+  <p><a href="/admin">Admin Panel</a></p>
+{% endif %}
+
+<hr>
+
+<h2>Your Container</h2>
+{% if user %}
+  {% if suspended %}
+    <p style="color: red;">
+      <strong>Your container has been suspended.</strong> Please contact an admin for assistance.
+    </p>
+  {% endif %}
+
+  <ul>
+    <li><strong>Username:</strong> {{ user.username }}</li>
+    <li><strong>VMID:</strong> {{ user.vmid }}</li>
+    {% if user.ip %}
+      <li><strong>IP:</strong> {{ user.ip }}</li>
+    {% endif %}
+    {% if container %}
+      <li><strong>Status:</strong> {{ container.status }}</li>
+      <li><strong>Hostname:</strong> {{ container.name }}</li>
+      <li><strong>CPU:</strong> {{ container.cpus }} Cores</li>
+      <li><strong>Memory:</strong> {{ container.maxmem | divided_by: 1048576 }} MB</li>
+    {% endif %}
+  </ul>
+  <p>
+    <strong>SSH:</strong> <code>ssh {{ user.username }}@hackclub.app</code>
+  </p>
+
+  {% unless suspended %}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      {% if container.status == 'running' %}
+        <button id="stop-btn">Stop Container</button>
+        <button id="reboot-btn">Reboot Container</button>
+      {% else %}
+        <button id="start-btn">Start Container</button>
+      {% endif %}
+      <button id="delete-btn" style="color: red;">Delete Container</button>
+    </div>
+  {% endunless %}
+
+  <hr>
+
+  <h2>Domains</h2>
+  <table id="domain-table">
+    <thead>
+      <tr>
+        <th>Domain</th>
+        <th>Proxy To</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in domains %}
+        <tr data-domain="{{ d.domain }}">
+          <td>{{ d.domain }}</td>
+          <td>{{ d.proxy }}</td>
+          <td><button class="domain-rm-btn" data-domain="{{ d.domain }}">Remove</button></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Add Domain</h3>
+  <input type="text" id="domain-input" placeholder="example.com">
+  <input type="text" id="proxy-input" placeholder="Proxy target (optional, defaults to container:80)">
+  <button id="domain-add-btn">Add</button>
+  <p id="domain-message"></p>
+
+{% elsif application %}
+  {% if application.status == 'pending' %}
+    <p>Your application is <strong>pending review</strong>. An admin will review it soon.</p>
+    <ul>
+      <li><strong>Username:</strong> {{ application.username }}</li>
+      <li><strong>Submitted:</strong> {{ application.created_at }}</li>
+    </ul>
+  {% elsif application.status == 'rejected' %}
+    <p style="color: red;">Your application was <strong>rejected</strong>. You may submit a new one.</p>
+  {% endif %}
+
+  {% if application.status == 'rejected' or application == null %}
+  {% endif %}
+
+{% else %}
+  {% if eligible %}
+    <p>You are verified eligible! Fill out the form below to apply for a Nest container.</p>
+    <label for="username-input"><strong>Choose a username:</strong></label
+    ><br>
+    <input
+      type="text"
+      id="username-input"
+      placeholder="e.g. johndoe"
+      maxlength="32"
+      pattern="[a-z][a-z0-9_-]{1,30}[a-z0-9]"
+    >
+    <span id="username-status"></span><br>
+    <br>
+    <label for="sshkey-input"><strong>SSH Public Key:</strong></label
+    ><br>
+    <textarea id="sshkey-input" rows="3" cols="60" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
+    <span id="sshkey-status"></span><br>
+    <br>
+    <label for="reason-input"><strong>Why do you want to use Nest?</strong></label
+    ><br>
+    <textarea id="reason-input" rows="3" cols="60" placeholder="Tell us what you'd like to use Nest for..."></textarea>
+    <span id="reason-status"></span><br>
+    <br>
+    <button id="apply-btn" disabled>Submit Application</button>
+  {% else %}
+    <p>
+      You are not currently eligible. Please verify your identity at
+      <a href="https://identity.hackclub.com">identity.hackclub.com</a> first.
+    </p>
+  {% endif %}
+{% endif %}
+
+<p id="status-message"></p>
+
+<script>
+  const msg = document.getElementById('status-message');
+  const domainMsg = document.getElementById('domain-message');
+
+  const usernameInput = document.getElementById('username-input');
+  const usernameStatus = document.getElementById('username-status');
+  const applyBtn = document.getElementById('apply-btn');
+  let usernameValid = false;
+  let sshKeyValid = false;
+  let reasonValid = false;
+  let checkTimeout;
+
+  function updateApplyBtn() {
+    if (applyBtn) applyBtn.disabled = !(usernameValid && sshKeyValid && reasonValid);
+  }
+
+  usernameInput?.addEventListener('input', () => {
+    clearTimeout(checkTimeout);
+    usernameValid = false;
+    updateApplyBtn();
+    const val = usernameInput.value.toLowerCase();
+    usernameInput.value = val;
+
+    if (!val) {
+      usernameStatus.innerText = '';
+      return;
+    }
+    if (!/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(val)) {
+      usernameStatus.innerText =
+        'Must be 3-32 chars, start with a letter, end with letter/number. Only lowercase, numbers, hyphens, underscores.';
+      usernameStatus.style.color = 'red';
+      return;
+    }
+
+    usernameStatus.innerText = 'Checking...';
+    usernameStatus.style.color = '';
+    checkTimeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/username/check?username=${encodeURIComponent(val)}`);
+        const data = await res.json();
+        if (usernameInput.value !== val) return;
+        if (data.available) {
+          usernameStatus.innerText = 'Available!';
+          usernameStatus.style.color = 'green';
+          usernameValid = true;
+          updateApplyBtn();
+        } else {
+          usernameStatus.innerText = data.error || 'Taken';
+          usernameStatus.style.color = 'red';
+        }
+      } catch {
+        usernameStatus.innerText = 'Error checking username';
+        usernameStatus.style.color = 'red';
+      }
+    }, 400);
+  });
+
+  const sshKeyInput = document.getElementById('sshkey-input');
+  const sshKeyStatus = document.getElementById('sshkey-status');
+
+  sshKeyInput?.addEventListener('input', () => {
+    const val = sshKeyInput.value.trim();
+    sshKeyValid = false;
+    updateApplyBtn();
+    if (!val) {
+      sshKeyStatus.innerText = '';
+      return;
+    }
+    if (/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(val)) {
+      sshKeyStatus.innerText = 'Looks good!';
+      sshKeyStatus.style.color = 'green';
+      sshKeyValid = true;
+      updateApplyBtn();
+    } else {
+      sshKeyStatus.innerText = 'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, or ssh-ecdsa)';
+      sshKeyStatus.style.color = 'red';
+    }
+  });
+
+  const reasonInput = document.getElementById('reason-input');
+  const reasonStatus = document.getElementById('reason-status');
+
+  reasonInput?.addEventListener('input', () => {
+    const val = reasonInput.value.trim();
+    reasonValid = false;
+    updateApplyBtn();
+    if (!val) {
+      reasonStatus.innerText = '';
+      return;
+    }
+    if (val.length >= 10) {
+      reasonStatus.innerText = '';
+      reasonValid = true;
+      updateApplyBtn();
+    } else {
+      reasonStatus.innerText = 'Please write at least 10 characters.';
+      reasonStatus.style.color = 'red';
+    }
+  });
+
+  applyBtn?.addEventListener('click', async () => {
+    if (!usernameValid || !sshKeyValid || !reasonValid) return;
+    const username = usernameInput.value;
+    const sshKey = sshKeyInput.value.trim();
+    const reason = reasonInput.value.trim();
+    msg.innerText = 'Submitting application...';
+    applyBtn.disabled = true;
+    usernameInput.disabled = true;
+    sshKeyInput.disabled = true;
+    reasonInput.disabled = true;
+    try {
+      const res = await fetch('/api/application/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, sshKey, reason }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        msg.innerText = 'Application submitted! An admin will review it soon.';
+        msg.style.color = 'green';
+        setTimeout(() => location.reload(), 3000);
+      } else {
+        msg.innerText = 'Error: ' + data.error;
+        msg.style.color = 'red';
+        applyBtn.disabled = false;
+        usernameInput.disabled = false;
+        sshKeyInput.disabled = false;
+        reasonInput.disabled = false;
+      }
+    } catch (e) {
+      msg.innerText = 'Failed to connect to API.';
+      msg.style.color = 'red';
+      applyBtn.disabled = false;
+      usernameInput.disabled = false;
+      sshKeyInput.disabled = false;
+      reasonInput.disabled = false;
+    }
+  });
+
+  async function containerAction(action, btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      msg.innerText = action + '...';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/api/container/${action.toLowerCase()}`, { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          msg.innerText = data.message;
+          msg.style.color = 'green';
+          setTimeout(() => location.reload(), 2000);
+        } else {
+          msg.innerText = 'Error: ' + data.error;
+          msg.style.color = 'red';
+          btn.disabled = false;
+        }
+      } catch {
+        msg.innerText = 'Failed to connect to API.';
+        msg.style.color = 'red';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  containerAction('Start', 'start-btn');
+  containerAction('Stop', 'stop-btn');
+  containerAction('Reboot', 'reboot-btn');
+
+  document.getElementById('delete-btn')?.addEventListener('click', async () => {
+    if (!confirm('Are you sure? This will permanently delete all data on your container.')) return;
+
+    msg.innerText = 'Deleting container...';
+    try {
+      const res = await fetch('/api/container/delete', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        location.reload();
+      } else if (res.status === 403 && data.redirect) {
+        location.href = data.redirect;
+      } else {
+        msg.innerText = 'Error: ' + data.error;
+        msg.style.color = 'red';
+      }
+    } catch (e) {
+      msg.innerText = 'Failed to connect to API.';
+      msg.style.color = 'red';
+    }
+  });
+
+  document.getElementById('domain-add-btn')?.addEventListener('click', async () => {
+    const domain = document.getElementById('domain-input').value.trim();
+    const proxy = document.getElementById('proxy-input').value.trim();
+    if (!domain) return;
+
+    domainMsg.innerText = 'Adding...';
+    domainMsg.style.color = '';
+    try {
+      const res = await fetch('/api/domains/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain, proxy: proxy || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        location.reload();
+      } else {
+        domainMsg.innerText = data.error;
+        domainMsg.style.color = 'red';
+      }
+    } catch {
+      domainMsg.innerText = 'Failed to connect to API.';
+      domainMsg.style.color = 'red';
+    }
+  });
+
+  document.querySelectorAll('.domain-rm-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const domain = btn.dataset.domain;
+      if (!confirm(`Remove ${domain}?`)) return;
+
+      domainMsg.innerText = 'Removing...';
+      domainMsg.style.color = '';
+      try {
+        const res = await fetch('/api/domains/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          btn.closest('tr').remove();
+          domainMsg.innerText = `${domain} removed.`;
+          domainMsg.style.color = 'green';
+        } else {
+          domainMsg.innerText = data.error;
+          domainMsg.style.color = 'red';
+        }
+      } catch {
+        domainMsg.innerText = 'Failed to connect to API.';
+        domainMsg.style.color = 'red';
+      }
+    });
+  });
+</script>
+{%- endblock %}

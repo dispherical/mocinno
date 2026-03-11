@@ -1,0 +1,21 @@
+{
+  "name": "nest-prov",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.js",
+    "bastion": "bun run bastion.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "hono-sessions": "^0.8.1",
+    "liquidjs": "^10.24.0",
+    "ssh2": "^1.17.0"
+  }
+}
