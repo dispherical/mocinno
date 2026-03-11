@@ -5,6 +5,7 @@ import crypto from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:dns/promises'
 import * as db from './db.js'
+import { getChallengeResponse, issueCertificate, renewExpiringCertificates, getOrIssueCertificate, isPublicDomain } from './cert.js'
 
 const bastionPubKey = readFileSync(process.env.BASTION_PROXY_KEY_PUB || './bastion_proxy_key.pub', 'utf-8').trim();
 
@@ -190,7 +191,7 @@ app.get('/dashboard', async (c) => {
     suspended = await isContainerSuspended(user.vmid);
   } else if (!user) {
     application = await db.getApplicationBySub(profile.sub);
-    if (!application) {
+    if (!application || application.status === 'rejected') {
       eligible = profile.verification_status === "verified_eligible"
     }
   }
@@ -260,7 +261,7 @@ app.get('/flow/authorization/goalpost', async (c) => {
   const profile = await exchangeCodeForProfile(code, process.env.OAUTH_CLIENT_REDIRECT_URI);
 
   if (!profile) return c.redirect("/flow/authorization/login/start");
-
+  if (process.env.NODE_ENV != "production") profile.verification_status = "verified_eligible"
   session.set("profile", profile);
 
   // this allows one destructive action per 2fa login
@@ -459,7 +460,12 @@ app.post('/api/domains/add', async (c) => {
   const proxyTarget = proxy || `${ip}:80`;
   const row = await db.addDomain({ userId: user.id, domain, proxy: proxyTarget });
 
-  await reloadCaddy();
+  try {
+    await issueCertificate(domain);
+    await reloadProxy();
+  } catch (err) {
+    console.error(`Failed to issue certificate for ${domain}:`, err.message);
+  }
 
   return c.json({ message: `${domain} added`, domain: row });
 });
@@ -479,93 +485,118 @@ app.post('/api/domains/remove', async (c) => {
   const removed = await db.removeDomain(user.id, domain);
   if (!removed) { c.status(404); return c.json({ error: 'Domain not found or not owned by you' }) }
 
-  await reloadCaddy();
+  await db.deleteCertificate(domain);
+  await reloadProxy();
 
   return c.json({ message: `${domain} removed` });
 });
 
-async function reloadCaddy() {
-  const domains = await db.getAllDomains();
-
-  const caddy = {
-    admin: {
-      listen: process.env.CADDY_ADMIN_LISTEN || "0.0.0.0:2019",
-    },
-    apps: {
-      http: {
-        servers: {
-          srv0: {
-            listen: [":443", ":80"],
-            routes: [],
-          },
-        },
-      },
-      tls: {
-        automation: {
-          policies: [
-            {
-              subjects: ["*.hackclub.app"],
-              on_demand: true,
-            },
-          ],
-          on_demand: {
-            permission: {
-              endpoint: process.env.CADDY_ON_DEMAND_ENDPOINT || "https://hackclub.app/ok",
-              module: "http",
-            },
-          },
-        },
-      },
-    },
-  };
-
-  for (const domain of domains) {
-    caddy.apps.http.servers.srv0.routes.push({
-      match: [{ host: [domain.domain] }],
-      handle: [
-        {
-          handler: "subroute",
-          routes: [
-            {
-              handle: [
-                {
-                  handler: "reverse_proxy",
-                  headers: {
-                    request: {
-                      set: {
-                        "X-Forwarded-For": ["{http.request.remote.host}"],
-                      },
-                    },
-                  },
-                  upstreams: [{ dial: domain.proxy }],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      terminal: true,
-    });
+async function buildServerNames() {
+  const certs = await db.getAllCertificates();
+  const serverNames = {};
+  for (const cert of certs) {
+    serverNames[cert.domain] = { cert: cert.cert, key: cert.key };
   }
-
-  const res = await fetch(process.env.CADDY_ADMIN_URL || "http://localhost:2019/load", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    timeout: false,
-    body: JSON.stringify(caddy),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Caddy reload failed: ${res.status} - ${err}`);
-  }
+  return serverNames;
 }
 
-app.post('/api/caddy/reload', async (c) => {
-  await reloadCaddy();
-  return c.json({ message: 'Caddy config reloaded' });
+async function proxyRequest(req, target) {
+  const url = new URL(req.url);
+  const targetUrl = `http://${target}${url.pathname}${url.search}`;
+
+  const headers = new Headers();
+  for (const [k, v] of req.headers) {
+    const lower = k.toLowerCase();
+    if (lower !== 'host' && lower !== 'connection' && lower !== 'transfer-encoding') {
+      headers.set(k, v);
+    }
+  }
+  headers.set('X-Forwarded-For', req.headers.get('X-Forwarded-For') || '');
+  headers.set('X-Forwarded-Proto', 'https');
+  headers.set('X-Forwarded-Host', url.hostname);
+
+  const proxyRes = await fetch(targetUrl, {
+    method: req.method,
+    headers,
+    body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
+  });
+
+  const resHeaders = new Headers();
+  for (const [k, v] of proxyRes.headers) {
+    const lower = k.toLowerCase();
+    if (lower !== 'transfer-encoding' && lower !== 'connection') {
+      resHeaders.set(k, v);
+    }
+  }
+
+  return new Response(proxyRes.body, { status: proxyRes.status, headers: resHeaders });
+}
+
+let proxyServer = null;
+
+async function reloadProxy() {
+  const serverNames = await buildServerNames();
+  if (Object.keys(serverNames).length === 0) return;
+
+  const appPort = parseInt(process.env.MOCINNO_PORT) || 3000;
+  const appDomain = process.env.APP_DOMAIN;
+
+  const proxyFetch = async (req) => {
+    try {
+      const host = new URL(req.url).hostname;
+      if (appDomain && host === appDomain) {
+        return proxyRequest(req, `127.0.0.1:${appPort}`);
+      }
+      const domainRow = await db.getDomainByName(host);
+      if (!domainRow) return new Response('Not found', { status: 404 });
+      return proxyRequest(req, domainRow.proxy);
+    } catch (err) {
+      console.error('Proxy error:', err.message);
+      return new Response('Bad Gateway', { status: 502 });
+    }
+  };
+
+  if (proxyServer) proxyServer.stop(true);
+
+  proxyServer = Bun.serve({
+    port: 443,
+    hostname: '0.0.0.0',
+    tls: { serverNames },
+    fetch: proxyFetch,
+  });
+}
+
+Bun.serve({
+  port: 80,
+  hostname: '0.0.0.0',
+  async fetch(req) {
+    const url = new URL(req.url);
+    if (url.pathname.startsWith('/.well-known/acme-challenge/')) {
+      const token = url.pathname.split('/').pop();
+      const keyAuth = getChallengeResponse(token);
+      if (keyAuth) return new Response(keyAuth, { headers: { 'Content-Type': 'application/octet-stream' } });
+      return new Response('Not found', { status: 404 });
+    }
+    const host = req.headers.get('host')?.split(':')[0] || '';
+    if (!isPublicDomain(host)) {
+      try {
+        const domainRow = await db.getDomainByName(host);
+        if (!domainRow) return new Response('Not found', { status: 404 });
+        return proxyRequest(req, domainRow.proxy);
+      } catch (err) {
+        console.error('HTTP proxy error:', err.message);
+        return new Response('Bad Gateway', { status: 502 });
+      }
+    }
+    return Response.redirect(`https://${req.headers.get('host')}${url.pathname}${url.search}`, 301);
+  },
+});
+
+app.post('/api/proxy/reload', async (c) => {
+  const profile = c.get('session').get('profile');
+  if (!profile || !db.isAdmin(profile.email)) { c.status(403); return c.json({ error: 'Forbidden' }) }
+  await reloadProxy();
+  return c.json({ message: 'Proxy reloaded' });
 });
 
 app.get('/admin', async (c) => {
@@ -631,10 +662,11 @@ app.post('/api/admin/applications/approve', async (c) => {
   const node = process.env.PVE_NODE;
   const password = crypto.randomBytes(12).toString('hex');
   const allocated = await db.allocateIP();
+  console.log(`name=eth0,bridge=vmbr0,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${allocated.gateway},ip6=auto`)
   const result = await pveFetch(`/nodes/${node}/lxc`, 'POST', {
     vmid,
-    ostemplate: 'local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst',
-    rootfs: 'local:8',
+    ostemplate: process.env.OS_TEMPLATE,
+    rootfs: process.env.ROOTFS,
     unprivileged: 1,
     features: 'nesting=1',
     cores: 1,
@@ -754,6 +786,40 @@ const serve = Bun.serve({
 });
 
 console.log('Mocinno is running on port %s (%s)', serve.port, serve.hostname);
+
+(async () => {
+  const appDomain = process.env.APP_DOMAIN;
+  if (appDomain) {
+    try {
+      await getOrIssueCertificate(appDomain);
+      console.log(`Certificate ready for ${appDomain}`);
+    } catch (err) {
+      console.error(`Failed to issue certificate for ${appDomain}:`, err.message);
+    }
+  }
+
+  const domains = await db.getAllDomains();
+  for (const d of domains) {
+    try {
+      await getOrIssueCertificate(d.domain);
+    } catch (err) {
+      console.error(`Failed to issue certificate for ${d.domain}:`, err.message);
+    }
+  }
+
+  await reloadProxy();
+  console.log('Proxy server running on port 443');
+
+  setInterval(async () => {
+    try {
+      await renewExpiringCertificates();
+      await reloadProxy();
+    } catch (err) {
+      console.error('Certificate renewal error:', err.message);
+    }
+  }, 12 * 60 * 60 * 1000);
+})();
+
 process.on('uncaughtException', (error) => {
   console.error(error);
 });

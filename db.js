@@ -37,6 +37,24 @@ await sql`
   )
 `;
 
+await sql`
+  CREATE TABLE IF NOT EXISTS certificates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain TEXT UNIQUE NOT NULL,
+    cert TEXT NOT NULL,
+    key TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`;
+
+await sql`
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  )
+`;
+
 try { await sql`ALTER TABLE users ADD COLUMN ip TEXT`; } catch {}
 
 await sql`PRAGMA foreign_keys = ON`;
@@ -208,6 +226,48 @@ export async function searchUsers({ query, limit = 50, offset = 0 }) {
 export async function updateUsername(vmid, newUsername) {
   const [user] = await sql`UPDATE users SET username = ${newUsername} WHERE vmid = ${vmid} RETURNING *`;
   return user ?? null;
+}
+
+export async function getDomainByName(domain) {
+  const [row] = await sql`SELECT * FROM domains WHERE domain = ${domain}`;
+  return row ?? null;
+}
+
+export async function getSetting(key) {
+  const [row] = await sql`SELECT value FROM settings WHERE key = ${key}`;
+  return row?.value ?? null;
+}
+
+export async function setSetting(key, value) {
+  await sql`INSERT INTO settings (key, value) VALUES (${key}, ${value}) ON CONFLICT(key) DO UPDATE SET value = excluded.value`;
+}
+
+export async function saveCertificate({ domain, cert, key, expiresAt }) {
+  const [row] = await sql`
+    INSERT INTO certificates (domain, cert, key, expires_at)
+    VALUES (${domain}, ${cert}, ${key}, ${expiresAt})
+    ON CONFLICT(domain) DO UPDATE SET cert = excluded.cert, key = excluded.key, expires_at = excluded.expires_at, created_at = datetime('now')
+    RETURNING *
+  `;
+  return row;
+}
+
+export async function getCertificate(domain) {
+  const [row] = await sql`SELECT * FROM certificates WHERE domain = ${domain}`;
+  return row ?? null;
+}
+
+export async function deleteCertificate(domain) {
+  await sql`DELETE FROM certificates WHERE domain = ${domain}`;
+}
+
+export async function getAllCertificates() {
+  return await sql`SELECT * FROM certificates ORDER BY domain`;
+}
+
+export async function getExpiringCertificates(withinDays = 30) {
+  const cutoff = new Date(Date.now() + withinDays * 24 * 60 * 60 * 1000).toISOString();
+  return await sql`SELECT * FROM certificates WHERE expires_at <= ${cutoff} ORDER BY expires_at`;
 }
 
 export { sql };

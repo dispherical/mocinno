@@ -87,11 +87,39 @@
   {% endif %}
 
   {% if application.status == 'rejected' or application == null %}
+    {% if eligible %}
+      <label for="username-input"><strong>Choose a username:</strong></label
+      ><br>
+      <input
+        type="text"
+        id="username-input"
+        placeholder="e.g. johndoe"
+        maxlength="32"
+        pattern="[a-z][a-z0-9_-]{1,30}[a-z0-9]"
+      >
+      <span id="username-status"></span><br>
+      <br>
+      <label for="sshkey-input"><strong>SSH Public Key:</strong></label
+      ><br>
+      <textarea id="sshkey-input" rows="3" cols="60" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
+      <span id="sshkey-status"></span><br>
+      <br>
+      <label for="reason-input"><strong>Why do you want to use Nest?</strong></label
+      ><br>
+      <textarea id="reason-input" rows="3" cols="60" placeholder="Tell us what you'd like to use Nest for..."></textarea>
+      <span id="reason-status"></span><br>
+      <br>
+      <button id="apply-btn" disabled>Submit Application</button>
+    {% else %}
+      <p>
+        You are not currently eligible. Please verify your identity at
+        <a href="https://auth.hackclub.com">auth.hackclub.com</a> first.
+      </p>
+    {% endif %}
   {% endif %}
 
 {% else %}
   {% if eligible %}
-    <p>You are verified eligible! Fill out the form below to apply for a Nest container.</p>
     <label for="username-input"><strong>Choose a username:</strong></label
     ><br>
     <input
