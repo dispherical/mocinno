@@ -1,63 +1,6 @@
-import { sql } from "bun";
-
-await sql`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sub TEXT UNIQUE NOT NULL,
-    username TEXT UNIQUE NOT NULL,
-    ssh_key TEXT NOT NULL,
-    vmid INTEGER,
-    ip TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )
-`;
-
-await sql`
-  CREATE TABLE IF NOT EXISTS domains (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    domain TEXT UNIQUE NOT NULL,
-    proxy TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
-  )
-`;
-
-await sql`
-  CREATE TABLE IF NOT EXISTS applications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sub TEXT NOT NULL,
-    email TEXT NOT NULL,
-    username TEXT NOT NULL,
-    ssh_key TEXT NOT NULL,
-    reason TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    reviewed_by TEXT,
-    reviewed_at TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )
-`;
-
-await sql`
-  CREATE TABLE IF NOT EXISTS certificates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    domain TEXT UNIQUE NOT NULL,
-    cert TEXT NOT NULL,
-    key TEXT NOT NULL,
-    expires_at TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
-  )
-`;
-
-await sql`
-  CREATE TABLE IF NOT EXISTS settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-  )
-`;
-
-try { await sql`ALTER TABLE users ADD COLUMN ip TEXT`; } catch {}
-
-await sql`PRAGMA foreign_keys = ON`;
+import { eq, like, or, and, asc, desc, lte, count, isNotNull, sql } from 'drizzle-orm';
+import { db } from './src/db/index.ts';
+import { usersTable, domainsTable, applicationsTable, certificatesTable, settingsTable } from './src/db/schema.ts';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
@@ -84,7 +27,7 @@ export async function allocateIP() {
   const startHost = network + 2;
   const endHost = broadcast - 1;
 
-  const usedRows = await sql`SELECT ip FROM users WHERE ip IS NOT NULL`;
+  const usedRows = await db.select({ ip: usersTable.ip }).from(usersTable).where(isNotNull(usersTable.ip));
   const usedIPs = new Set(usedRows.map(r => r.ip));
 
   for (let i = startHost; i <= endHost; i++) {
@@ -101,173 +44,167 @@ export function isAdmin(email) {
 }
 
 export async function findUserBySub(sub) {
-  const [user] = await sql`SELECT * FROM users WHERE sub = ${sub}`;
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.sub, sub));
   return user ?? null;
 }
 
 export async function findUserByUsername(username) {
-  const [user] = await sql`SELECT * FROM users WHERE username = ${username}`;
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.username, username));
   return user ?? null;
 }
 
 export async function isUsernameTaken(username) {
-  const [row] = await sql`SELECT 1 FROM users WHERE username = ${username}`;
-  if (row) return true;
-  const [app] = await sql`SELECT 1 FROM applications WHERE username = ${username} AND status = 'pending'`;
+  const [user] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.username, username));
+  if (user) return true;
+  const [app] = await db.select({ id: applicationsTable.id }).from(applicationsTable).where(
+    and(eq(applicationsTable.username, username), eq(applicationsTable.status, 'pending'))
+  );
   return !!app;
 }
 
 export async function createUser({ sub, username, sshKey, vmid, ip }) {
-  const [user] = await sql`
-    INSERT INTO users (sub, username, ssh_key, vmid, ip)
-    VALUES (${sub}, ${username}, ${sshKey}, ${vmid}, ${ip || null})
-    RETURNING *
-  `;
+  const [user] = await db.insert(usersTable).values({ sub, username, ssh_key: sshKey, vmid, ip: ip || null }).returning();
   return user;
 }
 
 export async function deleteUser(sub) {
-  await sql`DELETE FROM users WHERE sub = ${sub}`;
+  await db.delete(usersTable).where(eq(usersTable.sub, sub));
 }
 
 export async function getDomainsForUser(userId) {
-  return await sql`SELECT * FROM domains WHERE user_id = ${userId} ORDER BY created_at`;
+  return db.select().from(domainsTable).where(eq(domainsTable.user_id, userId)).orderBy(asc(domainsTable.created_at));
 }
 
 export async function addDomain({ userId, domain, proxy }) {
-  const [row] = await sql`
-    INSERT INTO domains (user_id, domain, proxy)
-    VALUES (${userId}, ${domain}, ${proxy})
-    RETURNING *
-  `;
+  const [row] = await db.insert(domainsTable).values({ user_id: userId, domain, proxy }).returning();
   return row;
 }
 
 export async function removeDomain(userId, domain) {
-  const [row] = await sql`
-    DELETE FROM domains WHERE user_id = ${userId} AND domain = ${domain}
-    RETURNING *
-  `;
+  const [row] = await db.delete(domainsTable).where(
+    and(eq(domainsTable.user_id, userId), eq(domainsTable.domain, domain))
+  ).returning();
   return row ?? null;
 }
 
 export async function domainExists(domain) {
-  const [row] = await sql`SELECT 1 FROM domains WHERE domain = ${domain}`;
+  const [row] = await db.select({ id: domainsTable.id }).from(domainsTable).where(eq(domainsTable.domain, domain));
   return !!row;
 }
 
 export async function domainOwnedBy(domain, userId) {
-  const [row] = await sql`SELECT 1 FROM domains WHERE domain = ${domain} AND user_id = ${userId}`;
+  const [row] = await db.select({ id: domainsTable.id }).from(domainsTable).where(
+    and(eq(domainsTable.domain, domain), eq(domainsTable.user_id, userId))
+  );
   return !!row;
 }
 
 export async function getAllDomains() {
-  return await sql`
-    SELECT d.domain, d.proxy, u.username
-    FROM domains d
-    JOIN users u ON d.user_id = u.id
-    ORDER BY d.domain
-  `;
+  return db.select({
+    domain: domainsTable.domain,
+    proxy: domainsTable.proxy,
+    username: usersTable.username,
+  }).from(domainsTable).innerJoin(usersTable, eq(domainsTable.user_id, usersTable.id)).orderBy(asc(domainsTable.domain));
 }
 
 export async function createApplication({ sub, email, username, sshKey, reason }) {
-  const [app] = await sql`
-    INSERT INTO applications (sub, email, username, ssh_key, reason)
-    VALUES (${sub}, ${email}, ${username}, ${sshKey}, ${reason})
-    RETURNING *
-  `;
+  const [app] = await db.insert(applicationsTable).values({ sub, email, username, ssh_key: sshKey, reason }).returning();
   return app;
 }
 
 export async function getPendingApplications() {
-  return await sql`SELECT * FROM applications WHERE status = 'pending' ORDER BY created_at`;
+  return db.select().from(applicationsTable).where(eq(applicationsTable.status, 'pending')).orderBy(asc(applicationsTable.created_at));
 }
 
 export async function getAllApplications() {
-  return await sql`SELECT * FROM applications ORDER BY created_at DESC`;
+  return db.select().from(applicationsTable).orderBy(desc(applicationsTable.created_at));
 }
 
 export async function getApplicationById(id) {
-  const [app] = await sql`SELECT * FROM applications WHERE id = ${id}`;
+  const [app] = await db.select().from(applicationsTable).where(eq(applicationsTable.id, id));
   return app ?? null;
 }
 
 export async function getApplicationBySub(sub) {
-  const [app] = await sql`SELECT * FROM applications WHERE sub = ${sub} ORDER BY created_at DESC LIMIT 1`;
+  const [app] = await db.select().from(applicationsTable).where(eq(applicationsTable.sub, sub)).orderBy(desc(applicationsTable.created_at)).limit(1);
   return app ?? null;
 }
 
 export async function updateApplicationStatus(id, status, reviewedBy) {
-  const [app] = await sql`
-    UPDATE applications
-    SET status = ${status}, reviewed_by = ${reviewedBy}, reviewed_at = datetime('now')
-    WHERE id = ${id}
-    RETURNING *
-  `;
+  const [app] = await db.update(applicationsTable)
+    .set({ status, reviewed_by: reviewedBy, reviewed_at: new Date() })
+    .where(eq(applicationsTable.id, id))
+    .returning();
   return app ?? null;
 }
 
 export async function getAllUsers() {
-  return await sql`SELECT * FROM users ORDER BY created_at DESC`;
+  return db.select().from(usersTable).orderBy(desc(usersTable.created_at));
 }
 
 export async function searchUsers({ query, limit = 50, offset = 0 }) {
   if (query) {
-    const like = `%${query}%`;
-    const rows = await sql`SELECT * FROM users WHERE username LIKE ${like} OR ip LIKE ${like} OR CAST(vmid AS TEXT) LIKE ${like} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-    const [{ total }] = await sql`SELECT COUNT(*) as total FROM users WHERE username LIKE ${like} OR ip LIKE ${like} OR CAST(vmid AS TEXT) LIKE ${like}`;
-    return { users: rows, total };
+    const likePattern = `%${query}%`;
+    const whereClause = or(
+      like(usersTable.username, likePattern),
+      like(usersTable.ip, likePattern),
+      like(sql`CAST(${usersTable.vmid} AS TEXT)`, likePattern)
+    );
+    const rows = await db.select().from(usersTable).where(whereClause).orderBy(desc(usersTable.created_at)).limit(limit).offset(offset);
+    const [{ total }] = await db.select({ total: count() }).from(usersTable).where(whereClause);
+    return { users: rows, total: Number(total) };
   }
-  const rows = await sql`SELECT * FROM users ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-  const [{ total }] = await sql`SELECT COUNT(*) as total FROM users`;
-  return { users: rows, total };
+  const rows = await db.select().from(usersTable).orderBy(desc(usersTable.created_at)).limit(limit).offset(offset);
+  const [{ total }] = await db.select({ total: count() }).from(usersTable);
+  return { users: rows, total: Number(total) };
 }
 
 export async function updateUsername(vmid, newUsername) {
-  const [user] = await sql`UPDATE users SET username = ${newUsername} WHERE vmid = ${vmid} RETURNING *`;
+  const [user] = await db.update(usersTable).set({ username: newUsername }).where(eq(usersTable.vmid, vmid)).returning();
   return user ?? null;
 }
 
 export async function getDomainByName(domain) {
-  const [row] = await sql`SELECT * FROM domains WHERE domain = ${domain}`;
+  const [row] = await db.select().from(domainsTable).where(eq(domainsTable.domain, domain));
   return row ?? null;
 }
 
 export async function getSetting(key) {
-  const [row] = await sql`SELECT value FROM settings WHERE key = ${key}`;
+  const [row] = await db.select({ value: settingsTable.value }).from(settingsTable).where(eq(settingsTable.key, key));
   return row?.value ?? null;
 }
 
 export async function setSetting(key, value) {
-  await sql`INSERT INTO settings (key, value) VALUES (${key}, ${value}) ON CONFLICT(key) DO UPDATE SET value = excluded.value`;
+  await db.insert(settingsTable).values({ key, value }).onConflictDoUpdate({ target: settingsTable.key, set: { value } });
 }
 
 export async function saveCertificate({ domain, cert, key, expiresAt }) {
-  const [row] = await sql`
-    INSERT INTO certificates (domain, cert, key, expires_at)
-    VALUES (${domain}, ${cert}, ${key}, ${expiresAt})
-    ON CONFLICT(domain) DO UPDATE SET cert = excluded.cert, key = excluded.key, expires_at = excluded.expires_at, created_at = datetime('now')
-    RETURNING *
-  `;
+  const [row] = await db.insert(certificatesTable)
+    .values({ domain, cert, key, expires_at: new Date(expiresAt) })
+    .onConflictDoUpdate({
+      target: certificatesTable.domain,
+      set: { cert, key, expires_at: new Date(expiresAt), created_at: new Date() },
+    })
+    .returning();
   return row;
 }
 
 export async function getCertificate(domain) {
-  const [row] = await sql`SELECT * FROM certificates WHERE domain = ${domain}`;
+  const [row] = await db.select().from(certificatesTable).where(eq(certificatesTable.domain, domain));
   return row ?? null;
 }
 
 export async function deleteCertificate(domain) {
-  await sql`DELETE FROM certificates WHERE domain = ${domain}`;
+  await db.delete(certificatesTable).where(eq(certificatesTable.domain, domain));
 }
 
 export async function getAllCertificates() {
-  return await sql`SELECT * FROM certificates ORDER BY domain`;
+  return db.select().from(certificatesTable).orderBy(asc(certificatesTable.domain));
 }
 
 export async function getExpiringCertificates(withinDays = 30) {
-  const cutoff = new Date(Date.now() + withinDays * 24 * 60 * 60 * 1000).toISOString();
-  return await sql`SELECT * FROM certificates WHERE expires_at <= ${cutoff} ORDER BY expires_at`;
+  const cutoff = new Date(Date.now() + withinDays * 24 * 60 * 60 * 1000);
+  return db.select().from(certificatesTable).where(lte(certificatesTable.expires_at, cutoff)).orderBy(asc(certificatesTable.expires_at));
 }
 
 export { sql };
