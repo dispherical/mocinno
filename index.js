@@ -558,12 +558,12 @@ async function reloadProxy() {
 
   if (proxyServer) proxyServer.stop(true);
 
-  proxyServer = Bun.serve({
+  /*proxyServer = Bun.serve({
     port: 443,
     hostname: '0.0.0.0',
     tls: { serverNames },
     fetch: proxyFetch,
-  });
+  });*/
 }
 
 Bun.serve({
