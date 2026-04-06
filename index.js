@@ -567,7 +567,7 @@ async function reloadProxy() {
 }
 
 Bun.serve({
-  port: 80,
+  port: process.env.PORT || 80,
   hostname: '0.0.0.0',
   async fetch(req) {
     const url = new URL(req.url);
