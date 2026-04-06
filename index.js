@@ -662,7 +662,6 @@ app.post('/api/admin/applications/approve', async (c) => {
   const node = process.env.PVE_NODE;
   const password = crypto.randomBytes(12).toString('hex');
   const allocated = await db.allocateIP();
-  console.log(`name=eth0,bridge=vmbr0,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${allocated.gateway},ip6=auto`)
   const result = await pveFetch(`/nodes/${node}/lxc`, 'POST', {
     vmid,
     ostemplate: process.env.OS_TEMPLATE,
@@ -672,7 +671,7 @@ app.post('/api/admin/applications/approve', async (c) => {
     cores: 1,
     memory: 512,
     swap: 512,
-    net0: `name=eth0,bridge=vmbr0,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${allocated.gateway},ip6=auto`,
+    net0: `name=eth0,bridge=vmbr4030,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${allocated.gateway},ip6=auto`,
     hostname: application.username,
     'ssh-public-keys': `${bastionPubKey}\n${application.ssh_key}`,
     password,

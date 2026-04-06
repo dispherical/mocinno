@@ -40,3 +40,4 @@ bastion_proxy_key
 bastion_proxy_key.pub
 
 *.sqlite
+.env.*
