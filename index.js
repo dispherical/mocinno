@@ -194,9 +194,18 @@ app.get('/dashboard', async (c) => {
     if (!application || application.status === 'rejected') {
       eligible = profile.verification_status === "verified_eligible"
     }
+
+    const inviteCode = session.get('invite_code');
+    if (inviteCode && !eligible) {
+      const invite = await db.getInvite(inviteCode);
+      if (invite && (!invite.max_uses || invite.uses < invite.max_uses) && (!invite.expires_at || new Date() <= new Date(invite.expires_at))) {
+        eligible = true;
+      }
+    }
   }
 
   const html = await engine.renderFile('dashboard', { profile, user, container, domains, admin, suspended, application, eligible });
+
   return c.html(html);
 });
 
@@ -269,6 +278,17 @@ app.get('/flow/authorization/goalpost', async (c) => {
 
   return c.redirect("/dashboard")
 });
+app.get('/invite/:code', async (c) => {
+  const code = c.req.param('code');
+  const invite = await db.getInvite(code);
+  if (!invite) return c.text('Invalid invite code', 404);
+  if (invite.max_uses && invite.uses >= invite.max_uses) return c.text('Invite code depleted', 403);
+  if (invite.expires_at && new Date() > new Date(invite.expires_at)) return c.text('Invite code expired', 403);
+  
+  c.get('session').set('invite_code', code);
+  return c.redirect('/flow/authorization/login/start');
+});
+
 app.get('/api/username/check', async (c) => {
   const username = c.req.query('username')?.toLowerCase();
   if (!username || !/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
@@ -290,8 +310,16 @@ app.post('/api/application/submit', async (c) => {
   const pendingApp = await db.getApplicationBySub(profile.sub);
   if (pendingApp?.status === 'pending') { c.status(400); return c.json({ error: 'You already have a pending application' }) }
 
-  const eligible = profile.verification_status === "verified_eligible"
-  if (!eligible) { c.status(403); return c.json({ error: 'You are not eligible. You must be verified on auth.hackclub.com.' }) }
+  let eligible = profile.verification_status === "verified_eligible";
+  const inviteCode = c.get('session').get('invite_code');
+  if (inviteCode && !eligible) {
+    const invite = await db.getInvite(inviteCode);
+    if (invite && (!invite.max_uses || invite.uses < invite.max_uses) && (!invite.expires_at || new Date() <= new Date(invite.expires_at))) {
+      eligible = true;
+    }
+  }
+
+  if (!eligible) { c.status(403); return c.json({ error: 'You are not eligible. You must be verified on auth.hackclub.com or have a valid invite code.' }) }
 
   const body = await c.req.json();
   const username = body.username?.toLowerCase();
@@ -317,6 +345,12 @@ app.post('/api/application/submit', async (c) => {
   if (taken) { c.status(409); return c.json({ error: 'Username is already taken' }) }
 
   const app = await db.createApplication({ sub: profile.sub, email: profile.email, username, sshKey, reason });
+  
+  if (inviteCode && profile.verification_status !== "verified_eligible") {
+    await db.incrementInvite(inviteCode);
+    c.get('session').set('invite_code', null);
+  }
+
   return c.json({ message: 'Application submitted', application: app });
 });
 
@@ -633,9 +667,32 @@ app.get('/admin', async (c) => {
   const users = [];
   const applications = await db.getPendingApplications();
   const allApplications = await db.getAllApplications();
+  const invites = await db.getAllInvites();
 
-  const html = await engine.renderFile('admin', { profile, users, applications, allApplications });
+  const html = await engine.renderFile('admin', { profile, users, applications, allApplications, invites, appDomain: process.env.APP_DOMAIN || c.req.header('host') });
   return c.html(html);
+});
+
+app.post('/api/admin/invites/create', async (c) => {
+  const profile = c.get('session').get('profile');
+  if (!profile || !db.isAdmin(profile.email)) { c.status(403); return c.json({ error: 'Forbidden' }) }
+
+  const body = await c.req.json();
+  const code = crypto.randomBytes(8).toString('hex');
+  const maxUses = parseInt(body.maxUses) || null;
+  const expiresAt = body.expiresAt || null;
+
+  const invite = await db.createInvite({ code, adminEmail: profile.email, maxUses, expiresAt });
+  return c.json({ message: 'Invite created', invite });
+});
+
+app.post('/api/admin/invites/delete', async (c) => {
+  const profile = c.get('session').get('profile');
+  if (!profile || !db.isAdmin(profile.email)) { c.status(403); return c.json({ error: 'Forbidden' }) }
+
+  const { code } = await c.req.json();
+  await db.deleteInvite(code);
+  return c.json({ message: 'Invite deleted' });
 });
 
 app.get('/api/admin/users', async (c) => {

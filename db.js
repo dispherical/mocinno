@@ -1,6 +1,6 @@
 import { eq, like, or, and, asc, desc, lte, count, isNotNull, sql } from 'drizzle-orm';
 import { db } from './src/db/index.ts';
-import { usersTable, domainsTable, applicationsTable, certificatesTable, settingsTable } from './src/db/schema.ts';
+import { usersTable, domainsTable, applicationsTable, certificatesTable, settingsTable, invitesTable } from './src/db/schema.ts';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -213,6 +213,33 @@ export async function getAllCertificates() {
 export async function getExpiringCertificates(withinDays = 30) {
   const cutoff = new Date(Date.now() + withinDays * 24 * 60 * 60 * 1000);
   return db.select().from(certificatesTable).where(lte(certificatesTable.expires_at, cutoff)).orderBy(asc(certificatesTable.expires_at));
+}
+
+export async function createInvite({ code, adminEmail, maxUses, expiresAt }) {
+  const [invite] = await db.insert(invitesTable).values({
+    code,
+    admin_email: adminEmail,
+    max_uses: maxUses || null,
+    expires_at: expiresAt ? new Date(expiresAt) : null,
+  }).returning();
+  return invite;
+}
+
+export async function getInvite(code) {
+  const [invite] = await db.select().from(invitesTable).where(eq(invitesTable.code, code));
+  return invite ?? null;
+}
+
+export async function incrementInvite(code) {
+  await db.update(invitesTable).set({ uses: sql`${invitesTable.uses} + 1` }).where(eq(invitesTable.code, code));
+}
+
+export async function getAllInvites() {
+  return db.select().from(invitesTable).orderBy(desc(invitesTable.created_at));
+}
+
+export async function deleteInvite(code) {
+  await db.delete(invitesTable).where(eq(invitesTable.code, code));
 }
 
 export { sql };

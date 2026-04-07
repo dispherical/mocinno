@@ -39,6 +39,46 @@
 
 <hr>
 
+<h2>Admin Invites</h2>
+<p>Create invite links to bypass eligibility checks.</p>
+<div style="margin-bottom: 12px; display:flex; gap:8px;">
+  <input type="number" id="invite-max-uses" placeholder="Max Uses (Empty=Infinite)">
+  <input type="datetime-local" id="invite-expires" placeholder="Expires At">
+  <button id="btn-create-invite">Create Invite</button>
+</div>
+{% if invites.size > 0 %}
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Uses</th>
+        <th>Max Uses</th>
+        <th>Expires</th>
+        <th>Created By</th>
+        <th>Link</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="invites-tbody">
+      {% for inv in invites %}
+        <tr id="invite-row-{{ inv.code }}">
+          <td>{{ inv.code }}</td>
+          <td>{{ inv.uses }}</td>
+          <td>{{ inv.max_uses | default: '∞' }}</td>
+          <td>{{ inv.expires_at | default: 'Never' }}</td>
+          <td>{{ inv.admin_email }}</td>
+          <td><code>https://{{ appDomain }}/invite/{{ inv.code }}</code></td>
+          <td><button class="delete-invite-btn" data-code="{{ inv.code }}">Revoke</button></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p id="no-invites-msg">No invites created yet.</p>
+{% endif %}
+
+<hr>
+
 <h2>Users</h2>
 <div>
   <input
@@ -87,6 +127,49 @@
 
 <script>
   const adminMsg = document.getElementById('admin-message');
+
+  document.getElementById('btn-create-invite')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-create-invite');
+    const maxUses = document.getElementById('invite-max-uses').value;
+    const expiresAt = document.getElementById('invite-expires').value;
+    
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/admin/invites/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxUses, expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Invite created: ' + data.invite.code);
+        location.reload();
+      } else {
+        alert(data.error);
+      }
+    } catch {
+      alert('Failed');
+    }
+    btn.disabled = false;
+  });
+
+  document.querySelectorAll('.delete-invite-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Revoke this invite?')) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/admin/invites/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: btn.dataset.code }),
+        });
+        if (res.ok) {
+          document.getElementById('invite-row-' + btn.dataset.code)?.remove();
+        }
+      } catch {}
+      btn.disabled = false;
+    });
+  });
 
   let usersPage = 1;
   let usersQuery = '';

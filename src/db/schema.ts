@@ -40,6 +40,15 @@ export const certificatesTable = pgTable('certificates', {
   created_at: timestamp('created_at').defaultNow(),
 });
 
+export const invitesTable = pgTable('invites', {
+  code: text('code').primaryKey(),
+  admin_email: text('admin_email').notNull(),
+  max_uses: integer('max_uses'),
+  uses: integer('uses').notNull().default(0),
+  expires_at: timestamp('expires_at'),
+  created_at: timestamp('created_at').defaultNow(),
+});
+
 export const settingsTable = pgTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
