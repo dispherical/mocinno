@@ -204,7 +204,8 @@ app.get('/dashboard', async (c) => {
     }
   }
 
-  const html = await engine.renderFile('dashboard', { profile, user, container, domains, admin, suspended, application, eligible });
+  const config = require('./config.js');
+  const html = await engine.renderFile('dashboard', { profile, user, container, domains, admin, suspended, application, eligible, config });
 
   return c.html(html);
 });
@@ -325,6 +326,8 @@ app.post('/api/application/submit', async (c) => {
   const username = body.username?.toLowerCase();
   const sshKey = body.sshKey?.trim();
   const reason = body.reason?.trim();
+  const server = body.server;
+  const template = body.template;
 
   if (!username || !/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
     c.status(400)
@@ -344,7 +347,7 @@ app.post('/api/application/submit', async (c) => {
   const taken = await db.isUsernameTaken(username);
   if (taken) { c.status(409); return c.json({ error: 'Username is already taken' }) }
 
-  const app = await db.createApplication({ sub: profile.sub, email: profile.email, username, sshKey, reason });
+  const app = await db.createApplication({ sub: profile.sub, email: profile.email, username, sshKey, reason, server, template });
   
   if (inviteCode && profile.verification_status !== "verified") {
     await db.incrementInvite(inviteCode);
@@ -740,20 +743,26 @@ app.post('/api/admin/applications/approve', async (c) => {
   if (!application) { c.status(404); return c.json({ error: 'Application not found' }) }
   if (application.status !== 'pending') { c.status(400); return c.json({ error: 'Application already processed' }) }
 
+  const config = require('./config.js');
+  const serverConfig = config.servers.find(s => s.name === application.server) || config.servers[0];
+  const templateConfig = Array.isArray(serverConfig.templates) 
+    ? serverConfig.templates.find(t => t.name === application.template) || serverConfig.templates[0]
+    : serverConfig.templates;
+
   const vmid = await getNextVmid();
-  const node = process.env.PVE_NODE;
+  const node = serverConfig.node || process.env.PVE_NODE;
   const password = crypto.randomBytes(12).toString('hex');
   const allocated = await db.allocateIP();
   const result = await pveFetch(`/nodes/${node}/lxc`, 'POST', {
     vmid,
-    ostemplate: process.env.OS_TEMPLATE,
-    rootfs: process.env.ROOTFS,
+    ostemplate: templateConfig.template || process.env.OS_TEMPLATE,
+    rootfs: serverConfig.rootfs || process.env.ROOTFS,
     unprivileged: 1,
     features: 'nesting=1',
     cores: 1,
     memory: 512,
     swap: 512,
-    net0: `name=eth0,bridge=vmbr4030,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${allocated.gateway},ip6=auto`,
+    net0: `name=eth0,bridge=vmbr4030,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${serverConfig.gateway || allocated.gateway},ip6=auto`,
     hostname: application.username,
     'ssh-public-keys': `${bastionPubKey}\n${application.ssh_key}`,
     password,

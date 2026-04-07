@@ -76,6 +76,7 @@ export async function createUser({ sub, username, sshKey, vmid, ip }) {
 }
 
 export async function deleteUser(sub) {
+  await db.delete(applicationsTable).where(eq(applicationsTable.sub, sub));
   await db.delete(usersTable).where(eq(usersTable.sub, sub));
 }
 
@@ -115,8 +116,8 @@ export async function getAllDomains() {
   }).from(domainsTable).innerJoin(usersTable, eq(domainsTable.user_id, usersTable.id)).orderBy(asc(domainsTable.domain));
 }
 
-export async function createApplication({ sub, email, username, sshKey, reason }) {
-  const [app] = await db.insert(applicationsTable).values({ sub, email, username, ssh_key: sshKey, reason }).returning();
+export async function createApplication({ sub, email, username, sshKey, reason, server, template }) {
+  const [app] = await db.insert(applicationsTable).values({ sub, email, username, ssh_key: sshKey, reason, server, template }).returning();
   return app;
 }
 

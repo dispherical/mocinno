@@ -1,164 +1,279 @@
 {% layout 'parent.liquid' %}
 
 {% block body -%}
-<h1>Nest</h1>
-<p>Hello {{ profile.name }}!</p>
-
-{% if admin %}
-  <p><a href="/admin">Admin Panel</a></p>
-{% endif %}
-
-<hr>
-
-<h2>Your Container</h2>
-{% if user %}
-  {% if suspended %}
-    <p style="color: red;">
-      <strong>Your container has been suspended.</strong> Please contact an admin for assistance.
-    </p>
-  {% endif %}
-
-  <ul>
-    <li><strong>Username:</strong> {{ user.username }}</li>
-    <li><strong>VMID:</strong> {{ user.vmid }}</li>
-    {% if user.ip %}
-      <li><strong>IP:</strong> {{ user.ip }}</li>
-    {% endif %}
-    {% if container %}
-      <li><strong>Status:</strong> {{ container.status }}</li>
-      <li><strong>Hostname:</strong> {{ container.name }}</li>
-      <li><strong>CPU:</strong> {{ container.cpus }} Cores</li>
-      <li><strong>Memory:</strong> {{ container.maxmem | divided_by: 1048576 }} MB</li>
-    {% endif %}
-  </ul>
-  <p>
-    <strong>SSH:</strong> <code>ssh {{ user.username }}@hackclub.app</code>
-  </p>
-
-  {% unless suspended %}
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      {% if container.status == 'running' %}
-        <button id="stop-btn">Stop Container</button>
-        <button id="reboot-btn">Reboot Container</button>
-      {% else %}
-        <button id="start-btn">Start Container</button>
-      {% endif %}
-      <button id="delete-btn" style="color: red;">Delete Container</button>
+<div class="bg-background font-geist-sans text-foreground antialiased min-h-screen flex flex-col">
+  <div class="border-border uk-shadow-sm flex h-14 items-center justify-between border-b px-6 bg-white">
+    <div class="flex space-x-6 text-md items-center font-bold">
+      <span>Nest</span>
+      <ul class="uk-subnav uk-subnav-pill mb-0 font-normal" id="main-tabs">
+        {% if user %}
+          <li class="uk-active"><a href="#" data-target="tab-dashboard">Dashboard</a></li>
+          <li><a href="#" data-target="tab-domains">Domains</a></li>
+        {% else %}
+          <li class="uk-active"><a href="#" data-target="tab-apply">Apply for Nest</a></li>
+        {% endif %}
+      </ul>
     </div>
-  {% endunless %}
+    <div class="flex items-center space-x-4">
+      <div class="text-sm font-medium">{{ profile.name }}</div>
+      {% if admin %}
+        <a href="/admin" class="uk-btn uk-btn-default uk-btn-sm">Admin Panel</a>
+      {% endif %}
+    </div>
+  </div>
 
-  <hr>
+  <div class="flex flex-1 max-w-4xl w-full mx-auto px-4 md:px-0">
+    <main class="flex-1 py-8">
+      <div id="tab-content" class="w-full relative">
+        {% if user %}
+          <div id="tab-dashboard" class="space-y-6 pt-2 block">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">Your Nest container</h2>
+              <p class="text-muted-foreground mt-1">From here you may check on the status of your container.</p>
+            </div>
+            <div class="border-border border-t"></div>
 
-  <h2>Domains</h2>
-  <table id="domain-table">
-    <thead>
-      <tr>
-        <th>Domain</th>
-        <th>Proxy To</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in domains %}
-        <tr data-domain="{{ d.domain }}">
-          <td>{{ d.domain }}</td>
-          <td>{{ d.proxy }}</td>
-          <td><button class="domain-rm-btn" data-domain="{{ d.domain }}">Remove</button></td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+            {% if suspended %}
+              <div class="uk-alert uk-alert-destructive">
+                <div class="uk-alert-description">
+                  <strong>Your container has been suspended.</strong> Please contact an admin for assistance.
+                </div>
+              </div>
+            {% endif %}
 
-  <h3>Add Domain</h3>
-  <input type="text" id="domain-input" placeholder="example.com">
-  <input type="text" id="proxy-input" placeholder="Proxy target (optional, defaults to container:80)">
-  <button id="domain-add-btn">Add</button>
-  <p id="domain-message"></p>
+            <div class="border-border border rounded-xl overflow-hidden shadow-sm bg-white">
+              <table class="uk-table uk-table-divider uk-table-middle mb-0">
+                <tbody>
+                  <tr><td class="w-48 font-medium pl-4 py-3">Username</td><td class="py-3">{{ user.username }}</td></tr>
+                  <tr><td class="font-medium pl-4 py-3">VMID</td><td class="py-3">{{ user.vmid }}</td></tr>
+                  {% if user.ip %}<tr><td class="font-medium pl-4 py-3">IP</td><td class="py-3">{{ user.ip }}</td></tr>{% endif %}
+                  {% if container %}
+                    <tr>
+                      <td class="font-medium pl-4 py-3">Status</td>
+                      <td class="py-3">
+                        <span>
+                          {{ container.status }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr><td class="font-medium pl-4 py-3">Hostname</td><td class="py-3">{{ container.name }}</td></tr>
+                    <tr><td class="font-medium pl-4 py-3">CPU</td><td class="py-3">{{ container.cpus }} Cores</td></tr>
+                    <tr><td class="font-medium pl-4 py-3">Memory</td><td class="py-3">{{ container.maxmem | divided_by: 1048576 }} MB</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
 
-{% elsif application %}
-  {% if application.status == 'pending' %}
-    <p>Your application is <strong>pending review</strong>. An admin will review it soon.</p>
-    <ul>
-      <li><strong>Username:</strong> {{ application.username }}</li>
-      <li><strong>Submitted:</strong> {{ application.created_at }}</li>
-    </ul>
-  {% elsif application.status == 'rejected' %}
-    <p style="color: red;">Your application was <strong>rejected</strong>. You may submit a new one.</p>
-  {% endif %}
+            <div class="p-5 border border-border bg-muted/40 rounded-xl flex items-center justify-between shadow-sm">
+              <div>
+                <span class="font-medium mr-3">SSH Access:</span>
+                <code class="text-sm font-mono bg-white border border-border px-2.5 py-1.5 rounded-md">ssh {{ user.username }}@hackclub.app</code>
+              </div>
+            </div>
 
-  {% if application.status == 'rejected' or application == null %}
-    {% if eligible %}
-      <label for="username-input"><strong>Choose a username:</strong></label
-      ><br>
-      <input
-        type="text"
-        id="username-input"
-        placeholder="e.g. johndoe"
-        maxlength="32"
-        pattern="[a-z][a-z0-9_-]{1,30}[a-z0-9]"
-      >
-      <span id="username-status"></span><br>
-      <br>
-      <label for="sshkey-input"><strong>SSH Public Key:</strong></label
-      ><br>
-      <textarea id="sshkey-input" rows="3" cols="60" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
-      <span id="sshkey-status"></span><br>
-      <br>
-      <label for="reason-input"><strong>Why do you want to use Nest?</strong></label
-      ><br>
-      <textarea id="reason-input" rows="3" cols="60" placeholder="Tell us what you'd like to use Nest for..."></textarea>
-      <span id="reason-status"></span><br>
-      <br>
-      <button id="apply-btn" disabled>Submit Application</button>
-    {% else %}
-      <p>
-        You are not currently eligible. Please verify your identity at
-        <a href="https://auth.hackclub.com">auth.hackclub.com</a> first.
-      </p>
-    {% endif %}
-  {% endif %}
+            {% unless suspended %}
+              <div class="flex gap-x-3 mt-4 pt-6 border-t border-border">
+                {% if container.status == 'running' %}
+                  <button id="stop-btn" class="uk-btn uk-btn-secondary">Stop Container</button>
+                  <button id="reboot-btn" class="uk-btn uk-btn-default">Reboot</button>
+                {% else %}
+                  <button id="start-btn" class="uk-btn uk-btn-primary">Start Container</button>
+                {% endif %}
+                <div class="flex-1"></div>
+                <button id="delete-btn" class="uk-btn uk-btn-destructive">Delete Container</button>
+              </div>
+            {% endunless %}
+            <p id="status-message" class="text-sm font-medium mt-2"></p>
+          </div>
 
-{% else %}
-  {% if eligible %}
-    <label for="username-input"><strong>Choose a username:</strong></label
-    ><br>
-    <input
-      type="text"
-      id="username-input"
-      placeholder="e.g. johndoe"
-      maxlength="32"
-      pattern="[a-z][a-z0-9_-]{1,30}[a-z0-9]"
-    >
-    <span id="username-status"></span><br>
-    <br>
-    <label for="sshkey-input"><strong>SSH Public Key:</strong></label
-    ><br>
-    <textarea id="sshkey-input" rows="3" cols="60" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
-    <span id="sshkey-status"></span><br>
-    <br>
-    <label for="reason-input"><strong>Why do you want to use Nest?</strong></label
-    ><br>
-    <textarea id="reason-input" rows="3" cols="60" placeholder="Tell us what you'd like to use Nest for..."></textarea>
-    <span id="reason-status"></span><br>
-    <br>
-    <button id="apply-btn" disabled>Submit Application</button>
-  {% else %}
-    <p>
-      You are not currently eligible. Please verify your identity at
-      <a href="https://auth.hackclub.com">auth.hackclub.com</a> first.
-    </p>
-  {% endif %}
-{% endif %}
+          <div id="tab-domains" class="space-y-6 pt-2 hidden">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">Domains</h2>
+              <p class="text-muted-foreground mt-1">From here you may configure custom domains to point towards your container.</p>
+            </div>
+            <div class="border-border border-t"></div>
 
-<p id="status-message"></p>
+            <div class="border-border border rounded-xl overflow-hidden shadow-sm bg-white">
+              <table id="domain-table" class="uk-table uk-table-divider uk-table-middle mb-0">
+                <thead>
+                  <tr class="bg-muted/20">
+                    <th class="pl-4">Domain</th>
+                    <th>Proxy To</th>
+                    <th class="w-24 text-right pr-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for d in domains %}
+                    <tr data-domain="{{ d.domain }}">
+                      <td class="font-medium pl-4">{{ d.domain }}</td>
+                      <td>{{ d.proxy }}</td>
+                      <td class="text-right pr-4">
+                        <button class="domain-rm-btn uk-btn uk-btn-text text-destructive hover:underline text-sm" data-domain="{{ d.domain }}">Remove</button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% if domains.size == 0 %}
+                <div class="p-6 text-center text-muted-foreground text-sm bg-white">No domains added yet.</div>
+              {% endif %}
+            </div>
+
+            <div class="bg-white p-6 border border-border rounded-xl shadow-sm mt-6">
+              <h4 class="font-medium text-lg mb-4">Add New Domain</h4>
+              <div class="flex items-start gap-x-4">
+                <div class="space-y-1 w-64">
+                   <label class="text-sm font-medium">Domain</label>
+                   <input type="text" id="domain-input" class="uk-input h-10" placeholder="example.com">
+                </div>
+                <div class="space-y-1 flex-1">
+                   <label class="text-sm font-medium">Target Port/Address</label>
+                   <input type="text" id="proxy-input" class="uk-input h-10" placeholder="Default: container:80">
+                </div>
+              </div>
+              <div class="flex items-center justify-between mt-4">
+                <div class="uk-form-help text-muted-foreground mt-0" id="domain-message">You'll need to point your domain to hackclub.app to use this!</div>
+                <button id="domain-add-btn" class="uk-btn uk-btn-primary">Add Domain</button>
+              </div>
+            </div>
+          </div>
+
+        {% else %}
+          <div id="tab-apply" class="space-y-6 pt-2 block">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">Apply for Nest</h2>
+              <p class="text-muted-foreground mt-1">Apply for a container on Nest by filling out the details below.</p>
+            </div>
+            <div class="border-border border-t"></div>
+
+            {% if application %}
+              {% if application.status == 'pending' %}
+                <div class="p-6 border border-border rounded-xl bg-muted/20 shadow-sm mb-6">
+                  <h3 class="font-semibold text-lg mb-2">Application Pending Review</h3>
+                  <p class="text-sm text-muted-foreground mb-4">You have already submitted a request. An admin will review it soon.</p>
+                  <ul class="uk-list uk-list-disc pl-5 text-sm text-muted-foreground">
+                    <li><strong>Username:</strong> {{ application.username }}</li>
+                    <li><strong>Submitted:</strong> {{ application.created_at }}</li>
+                  </ul>
+                </div>
+              {% elsif application.status == 'rejected' %}
+                <div class="p-4 border border-destructive/40 rounded-xl bg-destructive/10 mb-6 shadow-sm">
+                  <p class="text-destructive font-medium">Your previous application was rejected. You may submit a new one below.</p>
+                </div>
+              {% endif %}
+            {% endif %}
+
+            {% if application == null or application.status == 'rejected' %}
+              {% if eligible %}
+                <div class="bg-white p-8 border border-border rounded-xl shadow-sm space-y-8">
+                  
+                  <div class="space-y-3">
+                    <h3 class="text-lg font-medium">Select server location</h3>
+                    <p class="text-muted-foreground text-sm">Choose the server location closest to you.</p>
+                    <div class="mt-4 max-w-sm">
+                      <select id="server-input" class="uk-select h-10 w-full">
+                        {% for s in config.servers %}
+                          <option value="{{ s.name }}">{{ s.location }} - {{ s.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="border-border border-t"></div>
+
+                  <div class="space-y-3">
+                    <h3 class="text-lg font-medium">Select operating system</h3>
+                    <p class="text-muted-foreground text-sm">Choose the OS template to initialize on your container.</p>
+                    <div class="mt-4 max-w-sm">
+                      <select id="template-input" class="uk-select h-10 w-full">
+                        {% for s in config.servers %}
+                          {% if s.templates.name %}
+                             <option value="{{ s.templates.name }}" data-server="{{ s.name }}">{{ s.templates.name }}</option>
+                          {% else %}
+                             {% for t in s.templates %}
+                               <option value="{{ t.name }}" data-server="{{ s.name }}">{{ t.name }}</option>
+                             {% endfor %}
+                          {% endif %}
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="border-border border-t"></div>
+
+                  <div class="space-y-3">
+                    <h3 class="text-lg font-medium">Credentials & Usage</h3>
+                    <p class="text-muted-foreground text-sm">Configure your Nest access details.</p>
+                    
+                    <div class="space-y-5 pt-2">
+                      <div>
+                        <label class="uk-form-label font-medium mb-1.5 block" for="username-input">System Username</label>
+                        <input type="text" id="username-input" class="uk-input h-10 w-full max-w-md" placeholder="e.g. johndoe" maxlength="32">
+                        <div class="uk-form-help text-muted-foreground mt-1.5" id="username-status">Must be 3-32 lowercase letters, numbers, hyphens.</div>
+                      </div>
+                      
+                      <div>
+                        <label class="uk-form-label font-medium mb-1.5 block" for="sshkey-input">SSH Public Key</label>
+                        <textarea id="sshkey-input" class="uk-textarea p-3 h-28 w-full" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
+                        <div class="uk-form-help text-muted-foreground mt-1.5" id="sshkey-status">You'll login with this instead of a password.</div>
+                      </div>
+                      
+                      <div>
+                        <label class="uk-form-label font-medium mb-1.5 block" for="reason-input">Intended Usage</label>
+                        <textarea id="reason-input" class="uk-textarea p-3 h-24 w-full" placeholder="Briefly describe what you plan to host or build..."></textarea>
+                        <div class="uk-form-help text-muted-foreground mt-1.5" id="reason-status">Please provide at least 10 characters. It helps us understand what people use Nest for!</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pt-6 border-t border-border flex justify-end items-center">
+                    <p id="status-message-form" class="mr-4 text-sm font-medium"></p>
+                    <button id="apply-btn" class="uk-btn uk-btn-primary" disabled>Submit Application</button>
+                  </div>
+                </div>
+              {% else %}
+                <div class="p-6 border border-border rounded-xl bg-muted/20 shadow-sm text-center">
+                  <p class="mb-4">You are not currently eligible for Nest.</p>
+                  <p class="text-sm text-muted-foreground mb-4">You'll need to submit documentation that you can use Nest with Hack Club Auth.</p>
+                  <a href="https://auth.hackclub.com" class="uk-btn uk-btn-primary" target="_blank" rel="noopener noreferrer">Go to auth.hackclub.com</a>
+                </div>
+              {% endif %}
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </main>
+  </div>
+</div>
 
 <script>
-  const msg = document.getElementById('status-message');
+  document.querySelectorAll('#main-tabs a').forEach(t => {
+    t.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('#main-tabs li').forEach(li => li.classList.remove('uk-active'));
+      t.parentElement.classList.add('uk-active');
+      document.querySelectorAll('#tab-content > div').forEach(c => {
+        c.classList.remove('block');
+        c.classList.add('hidden');
+      });
+      const tgt = document.getElementById(t.dataset.target);
+      if (tgt) {
+        tgt.classList.remove('hidden');
+        tgt.classList.add('block');
+      }
+    });
+  });
+
+  const msgPanel = document.getElementById('status-message');
+  const msgForm = document.getElementById('status-message-form');
   const domainMsg = document.getElementById('domain-message');
 
   const usernameInput = document.getElementById('username-input');
   const usernameStatus = document.getElementById('username-status');
   const applyBtn = document.getElementById('apply-btn');
+  const serverInput = document.getElementById('server-input');
+  const templateInput = document.getElementById('template-input');
+
   let usernameValid = false;
   let sshKeyValid = false;
   let reasonValid = false;
@@ -168,6 +283,23 @@
     if (applyBtn) applyBtn.disabled = !(usernameValid && sshKeyValid && reasonValid);
   }
 
+  serverInput?.addEventListener('change', () => {
+    const selectedServer = serverInput.value;
+    if (!templateInput) return;
+    
+    let firstValid = null;
+    Array.from(templateInput.options).forEach(opt => {
+      const isMatch = opt.dataset.server === selectedServer;
+      if (isMatch) opt.style.display = '';
+      else opt.style.display = 'none';
+      if (isMatch && !firstValid) firstValid = opt.value;
+    });
+
+    if (firstValid) {
+      templateInput.value = firstValid;
+    }
+  });
+
   usernameInput?.addEventListener('input', () => {
     clearTimeout(checkTimeout);
     usernameValid = false;
@@ -176,18 +308,18 @@
     usernameInput.value = val;
 
     if (!val) {
-      usernameStatus.innerText = '';
+      usernameStatus.innerText = 'Must be 3-32 lowercase letters, numbers, hyphens.';
+      usernameStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
       return;
     }
     if (!/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(val)) {
-      usernameStatus.innerText =
-        'Must be 3-32 chars, start with a letter, end with letter/number. Only lowercase, numbers, hyphens, underscores.';
-      usernameStatus.style.color = 'red';
+      usernameStatus.innerText = 'Must be 3-32 chars, start with a letter, end with letter/number. Only lowercase, numbers, hyphens, underscores.';
+      usernameStatus.className = 'uk-form-help text-destructive mt-1.5';
       return;
     }
 
     usernameStatus.innerText = 'Checking...';
-    usernameStatus.style.color = '';
+    usernameStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
     checkTimeout = setTimeout(async () => {
       try {
         const res = await fetch(`/api/username/check?username=${encodeURIComponent(val)}`);
@@ -195,16 +327,16 @@
         if (usernameInput.value !== val) return;
         if (data.available) {
           usernameStatus.innerText = 'Available!';
-          usernameStatus.style.color = 'green';
+          usernameStatus.className = 'uk-form-help text-green-600 mt-1.5';
           usernameValid = true;
           updateApplyBtn();
         } else {
           usernameStatus.innerText = data.error || 'Taken';
-          usernameStatus.style.color = 'red';
+          usernameStatus.className = 'uk-form-help text-destructive mt-1.5';
         }
       } catch {
         usernameStatus.innerText = 'Error checking username';
-        usernameStatus.style.color = 'red';
+        usernameStatus.className = 'uk-form-help text-destructive mt-1.5';
       }
     }, 400);
   });
@@ -217,17 +349,18 @@
     sshKeyValid = false;
     updateApplyBtn();
     if (!val) {
-      sshKeyStatus.innerText = '';
+      sshKeyStatus.innerText = 'Paste your public key here.';
+      sshKeyStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
       return;
     }
     if (/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(val)) {
       sshKeyStatus.innerText = 'Looks good!';
-      sshKeyStatus.style.color = 'green';
+      sshKeyStatus.className = 'uk-form-help text-green-600 mt-1.5';
       sshKeyValid = true;
       updateApplyBtn();
     } else {
       sshKeyStatus.innerText = 'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, or ssh-ecdsa)';
-      sshKeyStatus.style.color = 'red';
+      sshKeyStatus.className = 'uk-form-help text-destructive mt-1.5';
     }
   });
 
@@ -239,16 +372,18 @@
     reasonValid = false;
     updateApplyBtn();
     if (!val) {
-      reasonStatus.innerText = '';
+      reasonStatus.innerText = 'At least 10 characters.';
+      reasonStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
       return;
     }
     if (val.length >= 10) {
-      reasonStatus.innerText = '';
+      reasonStatus.innerText = 'Looks good!';
+      reasonStatus.className = 'uk-form-help text-green-600 mt-1.5';
       reasonValid = true;
       updateApplyBtn();
     } else {
       reasonStatus.innerText = 'Please write at least 10 characters.';
-      reasonStatus.style.color = 'red';
+      reasonStatus.className = 'uk-form-help text-destructive mt-1.5';
     }
   });
 
@@ -257,37 +392,55 @@
     const username = usernameInput.value;
     const sshKey = sshKeyInput.value.trim();
     const reason = reasonInput.value.trim();
-    msg.innerText = 'Submitting application...';
+    const server = serverInput ? serverInput.value : '';
+    const template = templateInput ? templateInput.value : '';
+
+    if (msgForm) {
+      msgForm.innerText = 'Submitting application...';
+      msgForm.className = 'mr-4 text-sm font-medium text-muted-foreground';
+    }
     applyBtn.disabled = true;
     usernameInput.disabled = true;
     sshKeyInput.disabled = true;
     reasonInput.disabled = true;
+    if(serverInput) serverInput.disabled = true;
+    if(templateInput) templateInput.disabled = true;
     try {
       const res = await fetch('/api/application/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, sshKey, reason }),
+        body: JSON.stringify({ username, sshKey, reason, server, template }),
       });
       const data = await res.json();
       if (res.ok) {
-        msg.innerText = 'Application submitted! An admin will review it soon.';
-        msg.style.color = 'green';
-        setTimeout(() => location.reload(), 3000);
+        if (msgForm) {
+          msgForm.innerText = 'Application submitted!';
+          msgForm.className = 'mr-4 text-sm font-medium text-green-600';
+        }
+        setTimeout(() => location.reload(), 2000);
       } else {
-        msg.innerText = 'Error: ' + data.error;
-        msg.style.color = 'red';
+        if (msgForm) {
+          msgForm.innerText = 'Error: ' + data.error;
+          msgForm.className = 'mr-4 text-sm font-medium text-destructive';
+        }
         applyBtn.disabled = false;
         usernameInput.disabled = false;
         sshKeyInput.disabled = false;
         reasonInput.disabled = false;
+        if(serverInput) serverInput.disabled = false;
+        if(templateInput) templateInput.disabled = false;
       }
     } catch (e) {
-      msg.innerText = 'Failed to connect to API.';
-      msg.style.color = 'red';
+      if (msgForm) {
+        msgForm.innerText = 'Failed to connect to API.';
+        msgForm.className = 'mr-4 text-sm font-medium text-destructive';
+      }
       applyBtn.disabled = false;
       usernameInput.disabled = false;
       sshKeyInput.disabled = false;
       reasonInput.disabled = false;
+      if(serverInput) serverInput.disabled = false;
+      if(templateInput) templateInput.disabled = false;
     }
   });
 
@@ -295,23 +448,32 @@
     const btn = document.getElementById(btnId);
     if (!btn) return;
     btn.addEventListener('click', async () => {
-      msg.innerText = action + '...';
       btn.disabled = true;
+      if(msgPanel) {
+        msgPanel.innerText = action + 'ing container...';
+        msgPanel.className = 'mt-4 text-sm font-medium text-muted-foreground';
+      }
       try {
         const res = await fetch(`/api/container/${action.toLowerCase()}`, { method: 'POST' });
         const data = await res.json();
         if (res.ok) {
-          msg.innerText = data.message;
-          msg.style.color = 'green';
+          if(msgPanel) {
+            msgPanel.innerText = data.message || 'Success';
+            msgPanel.className = 'mt-4 text-sm font-medium text-green-600';
+          }
           setTimeout(() => location.reload(), 2000);
         } else {
-          msg.innerText = 'Error: ' + data.error;
-          msg.style.color = 'red';
+           if(msgPanel) {
+            msgPanel.innerText = 'Error: ' + data.error;
+            msgPanel.className = 'mt-4 text-sm font-medium text-destructive';
+           }
           btn.disabled = false;
         }
       } catch {
-        msg.innerText = 'Failed to connect to API.';
-        msg.style.color = 'red';
+        if (msgPanel) {
+          msgPanel.innerText = 'Failed to connect to API.';
+          msgPanel.className = 'mt-4 text-sm font-medium text-destructive';
+        }
         btn.disabled = false;
       }
     });
@@ -323,48 +485,62 @@
 
   document.getElementById('delete-btn')?.addEventListener('click', async () => {
     if (!confirm('Are you sure? This will permanently delete all data on your container.')) return;
-
-    msg.innerText = 'Deleting container...';
+    if(msgPanel) {
+      msgPanel.innerText = 'Deleting container...';
+      msgPanel.className = 'mt-4 text-sm font-medium text-muted-foreground';
+    }
     try {
       const res = await fetch('/api/container/delete', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        location.reload();
-      } else if (res.status === 403 && data.redirect) {
-        location.href = data.redirect;
+        location.href = data.redirect || '/';
       } else {
-        msg.innerText = 'Error: ' + data.error;
-        msg.style.color = 'red';
+        if(msgPanel) {
+          msgPanel.innerText = 'Error: ' + data.error;
+          msgPanel.className = 'mt-4 text-sm font-medium text-destructive';
+        }
       }
     } catch (e) {
-      msg.innerText = 'Failed to connect to API.';
-      msg.style.color = 'red';
+      if(msgPanel) {
+        msgPanel.innerText = 'Failed to connect to API.';
+        msgPanel.className = 'mt-4 text-sm font-medium text-destructive';
+      }
     }
   });
 
   document.getElementById('domain-add-btn')?.addEventListener('click', async () => {
     const domain = document.getElementById('domain-input').value.trim();
-    const proxy = document.getElementById('proxy-input').value.trim();
+    const proxyInput = document.getElementById('proxy-input');
+    const proxy = proxyInput ? proxyInput.value.trim() : '';
     if (!domain) return;
 
-    domainMsg.innerText = 'Adding...';
-    domainMsg.style.color = '';
+    if(domainMsg){
+      domainMsg.innerText = 'Adding...';
+      domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
+    }
     try {
+      const payload = { domain };
+      if (proxy) payload.proxy = proxy;
+
       const res = await fetch('/api/domains/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain, proxy: proxy || undefined }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok) {
         location.reload();
       } else {
-        domainMsg.innerText = data.error;
-        domainMsg.style.color = 'red';
+        if(domainMsg){
+          domainMsg.innerText = data.error;
+          domainMsg.className = 'uk-form-help text-destructive mt-0';
+        }
       }
     } catch {
-      domainMsg.innerText = 'Failed to connect to API.';
-      domainMsg.style.color = 'red';
+       if(domainMsg){
+        domainMsg.innerText = 'Failed to connect to API.';
+        domainMsg.className = 'uk-form-help text-destructive mt-0';
+       }
     }
   });
 
@@ -373,8 +549,10 @@
       const domain = btn.dataset.domain;
       if (!confirm(`Remove ${domain}?`)) return;
 
-      domainMsg.innerText = 'Removing...';
-      domainMsg.style.color = '';
+      if(domainMsg){
+        domainMsg.innerText = 'Removing ' + domain + '...';
+        domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
+      }
       try {
         const res = await fetch('/api/domains/remove', {
           method: 'POST',
@@ -384,17 +562,28 @@
         const data = await res.json();
         if (res.ok) {
           btn.closest('tr').remove();
-          domainMsg.innerText = `${domain} removed.`;
-          domainMsg.style.color = 'green';
+          if(domainMsg){
+            domainMsg.innerText = `${domain} removed.`;
+            domainMsg.className = 'uk-form-help text-green-600 mt-0';
+          }
         } else {
-          domainMsg.innerText = data.error;
-          domainMsg.style.color = 'red';
+          if(domainMsg){
+            domainMsg.innerText = data.error;
+            domainMsg.className = 'uk-form-help text-destructive mt-0';
+          }
         }
       } catch {
-        domainMsg.innerText = 'Failed to connect to API.';
-        domainMsg.style.color = 'red';
+        if(domainMsg){
+          domainMsg.innerText = 'Failed to connect to API.';
+          domainMsg.className = 'uk-form-help text-destructive mt-0';
+        }
       }
     });
   });
+
+  if (serverInput) {
+    const ev = new Event('change');
+    serverInput.dispatchEvent(ev);
+  }
 </script>
 {%- endblock %}

@@ -25,6 +25,9 @@ export const applicationsTable = pgTable('applications', {
   username: text('username').notNull(),
   ssh_key: text('ssh_key').notNull(),
   reason: text('reason').notNull(),
+  server: text('server').notNull().default('nest-prov-1'),
+  template: text('template').notNull().default('Debian 13'),
+
   status: text('status').notNull().default('pending'),
   reviewed_by: text('reviewed_by'),
   reviewed_at: timestamp('reviewed_at'),

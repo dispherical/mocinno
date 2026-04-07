@@ -1,129 +1,168 @@
 {% layout 'parent.liquid' %}
 
 {% block body -%}
-<h1>Admin Panel</h1>
-<p><a href="/dashboard">&larr; Back to Dashboard</a></p>
+<div class="p-6 lg:p-10 max-w-6xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div class="space-y-0.5">
+      <h1 class="text-2xl font-bold tracking-tight">Admin Panel</h1>
+      <p class="text-muted-foreground text-sm">Manage users, applications, and invites.</p>
+    </div>
+    <a href="/dashboard" class="uk-btn uk-btn-default">&larr; Back to Dashboard</a>
+  </div>
 
-<hr>
+  <div class="border-border my-6 border-t"></div>
 
-<h2>Pending Applications ({{ applications.size }})</h2>
-{% if applications.size > 0 %}
-  <table>
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Username</th>
-        <th>Reason</th>
-        <th>Submitted</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for app in applications %}
-        <tr id="app-{{ app.id }}">
-          <td>{{ app.email }}</td>
-          <td>{{ app.username }}</td>
-          <td style="max-width: 300px; word-wrap: break-word;">{{ app.reason }}</td>
-          <td>{{ app.created_at }}</td>
-          <td style="white-space: nowrap;">
-            <button class="approve-btn" data-id="{{ app.id }}">Approve</button>
-            <button class="reject-btn" data-id="{{ app.id }}">Reject</button>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p>No pending applications.</p>
-{% endif %}
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-medium">Pending Applications ({{ applications.size }})</h3>
+    </div>
+    
+    {% if applications.size > 0 %}
+      <div class="border border-border rounded-md">
+        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Reason</th>
+              <th>Submitted</th>
+              <th class="w-48 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for app in applications %}
+              <tr id="app-{{ app.id }}">
+                <td class="font-medium">{{ app.email }}</td>
+                <td>{{ app.username }}</td>
+                <td class="max-w-[300px] break-words whitespace-normal text-sm">{{ app.reason }}</td>
+                <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
+                <td class="text-right space-x-1">
+                  <button class="approve-btn uk-btn uk-btn-primary uk-btn-sm" data-id="{{ app.id }}">Approve</button>
+                  <button class="reject-btn uk-btn uk-btn-destructive uk-btn-sm" data-id="{{ app.id }}">Reject</button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted-foreground text-sm mt-4">No pending applications.</p>
+    {% endif %}
 
-<hr>
+    <div class="border-border my-6 border-t"></div>
 
-<h2>Admin Invites</h2>
-<p>Create invite links to bypass eligibility checks.</p>
-<div style="margin-bottom: 12px; display:flex; gap:8px;">
-  <input type="number" id="invite-max-uses" placeholder="Max Uses (Empty=Infinite)">
-  <input type="datetime-local" id="invite-expires" placeholder="Expires At">
-  <button id="btn-create-invite">Create Invite</button>
+    <div class="flex items-center justify-between">
+      <div class="space-y-0.5">
+        <h3 class="text-lg font-medium">Admin Invites</h3>
+        <p class="text-muted-foreground text-sm">An invite can bypass ID verification. This is useful for hackathons, large gatherings, etc.</p>
+      </div>
+    </div>
+    
+    <div class="flex gap-x-2 mt-4 max-w-2xl">
+      <input type="number" id="invite-max-uses" class="uk-input" placeholder="Max Uses (Empty=Infinite)">
+      <input type="datetime-local" id="invite-expires" class="uk-input" placeholder="Expires At">
+      <button id="btn-create-invite" class="uk-btn uk-btn-primary flex-none">Create Invite</button>
+    </div>
+
+    {% if invites.size > 0 %}
+      <div class="border border-border rounded-md mt-6">
+        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Uses</th>
+              <th>Max Uses</th>
+              <th>Expires</th>
+              <th>Created By</th>
+              <th>Link</th>
+              <th class="w-24 border-none text-right"></th>
+            </tr>
+          </thead>
+          <tbody id="invites-tbody">
+            {% for inv in invites %}
+              <tr id="invite-row-{{ inv.code }}">
+                <td class="font-medium">{{ inv.code }}</td>
+                <td>{{ inv.uses }}</td>
+                <td>{{ inv.max_uses | default: '∞' }}</td>
+                <td class="text-sm text-muted-foreground">{{ inv.expires_at | default: 'Never' }}</td>
+                <td>{{ inv.admin_email }}</td>
+                <td><code>https://{{ appDomain }}/invite/{{ inv.code }}</code></td>
+                <td class="text-right">
+                  <button class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm" data-code="{{ inv.code }}">Revoke</button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p id="no-invites-msg" class="text-muted-foreground text-sm mt-4">No invites created yet.</p>
+    {% endif %}
+
+    <div class="border-border my-6 border-t"></div>
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="space-y-0.5">
+        <h3 class="text-lg font-medium">Users</h3>
+      </div>
+    </div>
+    
+    <div class="max-w-md">
+      <div class="uk-inline w-full">
+        <span class="uk-form-icon" uk-icon="icon: search"></span>
+        <input type="text" id="user-search" class="uk-input" placeholder="Search by username, VMID, or IP...">
+      </div>
+    </div>
+    
+    <div id="users-table-wrap" class="mt-4">
+      <p class="text-muted-foreground text-sm">Loading...</p>
+    </div>
+    <div id="users-paging" class="flex gap-x-2 items-center mt-4"></div>
+
+    <div class="border-border my-6 border-t"></div>
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="space-y-0.5">
+        <h3 class="text-lg font-medium">All Applications</h3>
+      </div>
+    </div>
+    
+    {% if allApplications.size > 0 %}
+      <div class="border border-border rounded-md mt-4">
+        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Status</th>
+              <th>Reviewed By</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for app in allApplications %}
+              <tr>
+                <td class="font-medium">{{ app.email }}</td>
+                <td>{{ app.username }}</td>
+                <td>
+                  <span>
+                    {{ app.status }}
+                  </span>
+                </td>
+                <td class="text-sm text-muted-foreground">{{ app.reviewed_by }}</td>
+                <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted-foreground text-sm mt-4">No applications yet.</p>
+    {% endif %}
+
+    <p id="admin-message" class="mt-4 font-medium"></p>
+  </div>
 </div>
-{% if invites.size > 0 %}
-  <table>
-    <thead>
-      <tr>
-        <th>Code</th>
-        <th>Uses</th>
-        <th>Max Uses</th>
-        <th>Expires</th>
-        <th>Created By</th>
-        <th>Link</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody id="invites-tbody">
-      {% for inv in invites %}
-        <tr id="invite-row-{{ inv.code }}">
-          <td>{{ inv.code }}</td>
-          <td>{{ inv.uses }}</td>
-          <td>{{ inv.max_uses | default: '∞' }}</td>
-          <td>{{ inv.expires_at | default: 'Never' }}</td>
-          <td>{{ inv.admin_email }}</td>
-          <td><code>https://{{ appDomain }}/invite/{{ inv.code }}</code></td>
-          <td><button class="delete-invite-btn" data-code="{{ inv.code }}">Revoke</button></td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p id="no-invites-msg">No invites created yet.</p>
-{% endif %}
-
-<hr>
-
-<h2>Users</h2>
-<div>
-  <input
-    type="text"
-    id="user-search"
-    placeholder="Search by username, VMID, or IP..."
-    style="width:100%;padding:6px;margin-bottom:8px;box-sizing:border-box;"
-  >
-</div>
-<div id="users-table-wrap">
-  <p>Loading...</p>
-</div>
-<div id="users-paging" style="margin-top:8px;display:flex;gap:8px;align-items:center;"></div>
-
-<hr>
-
-<h2>All Applications</h2>
-{% if allApplications.size > 0 %}
-  <table>
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Username</th>
-        <th>Status</th>
-        <th>Reviewed By</th>
-        <th>Submitted</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for app in allApplications %}
-        <tr>
-          <td>{{ app.email }}</td>
-          <td>{{ app.username }}</td>
-          <td>{{ app.status }}</td>
-          <td>{{ app.reviewed_by }}</td>
-          <td>{{ app.created_at }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p>No applications yet.</p>
-{% endif %}
-
-<p id="admin-message"></p>
 
 <script>
   const adminMsg = document.getElementById('admin-message');
@@ -192,37 +231,40 @@
       const res = await fetch('/api/admin/users?' + params);
       const data = await res.json();
       if (!data.users?.length) {
-        wrap.innerHTML = '<p>No users found.</p>';
+        wrap.innerHTML = '<p class="text-muted-foreground text-sm mt-4">No users found.</p>';
         document.getElementById('users-paging').innerHTML = '';
         return;
       }
       let html =
-        '<table><thead><tr><th>Username</th><th>VMID</th><th>IP</th><th>Status</th><th>Susp</th><th>Cores</th><th>Mem</th><th>Created</th><th></th></tr></thead><tbody>';
+        '<div class="border border-border rounded-md mt-4"><table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0"><thead><tr><th>Username</th><th>VMID</th><th>IP</th><th>Status</th><th>Susp</th><th>Cores</th><th>Mem</th><th>Created</th><th class="w-32 text-right border-none"></th></tr></thead><tbody>';
       for (const u of data.users) {
-        const status = u.container ? u.container.status : 'unknown';
-        const cores = u.container?.cpus ?? '?';
-        const mem = u.container?.maxmem ? Math.round(u.container.maxmem / 1048576) : '?';
-        html += `<tr data-vmid="${u.vmid}" data-username="${u.username}">`;
-        html += `<td>${esc(u.username)}</td><td>${u.vmid}</td><td>${esc(u.ip || '')}</td>`;
-        html += `<td>${esc(status)}</td><td>${u.suspended ? 'Yes' : 'No'}</td>`;
-        html += `<td>${cores}</td><td>${mem} MB</td>`;
-        html += `<td>${esc(u.created_at || '')}</td>`;
-        html += `<td style="white-space:nowrap;">`;
-        html += `<button onclick="editUser(${u.vmid},'${esc(u.username)}',${cores === '?' ? 1 : cores},${
-          mem === '?' ? 512 : mem
-        })">Edit</button> `;
-        if (u.suspended) html += `<button onclick="unsuspendUser(${u.vmid})">Unsuspend</button>`;
-        else html += `<button onclick="suspendUser(${u.vmid},'${esc(u.username)}')">Suspend</button>`;
-        html += `</td></tr>`;
+        html += `<tr>
+          <td class="font-medium">${esc(u.username)}</td>
+          <td>${u.vmid}</td>
+          <td>${u.ip || ''}</td>
+          <td><span>${u.status || 'unknown'}</span></td>
+          <td>${u.suspended ? '<span class="uk-badge uk-badge-destructive">Yes</span>' : ''}</td>
+          <td>${u.cores}</td>
+          <td>${u.memory}</td>
+          <td class="text-sm text-muted-foreground">${new Date(u.created_at).toLocaleDateString()}</td>
+          <td class="text-right space-x-1 whitespace-nowrap">
+            <button class="uk-btn uk-btn-default uk-btn-sm" onclick="editUser(${u.vmid}, '${esc(u.username)}', ${u.cores}, ${u.memory})">Edit</button>
+            ${
+              u.suspended
+                ? `<button class="uk-btn uk-btn-secondary uk-btn-sm" onclick="unsuspendUser(${u.vmid})">Unsuspend</button>`
+                : `<button class="uk-btn uk-btn-destructive uk-btn-sm" onclick="suscribeUser(${u.vmid}, '${esc(u.username)}')">Suspend</button>`
+            }
+          </td>
+        </tr>`;
       }
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       wrap.innerHTML = html;
-      let paging = `<span>Page ${data.page} of ${data.pages} (${data.total} users)</span>`;
-      if (data.page > 1) paging += ` <button onclick="usersPage--;loadUsers()">Prev</button>`;
-      if (data.page < data.pages) paging += ` <button onclick="usersPage++;loadUsers()">Next</button>`;
+      let paging = `<span class="text-sm font-medium">Page ${data.page} of ${data.pages} (${data.total} users)</span>`;
+      if (data.page > 1) paging += ` <button class="uk-btn uk-btn-default uk-btn-sm ml-2" onclick="usersPage--;loadUsers()">Prev</button>`;
+      if (data.page < data.pages) paging += ` <button class="uk-btn uk-btn-default uk-btn-sm ml-2" onclick="usersPage++;loadUsers()">Next</button>`;
       document.getElementById('users-paging').innerHTML = paging;
     } catch {
-      wrap.innerHTML = '<p>Failed to load users.</p>';
+      wrap.innerHTML = '<p class="text-destructive mt-4">Failed to load users.</p>';
     }
   }
 
@@ -245,10 +287,11 @@
     if (parseInt(newMem) !== mem) body.memory = parseInt(newMem);
     if (Object.keys(body).length <= 1) {
       adminMsg.innerText = 'No changes.';
+      adminMsg.className = 'mt-4 font-medium text-muted-foreground';
       return;
     }
     adminMsg.innerText = 'Updating...';
-    adminMsg.style.color = '';
+    adminMsg.className = 'mt-4 font-medium text-muted-foreground';
     try {
       const res = await fetch('/api/admin/users/update', {
         method: 'POST',
@@ -257,24 +300,24 @@
       });
       const data = await res.json();
       if (res.ok) {
-        adminMsg.innerText = data.message;
-        adminMsg.style.color = 'green';
+        adminMsg.innerText = 'User updated.';
+        adminMsg.className = 'mt-4 font-medium text-green-600';
         loadUsers();
       } else {
         adminMsg.innerText = 'Error: ' + data.error;
-        adminMsg.style.color = 'red';
+        adminMsg.className = 'mt-4 font-medium text-destructive';
       }
     } catch {
       adminMsg.innerText = 'Failed to connect.';
-      adminMsg.style.color = 'red';
+      adminMsg.className = 'mt-4 font-medium text-destructive';
     }
   }
 
-  async function suspendUser(vmid, username) {
+  async function suscribeUser(vmid, username) {
     const reason = prompt(`Reason for suspending ${username}?`);
     if (!reason) return;
     adminMsg.innerText = 'Suspending...';
-    adminMsg.style.color = '';
+    adminMsg.className = 'mt-4 font-medium text-muted-foreground';
     try {
       const res = await fetch('/api/admin/users/suspend', {
         method: 'POST',
@@ -283,23 +326,25 @@
       });
       const data = await res.json();
       if (res.ok) {
-        adminMsg.innerText = data.message;
-        adminMsg.style.color = 'green';
+        adminMsg.innerText = 'Suspended.';
+        adminMsg.className = 'mt-4 font-medium text-green-600';
         loadUsers();
       } else {
         adminMsg.innerText = 'Error: ' + data.error;
-        adminMsg.style.color = 'red';
+        adminMsg.className = 'mt-4 font-medium text-destructive';
       }
     } catch {
       adminMsg.innerText = 'Failed to connect.';
-      adminMsg.style.color = 'red';
+      adminMsg.className = 'mt-4 font-medium text-destructive';
     }
   }
+
+  window.suscribeUser = suscribeUser;
 
   async function unsuspendUser(vmid) {
     if (!confirm('Unsuspend this container?')) return;
     adminMsg.innerText = 'Unsuspending...';
-    adminMsg.style.color = '';
+    adminMsg.className = 'mt-4 font-medium text-muted-foreground';
     try {
       const res = await fetch('/api/admin/users/unsuspend', {
         method: 'POST',
@@ -308,16 +353,16 @@
       });
       const data = await res.json();
       if (res.ok) {
-        adminMsg.innerText = data.message;
-        adminMsg.style.color = 'green';
+        adminMsg.innerText = 'Unsuspended.';
+        adminMsg.className = 'mt-4 font-medium text-green-600';
         loadUsers();
       } else {
         adminMsg.innerText = 'Error: ' + data.error;
-        adminMsg.style.color = 'red';
+        adminMsg.className = 'mt-4 font-medium text-destructive';
       }
     } catch {
       adminMsg.innerText = 'Failed to connect.';
-      adminMsg.style.color = 'red';
+      adminMsg.className = 'mt-4 font-medium text-destructive';
     }
   }
 
@@ -327,27 +372,27 @@
       if (!confirm('Approve this application? A container will be created.')) return;
       btn.disabled = true;
       adminMsg.innerText = 'Approving and creating container...';
-      adminMsg.style.color = '';
+      adminMsg.className = 'mt-4 font-medium text-muted-foreground';
       try {
         const res = await fetch('/api/admin/applications/approve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: parseInt(id) }),
+          body: JSON.stringify({ id }),
         });
         const data = await res.json();
         if (res.ok) {
-          adminMsg.innerText = `Approved! VMID: ${data.vmid}, Password: ${data.password}`;
-          adminMsg.style.color = 'green';
-          document.getElementById(`app-${id}`)?.remove();
+          adminMsg.innerText = 'Approved! Container creating or created.';
+          adminMsg.className = 'mt-4 font-medium text-green-600';
+          document.getElementById('app-' + id)?.remove();
           loadUsers();
         } else {
           adminMsg.innerText = 'Error: ' + data.error;
-          adminMsg.style.color = 'red';
+          adminMsg.className = 'mt-4 font-medium text-destructive';
           btn.disabled = false;
         }
       } catch {
-        adminMsg.innerText = 'Failed to connect to API.';
-        adminMsg.style.color = 'red';
+        adminMsg.innerText = 'Failed to connect.';
+        adminMsg.className = 'mt-4 font-medium text-destructive';
         btn.disabled = false;
       }
     });
@@ -359,26 +404,26 @@
       if (!confirm('Reject this application?')) return;
       btn.disabled = true;
       adminMsg.innerText = 'Rejecting...';
-      adminMsg.style.color = '';
+      adminMsg.className = 'mt-4 font-medium text-muted-foreground';
       try {
         const res = await fetch('/api/admin/applications/reject', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: parseInt(id) }),
+          body: JSON.stringify({ id }),
         });
         const data = await res.json();
         if (res.ok) {
-          adminMsg.innerText = 'Application rejected.';
-          adminMsg.style.color = 'green';
-          document.getElementById(`app-${id}`)?.remove();
+          adminMsg.innerText = 'Rejected.';
+          adminMsg.className = 'mt-4 font-medium text-green-600';
+          document.getElementById('app-' + id)?.remove();
         } else {
           adminMsg.innerText = 'Error: ' + data.error;
-          adminMsg.style.color = 'red';
+          adminMsg.className = 'mt-4 font-medium text-destructive';
           btn.disabled = false;
         }
       } catch {
-        adminMsg.innerText = 'Failed to connect to API.';
-        adminMsg.style.color = 'red';
+        adminMsg.innerText = 'Failed to connect.';
+        adminMsg.className = 'mt-4 font-medium text-destructive';
         btn.disabled = false;
       }
     });
