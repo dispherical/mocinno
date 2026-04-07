@@ -598,8 +598,13 @@ Bun.serve({
       return new Response('Not found', { status: 404 });
     }
     const host = req.headers.get('host')?.split(':')[0] || '';
-    if (!isPublicDomain(host)) {
+    if (process.env.DISABLE_SSL === 'true' || !isPublicDomain(host)) {
       try {
+        const appDomain = process.env.APP_DOMAIN;
+        if (appDomain && host === appDomain) {
+          const appPort = parseInt(process.env.MOCINNO_PORT) || 3000;
+          return proxyRequest(req, `127.0.0.1:${appPort}`);
+        }
         const domainRow = await db.getDomainByName(host);
         if (!domainRow) return new Response('Not found', { status: 404 });
         return proxyRequest(req, domainRow.proxy);
@@ -839,7 +844,7 @@ console.log('Mocinno is running on port %s (%s)', serve.port, serve.hostname);
       }
     }, 12 * 60 * 60 * 1000);
   } else {
-    console.log('SSL is disabled via process.env.DISABLE_SSL=true');
+    console.log('[!] SSL is disabled. Please don\'t be stupid with this.');
   }
 })();
 
