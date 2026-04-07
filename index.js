@@ -192,7 +192,7 @@ app.get('/dashboard', async (c) => {
   } else if (!user) {
     application = await db.getApplicationBySub(profile.sub);
     if (!application || application.status === 'rejected') {
-      eligible = profile.verification_status === "verified_eligible"
+      eligible = profile.verification_status === "verified"
     }
 
     const inviteCode = session.get('invite_code');
@@ -270,7 +270,7 @@ app.get('/flow/authorization/goalpost', async (c) => {
   const profile = await exchangeCodeForProfile(code, process.env.OAUTH_CLIENT_REDIRECT_URI);
 
   if (!profile) return c.redirect("/flow/authorization/login/start");
-  if (process.env.NODE_ENV != "production") profile.verification_status = "verified_eligible"
+  if (process.env.NODE_ENV != "production") profile.verification_status = "verified"
   session.set("profile", profile);
 
   // this allows one destructive action per 2fa login
@@ -310,7 +310,7 @@ app.post('/api/application/submit', async (c) => {
   const pendingApp = await db.getApplicationBySub(profile.sub);
   if (pendingApp?.status === 'pending') { c.status(400); return c.json({ error: 'You already have a pending application' }) }
 
-  let eligible = profile.verification_status === "verified_eligible";
+  let eligible = profile.verification_status === "verified";
   const inviteCode = c.get('session').get('invite_code');
   if (inviteCode && !eligible) {
     const invite = await db.getInvite(inviteCode);
@@ -346,7 +346,7 @@ app.post('/api/application/submit', async (c) => {
 
   const app = await db.createApplication({ sub: profile.sub, email: profile.email, username, sshKey, reason });
   
-  if (inviteCode && profile.verification_status !== "verified_eligible") {
+  if (inviteCode && profile.verification_status !== "verified") {
     await db.incrementInvite(inviteCode);
     c.get('session').set('invite_code', null);
   }
