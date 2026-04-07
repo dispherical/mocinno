@@ -44,9 +44,20 @@
             <div class="border-border border rounded-xl overflow-hidden shadow-sm bg-white">
               <table class="uk-table uk-table-divider uk-table-middle mb-0">
                 <tbody>
-                  <tr><td class="w-48 font-medium pl-4 py-3">Username</td><td class="py-3">{{ user.username }}</td></tr>
-                  <tr><td class="font-medium pl-4 py-3">VMID</td><td class="py-3">{{ user.vmid }}</td></tr>
-                  {% if user.ip %}<tr><td class="font-medium pl-4 py-3">IP</td><td class="py-3">{{ user.ip }}</td></tr>{% endif %}
+                  <tr>
+                    <td class="w-48 font-medium pl-4 py-3">Username</td>
+                    <td class="py-3">{{ user.username }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-medium pl-4 py-3">VMID</td>
+                    <td class="py-3">{{ user.vmid }}</td>
+                  </tr>
+                  {% if user.ip %}
+                    <tr>
+                      <td class="font-medium pl-4 py-3">IP</td>
+                      <td class="py-3">{{ user.ip }}</td>
+                    </tr>
+                  {% endif %}
                   {% if container %}
                     <tr>
                       <td class="font-medium pl-4 py-3">Status</td>
@@ -56,9 +67,18 @@
                         </span>
                       </td>
                     </tr>
-                    <tr><td class="font-medium pl-4 py-3">Hostname</td><td class="py-3">{{ container.name }}</td></tr>
-                    <tr><td class="font-medium pl-4 py-3">CPU</td><td class="py-3">{{ container.cpus }} Cores</td></tr>
-                    <tr><td class="font-medium pl-4 py-3">Memory</td><td class="py-3">{{ container.maxmem | divided_by: 1048576 }} MB</td></tr>
+                    <tr>
+                      <td class="font-medium pl-4 py-3">Hostname</td>
+                      <td class="py-3">{{ container.name }}</td>
+                    </tr>
+                    <tr>
+                      <td class="font-medium pl-4 py-3">CPU</td>
+                      <td class="py-3">{{ container.cpus }} Cores</td>
+                    </tr>
+                    <tr>
+                      <td class="font-medium pl-4 py-3">Memory</td>
+                      <td class="py-3">{{ container.maxmem | divided_by: 1048576 }} MB</td>
+                    </tr>
                   {% endif %}
                 </tbody>
               </table>
@@ -67,7 +87,9 @@
             <div class="p-5 border border-border bg-muted/40 rounded-xl flex items-center justify-between shadow-sm">
               <div>
                 <span class="font-medium mr-3">SSH Access:</span>
-                <code class="text-sm font-mono bg-white border border-border px-2.5 py-1.5 rounded-md">ssh {{ user.username }}@hackclub.app</code>
+                <code class="text-sm font-mono bg-white border border-border px-2.5 py-1.5 rounded-md"
+                  >ssh {{ user.username }}@hackclub.app</code
+                >
               </div>
             </div>
 
@@ -89,7 +111,9 @@
           <div id="tab-domains" class="space-y-6 pt-2 hidden">
             <div>
               <h2 class="text-2xl font-bold tracking-tight">Domains</h2>
-              <p class="text-muted-foreground mt-1">From here you may configure custom domains to point towards your container.</p>
+              <p class="text-muted-foreground mt-1">
+                From here you may configure custom domains to point towards your container.
+              </p>
             </div>
             <div class="border-border border-t"></div>
 
@@ -108,7 +132,12 @@
                       <td class="font-medium pl-4">{{ d.domain }}</td>
                       <td>{{ d.proxy }}</td>
                       <td class="text-right pr-4">
-                        <button class="domain-rm-btn uk-btn uk-btn-text text-destructive hover:underline text-sm" data-domain="{{ d.domain }}">Remove</button>
+                        <button
+                          class="domain-rm-btn uk-btn uk-btn-text text-destructive hover:underline text-sm"
+                          data-domain="{{ d.domain }}"
+                        >
+                          Remove
+                        </button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -123,16 +152,18 @@
               <h4 class="font-medium text-lg mb-4">Add New Domain</h4>
               <div class="flex items-start gap-x-4">
                 <div class="space-y-1 w-64">
-                   <label class="text-sm font-medium">Domain</label>
-                   <input type="text" id="domain-input" class="uk-input h-10" placeholder="example.com">
+                  <label class="text-sm font-medium">Domain</label>
+                  <input type="text" id="domain-input" class="uk-input h-10" placeholder="example.com">
                 </div>
                 <div class="space-y-1 flex-1">
-                   <label class="text-sm font-medium">Target Port/Address</label>
-                   <input type="text" id="proxy-input" class="uk-input h-10" placeholder="Default: container:80">
+                  <label class="text-sm font-medium">Target Port/Address</label>
+                  <input type="text" id="proxy-input" class="uk-input h-10" placeholder="Default: container:80">
                 </div>
               </div>
               <div class="flex items-center justify-between mt-4">
-                <div class="uk-form-help text-muted-foreground mt-0" id="domain-message">You'll need to point your domain to hackclub.app to use this!</div>
+                <div class="uk-form-help text-muted-foreground mt-0" id="domain-message">
+                  You'll need to point your domain to hackclub.app to use this!
+                </div>
                 <button id="domain-add-btn" class="uk-btn uk-btn-primary">Add Domain</button>
               </div>
             </div>
@@ -150,7 +181,9 @@
               {% if application.status == 'pending' %}
                 <div class="p-6 border border-border rounded-xl bg-muted/20 shadow-sm mb-6">
                   <h3 class="font-semibold text-lg mb-2">Application Pending Review</h3>
-                  <p class="text-sm text-muted-foreground mb-4">You have already submitted a request. An admin will review it soon.</p>
+                  <p class="text-sm text-muted-foreground mb-4">
+                    You have already submitted a request. An admin will review it soon.
+                  </p>
                   <ul class="uk-list uk-list-disc pl-5 text-sm text-muted-foreground">
                     <li><strong>Username:</strong> {{ application.username }}</li>
                     <li><strong>Submitted:</strong> {{ application.created_at }}</li>
@@ -158,7 +191,9 @@
                 </div>
               {% elsif application.status == 'rejected' %}
                 <div class="p-4 border border-destructive/40 rounded-xl bg-destructive/10 mb-6 shadow-sm">
-                  <p class="text-destructive font-medium">Your previous application was rejected. You may submit a new one below.</p>
+                  <p class="text-destructive font-medium">
+                    Your previous application was rejected. You may submit a new one below.
+                  </p>
                 </div>
               {% endif %}
             {% endif %}
@@ -166,7 +201,6 @@
             {% if application == null or application.status == 'rejected' %}
               {% if eligible %}
                 <div class="bg-white p-8 border border-border rounded-xl shadow-sm space-y-8">
-                  
                   <div class="space-y-3">
                     <h3 class="text-lg font-medium">Select server location</h3>
                     <p class="text-muted-foreground text-sm">Choose the server location closest to you.</p>
@@ -188,11 +222,13 @@
                       <select id="template-input" class="uk-select h-10 w-full">
                         {% for s in config.servers %}
                           {% if s.templates.name %}
-                             <option value="{{ s.templates.name }}" data-server="{{ s.name }}">{{ s.templates.name }}</option>
+                            <option value="{{ s.templates.name }}" data-server="{{ s.name }}">
+                              {{ s.templates.name }}
+                            </option>
                           {% else %}
-                             {% for t in s.templates %}
-                               <option value="{{ t.name }}" data-server="{{ s.name }}">{{ t.name }}</option>
-                             {% endfor %}
+                            {% for t in s.templates %}
+                              <option value="{{ t.name }}" data-server="{{ s.name }}">{{ t.name }}</option>
+                            {% endfor %}
                           {% endif %}
                         {% endfor %}
                       </select>
@@ -204,24 +240,46 @@
                   <div class="space-y-3">
                     <h3 class="text-lg font-medium">Credentials & Usage</h3>
                     <p class="text-muted-foreground text-sm">Configure your Nest access details.</p>
-                    
+
                     <div class="space-y-5 pt-2">
                       <div>
-                        <label class="uk-form-label font-medium mb-1.5 block" for="username-input">System Username</label>
-                        <input type="text" id="username-input" class="uk-input h-10 w-full max-w-md" placeholder="e.g. johndoe" maxlength="32">
-                        <div class="uk-form-help text-muted-foreground mt-1.5" id="username-status">Must be 3-32 lowercase letters, numbers, hyphens.</div>
+                        <label class="uk-form-label font-medium mb-1.5 block" for="username-input"
+                          >System Username</label
+                        >
+                        <input
+                          type="text"
+                          id="username-input"
+                          class="uk-input h-10 w-full max-w-md"
+                          placeholder="e.g. johndoe"
+                          maxlength="32"
+                        >
+                        <div class="uk-form-help text-muted-foreground mt-1.5" id="username-status">
+                          Must be 3-32 lowercase letters, numbers, hyphens.
+                        </div>
                       </div>
-                      
+
                       <div>
                         <label class="uk-form-label font-medium mb-1.5 block" for="sshkey-input">SSH Public Key</label>
-                        <textarea id="sshkey-input" class="uk-textarea p-3 h-28 w-full" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
-                        <div class="uk-form-help text-muted-foreground mt-1.5" id="sshkey-status">You'll login with this instead of a password.</div>
+                        <textarea
+                          id="sshkey-input"
+                          class="uk-textarea p-3 h-28 w-full"
+                          placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."
+                        ></textarea>
+                        <div class="uk-form-help text-muted-foreground mt-1.5" id="sshkey-status">
+                          You'll login with this instead of a password.
+                        </div>
                       </div>
-                      
+
                       <div>
                         <label class="uk-form-label font-medium mb-1.5 block" for="reason-input">Intended Usage</label>
-                        <textarea id="reason-input" class="uk-textarea p-3 h-24 w-full" placeholder="Briefly describe what you plan to host or build..."></textarea>
-                        <div class="uk-form-help text-muted-foreground mt-1.5" id="reason-status">Please provide at least 10 characters. It helps us understand what people use Nest for!</div>
+                        <textarea
+                          id="reason-input"
+                          class="uk-textarea p-3 h-24 w-full"
+                          placeholder="Briefly describe what you plan to host or build..."
+                        ></textarea>
+                        <div class="uk-form-help text-muted-foreground mt-1.5" id="reason-status">
+                          Please provide at least 10 characters. It helps us understand what people use Nest for!
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -234,8 +292,16 @@
               {% else %}
                 <div class="p-6 border border-border rounded-xl bg-muted/20 shadow-sm text-center">
                   <p class="mb-4">You are not currently eligible for Nest.</p>
-                  <p class="text-sm text-muted-foreground mb-4">You'll need to submit documentation that you can use Nest with Hack Club Auth.</p>
-                  <a href="https://auth.hackclub.com" class="uk-btn uk-btn-primary" target="_blank" rel="noopener noreferrer">Go to auth.hackclub.com</a>
+                  <p class="text-sm text-muted-foreground mb-4">
+                    You'll need to submit documentation that you can use Nest with Hack Club Auth.
+                  </p>
+                  <a
+                    href="https://auth.hackclub.com"
+                    class="uk-btn uk-btn-primary"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Go to auth.hackclub.com</a
+                  >
                 </div>
               {% endif %}
             {% endif %}
@@ -247,12 +313,12 @@
 </div>
 
 <script>
-  document.querySelectorAll('#main-tabs a').forEach(t => {
-    t.addEventListener('click', e => {
+  document.querySelectorAll('#main-tabs a').forEach((t) => {
+    t.addEventListener('click', (e) => {
       e.preventDefault();
-      document.querySelectorAll('#main-tabs li').forEach(li => li.classList.remove('uk-active'));
+      document.querySelectorAll('#main-tabs li').forEach((li) => li.classList.remove('uk-active'));
       t.parentElement.classList.add('uk-active');
-      document.querySelectorAll('#tab-content > div').forEach(c => {
+      document.querySelectorAll('#tab-content > div').forEach((c) => {
         c.classList.remove('block');
         c.classList.add('hidden');
       });
@@ -286,9 +352,9 @@
   serverInput?.addEventListener('change', () => {
     const selectedServer = serverInput.value;
     if (!templateInput) return;
-    
+
     let firstValid = null;
-    Array.from(templateInput.options).forEach(opt => {
+    Array.from(templateInput.options).forEach((opt) => {
       const isMatch = opt.dataset.server === selectedServer;
       if (isMatch) opt.style.display = '';
       else opt.style.display = 'none';
@@ -313,7 +379,8 @@
       return;
     }
     if (!/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(val)) {
-      usernameStatus.innerText = 'Must be 3-32 chars, start with a letter, end with letter/number. Only lowercase, numbers, hyphens, underscores.';
+      usernameStatus.innerText =
+        'Must be 3-32 chars, start with a letter, end with letter/number. Only lowercase, numbers, hyphens, underscores.';
       usernameStatus.className = 'uk-form-help text-destructive mt-1.5';
       return;
     }
@@ -403,8 +470,8 @@
     usernameInput.disabled = true;
     sshKeyInput.disabled = true;
     reasonInput.disabled = true;
-    if(serverInput) serverInput.disabled = true;
-    if(templateInput) templateInput.disabled = true;
+    if (serverInput) serverInput.disabled = true;
+    if (templateInput) templateInput.disabled = true;
     try {
       const res = await fetch('/api/application/submit', {
         method: 'POST',
@@ -427,8 +494,8 @@
         usernameInput.disabled = false;
         sshKeyInput.disabled = false;
         reasonInput.disabled = false;
-        if(serverInput) serverInput.disabled = false;
-        if(templateInput) templateInput.disabled = false;
+        if (serverInput) serverInput.disabled = false;
+        if (templateInput) templateInput.disabled = false;
       }
     } catch (e) {
       if (msgForm) {
@@ -439,8 +506,8 @@
       usernameInput.disabled = false;
       sshKeyInput.disabled = false;
       reasonInput.disabled = false;
-      if(serverInput) serverInput.disabled = false;
-      if(templateInput) templateInput.disabled = false;
+      if (serverInput) serverInput.disabled = false;
+      if (templateInput) templateInput.disabled = false;
     }
   });
 
@@ -449,7 +516,7 @@
     if (!btn) return;
     btn.addEventListener('click', async () => {
       btn.disabled = true;
-      if(msgPanel) {
+      if (msgPanel) {
         msgPanel.innerText = action + 'ing container...';
         msgPanel.className = 'mt-4 text-sm font-medium text-muted-foreground';
       }
@@ -457,16 +524,16 @@
         const res = await fetch(`/api/container/${action.toLowerCase()}`, { method: 'POST' });
         const data = await res.json();
         if (res.ok) {
-          if(msgPanel) {
+          if (msgPanel) {
             msgPanel.innerText = data.message || 'Success';
             msgPanel.className = 'mt-4 text-sm font-medium text-green-600';
           }
           setTimeout(() => location.reload(), 2000);
         } else {
-           if(msgPanel) {
+          if (msgPanel) {
             msgPanel.innerText = 'Error: ' + data.error;
             msgPanel.className = 'mt-4 text-sm font-medium text-destructive';
-           }
+          }
           btn.disabled = false;
         }
       } catch {
@@ -485,7 +552,7 @@
 
   document.getElementById('delete-btn')?.addEventListener('click', async () => {
     if (!confirm('Are you sure? This will permanently delete all data on your container.')) return;
-    if(msgPanel) {
+    if (msgPanel) {
       msgPanel.innerText = 'Deleting container...';
       msgPanel.className = 'mt-4 text-sm font-medium text-muted-foreground';
     }
@@ -493,15 +560,16 @@
       const res = await fetch('/api/container/delete', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        location.href = data.redirect || '/';
+        window.location.href = data.redirect || '/';
       } else {
-        if(msgPanel) {
+        if (msgPanel) {
           msgPanel.innerText = 'Error: ' + data.error;
           msgPanel.className = 'mt-4 text-sm font-medium text-destructive';
+          if (data.redirect) window.location.href = data.redirect;
         }
       }
     } catch (e) {
-      if(msgPanel) {
+      if (msgPanel) {
         msgPanel.innerText = 'Failed to connect to API.';
         msgPanel.className = 'mt-4 text-sm font-medium text-destructive';
       }
@@ -514,7 +582,7 @@
     const proxy = proxyInput ? proxyInput.value.trim() : '';
     if (!domain) return;
 
-    if(domainMsg){
+    if (domainMsg) {
       domainMsg.innerText = 'Adding...';
       domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
     }
@@ -531,16 +599,16 @@
       if (res.ok) {
         location.reload();
       } else {
-        if(domainMsg){
+        if (domainMsg) {
           domainMsg.innerText = data.error;
           domainMsg.className = 'uk-form-help text-destructive mt-0';
         }
       }
     } catch {
-       if(domainMsg){
+      if (domainMsg) {
         domainMsg.innerText = 'Failed to connect to API.';
         domainMsg.className = 'uk-form-help text-destructive mt-0';
-       }
+      }
     }
   });
 
@@ -549,7 +617,7 @@
       const domain = btn.dataset.domain;
       if (!confirm(`Remove ${domain}?`)) return;
 
-      if(domainMsg){
+      if (domainMsg) {
         domainMsg.innerText = 'Removing ' + domain + '...';
         domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
       }
@@ -562,18 +630,18 @@
         const data = await res.json();
         if (res.ok) {
           btn.closest('tr').remove();
-          if(domainMsg){
+          if (domainMsg) {
             domainMsg.innerText = `${domain} removed.`;
             domainMsg.className = 'uk-form-help text-green-600 mt-0';
           }
         } else {
-          if(domainMsg){
+          if (domainMsg) {
             domainMsg.innerText = data.error;
             domainMsg.className = 'uk-form-help text-destructive mt-0';
           }
         }
       } catch {
-        if(domainMsg){
+        if (domainMsg) {
           domainMsg.innerText = 'Failed to connect to API.';
           domainMsg.className = 'uk-form-help text-destructive mt-0';
         }
