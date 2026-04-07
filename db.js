@@ -1,6 +1,10 @@
 import { eq, like, or, and, asc, desc, lte, count, isNotNull, sql } from 'drizzle-orm';
 import { db } from './src/db/index.ts';
 import { usersTable, domainsTable, applicationsTable, certificatesTable, settingsTable } from './src/db/schema.ts';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
@@ -33,7 +37,11 @@ export async function allocateIP() {
   for (let i = startHost; i <= endHost; i++) {
     const candidate = intToIP(i >>> 0);
     if (!usedIPs.has(candidate)) {
-      return { ip: candidate, prefix, gateway: CONTAINER_GATEWAY || intToIP(network + 1) };
+      try {
+        await execAsync(`ping -c 1 -W 1 ${candidate}`);
+      } catch (error) {
+        return { ip: candidate, prefix, gateway: CONTAINER_GATEWAY || intToIP(network + 1) };
+      }
     }
   }
   throw new Error('No available IPs in CIDR range');
