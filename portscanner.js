@@ -1,14 +1,27 @@
-const WINDOW_MS = 15 * 60 * 1000
-const SLOW_BIG_HIT_THRESHOLD = 20
-const SLOW_IP_THRESHOLD = 10
-const FAST_BIG_HIT_THRESHOLD = 5
-const FAST_IP_THRESHOLD = 3
-const SEQUENTIAL_PORT_TRIGGER = 4
-const UNIQUE_PORTS_THRESHOLD = 20
+const WINDOW_MS = 5 * 60 * 1000
+const SLOW_BIG_HIT_THRESHOLD = 100
+const SLOW_IP_THRESHOLD = 20
+const FAST_BIG_HIT_THRESHOLD = 30
+const FAST_IP_THRESHOLD = 10
+const SEQUENTIAL_PORT_TRIGGER = 15
+const UNIQUE_PORTS_THRESHOLD = 50
 
-const SAFE_PORTS = new Set([80, 443])
+const SAFE_PORTS = new Set([
+  80,
+  443,
+  22,
+  53,
+  123,
+  587,
+  853,
+  1433,
+  3306,
+  5432,
+  6379,
+  27017
+])
 
-const SUSPEND_COOLDOWN_MS = 60_000
+const SUSPEND_COOLDOWN_MS = 300_000
 
 const containers = new Map()
 const recentPorts = {}
@@ -55,7 +68,7 @@ async function refreshIPMap() {
         vmidToName.set(user.vmid, user.username)
       }
     }
-  } catch {}
+  } catch { }
 
   try {
     const list = await pveFetch(`/nodes/${node}/lxc`)
@@ -67,7 +80,7 @@ async function refreshIPMap() {
         const eth0 = ifaces.data?.find(i => i.name === 'eth0')
         const ip = eth0?.['inet']?.split('/')[0]
         if (ip) ipToVmid.set(ip, ct.vmid)
-      } catch {}
+      } catch { }
     }
     console.log(`IP map refreshed: ${ipToVmid.size} containers`)
   } catch (e) {

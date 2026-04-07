@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:dns/promises'
 import * as db from './db.js'
 import { getChallengeResponse, issueCertificate, renewExpiringCertificates, getOrIssueCertificate, isPublicDomain } from './cert.js'
+import nodemailer from 'nodemailer';
 
 const bastionPubKey = readFileSync(process.env.BASTION_PROXY_KEY_PUB || './bastion_proxy_key.pub', 'utf-8').trim();
 
@@ -16,7 +17,15 @@ function generateState(length = 16) {
     .slice(0, length);
 }
 
-
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  }
+});
 
 async function getContainerConfig(vmid) {
   const node = process.env.PVE_NODE;
@@ -778,7 +787,22 @@ app.post('/api/admin/applications/approve', async (c) => {
   await waitForTask(node, result.data);
   await db.createUser({ sub: application.sub, username: application.username, sshKey: application.ssh_key, vmid: parseInt(vmid), ip: allocated.ip });
   await db.updateApplicationStatus(appId, 'approved', profile.email);
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: application.email,
+    subject: 'Nest account approved!',
+    text: `Your Nest account was approved. Congrats!
+    
+Internal IP: ${allocated.ip}
+Username: ${application.username}
+Operating System: ${templateConfig.name || process.env.OS_TEMPLATE}
 
+To login to Nest, you may use ssh ${application.username}@hackclub.app
+
+From the Dashboard (https://dashboard.hackclub.app/dashboard), you can manage custom domains, reboot your container, stop your container, or even delete your Nest account.
+
+By default, you have 512MB of RAM, 1 core of CPU, and 8 GB of storage. To increase this limit, you may contact the Nest team on slack via #nest-help`
+  });
   return c.json({ message: 'Approved and container created', vmid, password });
 });
 
@@ -795,6 +819,15 @@ app.post('/api/admin/applications/reject', async (c) => {
   if (application.status !== 'pending') { c.status(400); return c.json({ error: 'Application already processed' }) }
 
   await db.updateApplicationStatus(appId, 'rejected', profile.email);
+
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: application.email,
+    subject: 'Nest account rejected',
+    text: `Your Nest account was rejected.
+    
+You may contact the Nest team via #nest-help to learn more.`
+  });
   return c.json({ message: 'Application rejected' });
 });
 
