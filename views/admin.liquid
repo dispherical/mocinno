@@ -236,19 +236,19 @@
         return;
       }
       let html =
-        '<div class="border border-border rounded-md mt-4"><table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0"><thead><tr><th>Username</th><th>VMID</th><th>IP</th><th>Status</th><th>Susp</th><th>Cores</th><th>Mem</th><th>Created</th><th class="w-32 text-right border-none"></th></tr></thead><tbody>';
+        '<div class="border border-border rounded-md mt-4"><table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0"><thead><tr><th>Username</th><th>VMID</th><th>IP</th><!--<th>Status</th>--><th>Suspended</th><!--<th>Cores</th><th>Mem</th>--><th>Created</th><th class="w-32 text-right border-none"></th></tr></thead><tbody>';
       for (const u of data.users) {
         html += `<tr>
           <td class="font-medium">${esc(u.username)}</td>
           <td>${u.vmid}</td>
           <td>${u.ip || ''}</td>
-          <td><span>${u.status || 'unknown'}</span></td>
-          <td>${u.suspended ? '<span class="uk-badge uk-badge-destructive">Yes</span>' : ''}</td>
-          <td>${u.cores}</td>
-          <td>${u.memory}</td>
+          <!--<td><span>${u.status || 'unknown'}</span></td>-->
+          <td>${u.suspended ? '<span class="uk-badge uk-badge-destructive">Yes</span>' : 'No'}</td>
+          <!--<td>${u.cores}</td>
+          <td>${u.memory}</td>-->
           <td class="text-sm text-muted-foreground">${new Date(u.created_at).toLocaleDateString()}</td>
           <td class="text-right space-x-1 whitespace-nowrap">
-            <button class="uk-btn uk-btn-default uk-btn-sm" onclick="editUser(${u.vmid}, '${esc(u.username)}', ${u.cores}, ${u.memory})">Edit</button>
+            <!--<button class="uk-btn uk-btn-default uk-btn-sm" onclick="editUser(${u.vmid}, '${esc(u.username)}', ${u.cores}, ${u.memory})">Edit</button>-->
             ${
               u.suspended
                 ? `<button class="uk-btn uk-btn-secondary uk-btn-sm" onclick="unsuspendUser(${u.vmid})">Unsuspend</button>`
