@@ -285,7 +285,7 @@ app.get('/invite/:code', async (c) => {
   if (!invite) return c.text('Invalid invite code', 404);
   if (invite.max_uses && invite.uses >= invite.max_uses) return c.text('Invite code depleted', 403);
   if (invite.expires_at && new Date() > new Date(invite.expires_at)) return c.text('Invite code expired', 403);
-  
+
   c.get('session').set('invite_code', code);
   return c.redirect('/flow/authorization/login/start');
 });
@@ -294,6 +294,9 @@ app.get('/api/username/check', async (c) => {
   const username = c.req.query('username')?.toLowerCase();
   if (!username || !/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
     return c.json({ available: false, error: 'Invalid username. 3-32 chars, lowercase alphanumeric, hyphens, underscores. Must start with a letter and end with a letter or number.' });
+  }
+  if (require("./reservedUsernames").includes(username.toLowerCase())) {
+    return c.json({ available: false, error: 'This username is reserved.' });
   }
 
   const taken = await db.isUsernameTaken(username);
@@ -333,6 +336,9 @@ app.post('/api/application/submit', async (c) => {
     c.status(400)
     return c.json({ error: 'Invalid username. 3-32 chars, lowercase alphanumeric, hyphens, underscores. Must start with a letter and end with a letter or number.' })
   }
+  if (require("./reservedUsernames").includes(username.toLowerCase())) {
+    return c.json({ rror: 'This username is reserved.' });
+  }
 
   if (!sshKey || !/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(sshKey)) {
     c.status(400)
@@ -348,7 +354,7 @@ app.post('/api/application/submit', async (c) => {
   if (taken) { c.status(409); return c.json({ error: 'Username is already taken' }) }
 
   const app = await db.createApplication({ sub: profile.sub, email: profile.email, username, sshKey, reason, server, template });
-  
+
   if (inviteCode && profile.verification_status !== "verified") {
     await db.incrementInvite(inviteCode);
     c.get('session').set('invite_code', null);
@@ -517,7 +523,7 @@ app.get('/api/tls-ask', async (c) => {
   }
   const appDomain = process.env.APP_DOMAIN;
   if (appDomain && domain === appDomain) return c.text('OK');
-  
+
   const domainRow = await db.getDomainByName(domain);
   if (domainRow) return c.text('OK');
 
@@ -745,7 +751,7 @@ app.post('/api/admin/applications/approve', async (c) => {
 
   const config = require('./config.js');
   const serverConfig = config.servers.find(s => s.name === application.server) || config.servers[0];
-  const templateConfig = Array.isArray(serverConfig.templates) 
+  const templateConfig = Array.isArray(serverConfig.templates)
     ? serverConfig.templates.find(t => t.name === application.template) || serverConfig.templates[0]
     : serverConfig.templates;
 
