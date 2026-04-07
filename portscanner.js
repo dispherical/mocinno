@@ -165,7 +165,7 @@ function parseTcpdumpLine(line) {
 
   const srcIP = match[1]
   const vmid = ipToVmid.get(srcIP)
-  if (!vmid) return null
+  if (!vmid || vmid < 107) return null
 
   return {
     srcIP,
@@ -208,15 +208,19 @@ function onConnection(vmid, destIP, destPort) {
 }
 
 async function main() {
-  console.log('starting, reading tcpdump SYN packets from stdin...')
+  console.log('starting tcpdump...')
 
   await refreshIPMap()
   setInterval(refreshIPMap, 60_000)
 
+  const proc = Bun.spawn(['tcpdump', '-l', '-n', '-i', 'any', 'tcp[tcpflags] & tcp-syn != 0'], {
+    stdout: 'pipe',
+  })
+
   const decoder = new TextDecoder()
   let buffer = ''
 
-  for await (const chunk of Bun.stdin.stream()) {
+  for await (const chunk of proc.stdout) {
     buffer += decoder.decode(chunk)
     const lines = buffer.split('\n')
     buffer = lines.pop() ?? ''
