@@ -460,14 +460,32 @@ app.post('/api/domains/add', async (c) => {
   const proxyTarget = proxy || `${ip}:80`;
   const row = await db.addDomain({ userId: user.id, domain, proxy: proxyTarget });
 
-  try {
-    await issueCertificate(domain);
-    await reloadProxy();
-  } catch (err) {
-    console.error(`Failed to issue certificate for ${domain}:`, err.message);
+  if (process.env.DISABLE_SSL !== 'true') {
+    try {
+      await issueCertificate(domain);
+      await reloadProxy();
+    } catch (err) {
+      console.error(`Failed to issue certificate for ${domain}:`, err.message);
+    }
   }
 
   return c.json({ message: `${domain} added`, domain: row });
+});
+
+app.get('/api/tls-ask', async (c) => {
+  const domain = c.req.query('domain');
+  if (!domain) {
+    c.status(400);
+    return c.text('Missing domain');
+  }
+  const appDomain = process.env.APP_DOMAIN;
+  if (appDomain && domain === appDomain) return c.text('OK');
+  
+  const domainRow = await db.getDomainByName(domain);
+  if (domainRow) return c.text('OK');
+
+  c.status(404);
+  return c.text('Not found');
 });
 
 app.post('/api/domains/remove', async (c) => {
@@ -558,12 +576,14 @@ async function reloadProxy() {
 
   if (proxyServer) proxyServer.stop(true);
 
-  /*proxyServer = Bun.serve({
-    port: 443,
-    hostname: '0.0.0.0',
-    tls: { serverNames },
-    fetch: proxyFetch,
-  });*/
+  if (process.env.DISABLE_SSL !== 'true') {
+    proxyServer = Bun.serve({
+      port: 443,
+      hostname: '0.0.0.0',
+      tls: { serverNames },
+      fetch: proxyFetch,
+    });
+  }
 }
 
 Bun.serve({
@@ -787,36 +807,40 @@ const serve = Bun.serve({
 console.log('Mocinno is running on port %s (%s)', serve.port, serve.hostname);
 
 (async () => {
-  const appDomain = process.env.APP_DOMAIN;
-  if (appDomain) {
-    try {
-      await getOrIssueCertificate(appDomain);
-      console.log(`Certificate ready for ${appDomain}`);
-    } catch (err) {
-      console.error(`Failed to issue certificate for ${appDomain}:`, err.message);
+  if (process.env.DISABLE_SSL !== 'true') {
+    const appDomain = process.env.APP_DOMAIN;
+    if (appDomain) {
+      try {
+        await getOrIssueCertificate(appDomain);
+        console.log(`Certificate ready for ${appDomain}`);
+      } catch (err) {
+        console.error(`Failed to issue certificate for ${appDomain}:`, err.message);
+      }
     }
+
+    const domains = await db.getAllDomains();
+    for (const d of domains) {
+      try {
+        await getOrIssueCertificate(d.domain);
+      } catch (err) {
+        console.error(`Failed to issue certificate for ${d.domain}:`, err.message);
+      }
+    }
+
+    await reloadProxy();
+    console.log('Proxy server running on port 443');
+
+    setInterval(async () => {
+      try {
+        await renewExpiringCertificates();
+        await reloadProxy();
+      } catch (err) {
+        console.error('Certificate renewal error:', err.message);
+      }
+    }, 12 * 60 * 60 * 1000);
+  } else {
+    console.log('SSL is disabled via process.env.DISABLE_SSL=true');
   }
-
-  const domains = await db.getAllDomains();
-  for (const d of domains) {
-    try {
-      await getOrIssueCertificate(d.domain);
-    } catch (err) {
-      console.error(`Failed to issue certificate for ${d.domain}:`, err.message);
-    }
-  }
-
-  await reloadProxy();
-  console.log('Proxy server running on port 443');
-
-  setInterval(async () => {
-    try {
-      await renewExpiringCertificates();
-      await reloadProxy();
-    } catch (err) {
-      console.error('Certificate renewal error:', err.message);
-    }
-  }, 12 * 60 * 60 * 1000);
 })();
 
 process.on('uncaughtException', (error) => {
