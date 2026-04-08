@@ -530,6 +530,7 @@ app.get('/api/tls-ask', async (c) => {
     c.status(400);
     return c.text('Missing domain');
   }
+  if (domain.endsWith(".hackclub.app")) return c.text('OK');
   const appDomain = process.env.APP_DOMAIN;
   if (appDomain && domain === appDomain) return c.text('OK');
 
