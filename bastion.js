@@ -68,14 +68,14 @@ async function findContainerByUsername(username) {
   try {
     const statusRes = await pveFetch(`/nodes/${node}/lxc/${user.vmid}/status/current`);
     status = statusRes.data.status;
-  } catch {}
+  } catch { }
 
   if (status === 'running' && !ip) {
     try {
       const ifaces = await pveFetch(`/nodes/${node}/lxc/${user.vmid}/interfaces`);
       const eth0 = ifaces.data?.find(i => i.name === 'eth0');
       ip = eth0?.['inet']?.split('/')[0] || null;
-    } catch {}
+    } catch { }
   }
 
   const suspended = await isContainerSuspended(user.vmid);
@@ -87,9 +87,9 @@ function verifyClientKey(ctx, allowedKeyStr) {
   const allowedKey = utils.parseKey(allowedKeyStr);
   if (allowedKey instanceof Error) return false;
   const parsed = Array.isArray(allowedKey) ? allowedKey[0] : allowedKey;
-  if (ctx.key.algo !== parsed.type || !ctx.key.data.equals(parsed.getPublicSSH())) return false;
-  if (ctx.signature && parsed.verify(ctx.blob, ctx.signature) !== true) return false;
-  return true;
+  if (!ctx.key.data.equals(parsed.getPublicSSH())) return false;
+  if (!ctx.signature) return true;
+  return parsed.verify(ctx.blob, ctx.signature);
 }
 
 function writeAndClose(stream, message) {
@@ -135,7 +135,7 @@ async function resolveContainer(containerPromise, username, client, stream) {
           const ifaces = await pveFetch(`/nodes/${node}/lxc/${container.vmid}/interfaces`);
           const eth0 = ifaces.data?.find(i => i.name === 'eth0');
           container.ip = eth0?.['inet']?.split('/')[0];
-        } catch {}
+        } catch { }
       }
       if (!container.ip) {
         if (stream) writeAndClose(stream, 'Container started but could not determine IP. Try again in a moment.');
@@ -262,8 +262,8 @@ function proxyToContainer(ip, clientStream, client, command = null, subsystem = 
 
   conn.on('error', (err) => {
     console.error(`[bastion] Upstream error: ${err.message}`);
-    try { clientStream.close(); } catch {}
-    try { client.end(); } catch {}
+    try { clientStream.close(); } catch { }
+    try { client.end(); } catch { }
   });
 
   conn.connect({
@@ -282,8 +282,8 @@ function pipeStreams(clientStream, containerStream, upstreamConn, client) {
   });
 
   containerStream.on('close', () => {
-    try { clientStream.close(); } catch {}
-    try { client.end(); } catch {}
+    try { clientStream.close(); } catch { }
+    try { client.end(); } catch { }
   });
 
   containerStream.on('exit', (code) => {
