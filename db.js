@@ -75,6 +75,11 @@ export async function createUser({ sub, username, sshKeys, vmid, ip }) {
   return user;
 }
 
+export async function updateUserSSHKeys(sub, keys) {
+  const [user] = await db.update(usersTable).set({ ssh_keys: keys }).where(eq(usersTable.sub, sub)).returning();
+  return user ?? null;
+}
+
 export async function deleteUser(sub) {
   await db.delete(applicationsTable).where(eq(applicationsTable.sub, sub));
   await db.delete(usersTable).where(eq(usersTable.sub, sub));

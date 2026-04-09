@@ -9,6 +9,7 @@
         {% if user %}
           <li class="uk-active"><a href="#" data-target="tab-dashboard">Dashboard</a></li>
           <li><a href="#" data-target="tab-domains">Domains</a></li>
+          <li><a href="#" data-target="tab-ssh-keys">SSH Keys</a></li>
         {% else %}
           <li class="uk-active"><a href="#" data-target="tab-apply">Apply for Nest</a></li>
         {% endif %}
@@ -165,6 +166,59 @@
                   You'll need to point your domain to hackclub.app to use this!
                 </div>
                 <button id="domain-add-btn" class="uk-btn uk-btn-primary">Add Domain</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-ssh-keys" class="space-y-6 pt-2 hidden">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">SSH Keys</h2>
+              <p class="text-muted-foreground mt-1">
+                Manage the SSH public keys that can access your container.
+              </p>
+            </div>
+            <div class="border-border border-t"></div>
+
+            <div class="border-border border rounded-xl overflow-hidden shadow-sm bg-white">
+              <table id="ssh-key-table" class="uk-table uk-table-divider uk-table-middle mb-0">
+                <thead>
+                  <tr class="bg-muted/20">
+                    <th class="pl-4">Key</th>
+                    <th class="w-24 text-right pr-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for k in user.ssh_keys %}
+                    <tr data-key="{{ k }}">
+                      <td class="pl-4 font-mono text-sm text-muted-foreground break-all">{{ k }}</td>
+                      <td class="text-right pr-4">
+                        <button
+                          class="ssh-key-rm-btn uk-btn uk-btn-text text-destructive hover:underline text-sm"
+                          data-key="{{ k }}"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% if user.ssh_keys.size == 0 %}
+                <div class="p-6 text-center text-muted-foreground text-sm bg-white">No SSH keys found.</div>
+              {% endif %}
+            </div>
+
+            <div class="bg-white p-6 border border-border rounded-xl shadow-sm mt-6">
+              <h4 class="font-medium text-lg mb-4">Add New SSH Key</h4>
+              <div class="space-y-1">
+                <label class="text-sm font-medium">Public Key</label>
+                <textarea id="ssh-key-input" class="uk-textarea p-3 h-28 w-full" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
+                <div class="uk-form-help text-muted-foreground mt-1" id="ssh-key-add-status">
+                  Paste your public key here (ssh-ed25519, ssh-rsa, or ssh-ecdsa).
+                </div>
+              </div>
+              <div class="flex items-center justify-end mt-4">
+                <button id="ssh-key-add-btn" class="uk-btn uk-btn-primary" disabled>Add Key</button>
               </div>
             </div>
           </div>
@@ -653,5 +707,76 @@
     const ev = new Event('change');
     serverInput.dispatchEvent(ev);
   }
+
+  const newSshKeyInput = document.getElementById('ssh-key-input');
+  const sshKeyAddStatus = document.getElementById('ssh-key-add-status');
+  const sshKeyAddBtn = document.getElementById('ssh-key-add-btn');
+
+  newSshKeyInput?.addEventListener('input', () => {
+    const val = newSshKeyInput.value.trim();
+    if (!val) {
+      sshKeyAddStatus.innerText = 'Paste your public key here (ssh-ed25519, ssh-rsa, or ssh-ecdsa).';
+      sshKeyAddStatus.className = 'uk-form-help text-muted-foreground mt-1';
+      sshKeyAddBtn.disabled = true;
+      return;
+    }
+    if (/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(val)) {
+      sshKeyAddStatus.innerText = 'Looks good!';
+      sshKeyAddStatus.className = 'uk-form-help text-green-600 mt-1';
+      sshKeyAddBtn.disabled = false;
+    } else {
+      sshKeyAddStatus.innerText = 'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, or ssh-ecdsa).';
+      sshKeyAddStatus.className = 'uk-form-help text-destructive mt-1';
+      sshKeyAddBtn.disabled = true;
+    }
+  });
+
+  sshKeyAddBtn?.addEventListener('click', async () => {
+    const key = newSshKeyInput.value.trim();
+    sshKeyAddBtn.disabled = true;
+    sshKeyAddStatus.innerText = 'Adding key...';
+    sshKeyAddStatus.className = 'uk-form-help text-muted-foreground mt-1';
+    try {
+      const res = await fetch('/api/ssh-keys/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        location.reload();
+      } else {
+        sshKeyAddStatus.innerText = data.error;
+        sshKeyAddStatus.className = 'uk-form-help text-destructive mt-1';
+        sshKeyAddBtn.disabled = false;
+      }
+    } catch {
+      sshKeyAddStatus.innerText = 'Failed to connect to API.';
+      sshKeyAddStatus.className = 'uk-form-help text-destructive mt-1';
+      sshKeyAddBtn.disabled = false;
+    }
+  });
+
+  document.querySelectorAll('.ssh-key-rm-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const key = btn.dataset.key;
+      if (!confirm('Remove this SSH key?')) return;
+      try {
+        const res = await fetch('/api/ssh-keys/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          btn.closest('tr').remove();
+        } else {
+          alert(data.error);
+        }
+      } catch {
+        alert('Failed to connect to API.');
+      }
+    });
+  });
 </script>
 {%- endblock %}

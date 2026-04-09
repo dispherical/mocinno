@@ -602,6 +602,87 @@ app.post('/api/domains/remove', async (c) => {
   return c.json({ message: `${domain} removed` });
 });
 
+app.post('/api/ssh-keys/add', async (c) => {
+  const profile = c.get('session').get('profile');
+  if (!profile) { c.status(401); return c.json({ error: 'Unauthorized' }) }
+
+  const user = await db.findUserBySub(profile.sub);
+  if (!user) { c.status(404); return c.json({ error: 'No account found' }) }
+
+  const body = await c.req.json();
+  const key = body.key?.trim();
+
+  if (!key || !/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(key)) {
+    c.status(400);
+    return c.json({ error: 'Invalid SSH public key (must be ssh-ed25519, ssh-rsa, or ssh-ecdsa)' });
+  }
+
+  const currentKeys = user.ssh_keys || [];
+  if (currentKeys.includes(key)) {
+    c.status(409);
+    return c.json({ error: 'This key is already added' });
+  }
+  if (currentKeys.length >= 10) {
+    c.status(400);
+    return c.json({ error: 'Maximum of 10 SSH keys allowed' });
+  }
+
+  const newKeys = [...currentKeys, key];
+  await db.updateUserSSHKeys(profile.sub, newKeys);
+
+  if (user.vmid) {
+    const node = process.env.PVE_NODE;
+    try {
+      await pveFetch(`/nodes/${node}/lxc/${user.vmid}/config`, 'PUT', {
+        'ssh-public-keys': `${bastionPubKey}\n${newKeys.join('\n')}`,
+      });
+    } catch (e) {
+      console.error(`Failed to update container SSH keys for ${user.username}:`, e.message);
+    }
+  }
+
+  return c.json({ message: 'SSH key added' });
+});
+
+app.post('/api/ssh-keys/remove', async (c) => {
+  const profile = c.get('session').get('profile');
+  if (!profile) { c.status(401); return c.json({ error: 'Unauthorized' }) }
+
+  const user = await db.findUserBySub(profile.sub);
+  if (!user) { c.status(404); return c.json({ error: 'No account found' }) }
+
+  const body = await c.req.json();
+  const key = body.key?.trim();
+
+  if (!key) { c.status(400); return c.json({ error: 'Key is required' }) }
+
+  const currentKeys = user.ssh_keys || [];
+  if (!currentKeys.includes(key)) {
+    c.status(404);
+    return c.json({ error: 'Key not found' });
+  }
+  if (currentKeys.length <= 1) {
+    c.status(400);
+    return c.json({ error: 'You must have at least one SSH key' });
+  }
+
+  const newKeys = currentKeys.filter(k => k !== key);
+  await db.updateUserSSHKeys(profile.sub, newKeys);
+
+  if (user.vmid) {
+    const node = process.env.PVE_NODE;
+    try {
+      await pveFetch(`/nodes/${node}/lxc/${user.vmid}/config`, 'PUT', {
+        'ssh-public-keys': `${bastionPubKey}\n${newKeys.join('\n')}`,
+      });
+    } catch (e) {
+      console.error(`Failed to update container SSH keys for ${user.username}:`, e.message);
+    }
+  }
+
+  return c.json({ message: 'SSH key removed' });
+});
+
 async function buildServerNames() {
   const certs = await db.getAllCertificates();
   const serverNames = {};
