@@ -79,7 +79,7 @@ async function findContainerByUsername(username) {
   }
 
   const suspended = await isContainerSuspended(user.vmid);
-  return { vmid: user.vmid, ip, status, sshKey: user.ssh_key, suspended };
+  return { vmid: user.vmid, ip, status, sshKeys: user.ssh_keys, suspended };
 }
 
 function verifyClientKey(ctx, allowedKeyStr) {
@@ -181,12 +181,12 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
       if (!containerPromise) containerPromise = findContainerByUsername(username);
       const container = await containerPromise;
 
-      if (!container?.sshKey) {
-        console.warn(`[bastion] No SSH key on record for ${username}`);
+      if (!container?.sshKeys?.length) {
+        console.warn(`[bastion] No SSH keys on record for ${username}`);
         return ctx.reject(['publickey']);
       }
 
-      if (verifyClientKey(ctx, container.sshKey)) {
+      if (container.sshKeys.some(key => verifyClientKey(ctx, key))) {
         return ctx.accept();
       }
     } catch (e) {
