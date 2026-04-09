@@ -159,6 +159,46 @@ async function waitForTask(node, upid, timeoutMs = 30000) {
   throw new Error('Task timed out');
 }
 
+function formatUptime(seconds) {
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  
+  const parts = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  
+  return parts.join(' ') || '0m';
+}
+
+async function getNodeStats() {
+  const node = process.env.PVE_NODE;
+
+  try {
+    const [status, containers, rootfs] = await Promise.all([
+      pveFetch(`/nodes/${node}/status`),
+      pveFetch(`/nodes/${node}/lxc`),
+      pveFetch(`/nodes/${node}/storage/${process.env.ROOTFS.split(':')[0]}/status`)
+    ]);
+    
+    return {
+      cpu_percent: (status.data.cpu * 100).toFixed(2),
+      ram_used_gb: (status.data.memory.used / 1024 ** 3).toFixed(2),
+      ram_total_gb: (status.data.memory.total / 1024 ** 3).toFixed(2),
+      ram_percent: ((status.data.memory.used / status.data.memory.total) * 100).toFixed(2),
+      rootfs_used_gb: (rootfs.data.used / 1024 ** 3).toFixed(2),
+      rootfs_total_gb: (rootfs.data.total / 1024 ** 3).toFixed(2),
+      rootfs_percent: ((rootfs.data.used / rootfs.data.total) * 100).toFixed(2),
+      container_count: containers.data.length,
+      load_avg: status.data.loadavg.join(' / '),
+      core_count: status.data.cpuinfo.cpus,
+      uptime: formatUptime(status.data.uptime),
+    }
+  } catch (err) {
+    console.error('Failed to fetch node stats:', err.message);
+  } 
+}
 
 const engine = new Liquid({
   root: './views',
@@ -687,8 +727,14 @@ app.get('/admin', async (c) => {
   const applications = await db.getPendingApplications();
   const allApplications = await db.getAllApplications();
   const invites = await db.getAllInvites();
+  const stats = await getNodeStats();
 
-  const html = await engine.renderFile('admin', { profile, users, applications, allApplications, invites, appDomain: process.env.APP_DOMAIN || c.req.header('host') });
+  const html = await engine.renderFile('admin', {
+    profile, users, applications,
+    allApplications, invites, stats,
+    appDomain: process.env.APP_DOMAIN || c.req.header('host')
+  });
+  
   return c.html(html);
 });
 

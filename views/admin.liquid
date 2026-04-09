@@ -11,6 +11,41 @@
   </div>
 
   <div class="border-border my-6 border-t"></div>
+  
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-medium">Server Status</h3>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="border border-border rounded-md p-4">
+        <h4 class="text-sm font-medium text-muted-foreground">Total containers</h4>
+        <p class="text-xl font-bold">{{ stats.container_count }}</p>
+      </div>
+      <div class="border border-border rounded-md p-4">
+        <h4 class="text-sm font-medium text-muted-foreground">CPU Usage</h4>
+        <p class="text-xl font-bold">{{ stats.cpu_percent }}%</p>
+      </div>
+      <div class="border border-border rounded-md p-4">
+        <h4 class="text-sm font-medium text-muted-foreground">Ram Usage</h4>
+        <p class="text-xl font-bold">{{ stats.ram_used_gb }} GB / {{ stats.ram_total_gb }} GB ({{ stats.ram_percent }}%)</p>
+      </div>
+      <div class="border border-border rounded-md p-4">
+        <h4 class="text-sm font-medium text-muted-foreground">Storage Usage</h4>
+        <p class="text-xl font-bold">{{ stats.rootfs_used_gb }} GB / {{ stats.rootfs_total_gb }} GB ({{ stats.rootfs_percent }}%)</p>
+      </div>
+      <div class="border border-border rounded-md p-4">
+        <h4 class="text-sm font-medium text-muted-foreground">Load Avg. (&gt; {{ stats.core_count }} is bad)</h4>
+        <p class="text-xl font-bold">{{ stats.load_avg }}</p>
+      </div>
+      <div class="border border-border rounded-md p-4">
+        <h4 class="text-sm font-medium text-muted-foreground">Uptime</h4>
+        <p class="text-xl font-bold">{{ stats.uptime }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="border-border my-6 border-t"></div>
 
   <div class="space-y-6">
     <div class="flex items-center justify-between">
