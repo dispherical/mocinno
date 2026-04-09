@@ -70,8 +70,8 @@ export async function isUsernameTaken(username) {
   return !!app;
 }
 
-export async function createUser({ sub, username, sshKey, vmid, ip }) {
-  const [user] = await db.insert(usersTable).values({ sub, username, ssh_key: sshKey, vmid, ip: ip || null }).returning();
+export async function createUser({ sub, username, sshKeys, vmid, ip }) {
+  const [user] = await db.insert(usersTable).values({ sub, username, ssh_keys: sshKeys, vmid, ip: ip || null }).returning();
   return user;
 }
 
