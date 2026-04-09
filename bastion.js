@@ -201,21 +201,58 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
 
     client.on('session', (accept) => {
       const session = accept();
+      let pty = null;
+      let env = {};
+      let upstreamStream = null;
 
-      session.on('pty', (accept) => { accept(); });
+      session.on('auth-agent', (accept, reject) => {
+        reject?.();
+      });
+
+      session.on('env', (accept, reject, info) => {
+        env[info.key] = info.value ?? info.val;
+        accept?.();
+      });
+
+      session.on('pty', (accept, reject, info) => {
+        pty = normalizePty(info);
+        accept();
+      });
+
+      session.on('window-change', (accept, reject, info) => {
+        pty = updatePty(pty, info);
+        if (upstreamStream?.setWindow && pty) {
+          upstreamStream.setWindow(pty.rows, pty.cols, pty.height, pty.width);
+        }
+        accept?.();
+      });
+
+      session.on('signal', (accept, reject, info) => {
+        upstreamStream?.signal?.(info.name);
+        accept?.();
+      });
 
       session.on('shell', async (accept) => {
         const stream = accept();
         const container = await resolveContainer(containerPromise, username, client, stream);
         if (!container) return;
-        proxyToContainer(container.ip, stream, client);
+        proxyToContainer(container.ip, stream, client, {
+          getPty: () => pty,
+          getEnv: () => env,
+          onStream: (stream) => { upstreamStream = stream; }
+        });
       });
 
       session.on('exec', async (accept, reject, info) => {
         const stream = accept();
         const container = await resolveContainer(containerPromise, username, client, stream);
         if (!container) return;
-        proxyToContainer(container.ip, stream, client, info.command);
+        proxyToContainer(container.ip, stream, client, {
+          command: info.command,
+          getPty: () => pty,
+          getEnv: () => env,
+          onStream: (stream) => { upstreamStream = stream; }
+        });
       });
 
       session.on('subsystem', async (accept, reject, info) => {
@@ -223,7 +260,9 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
           const stream = accept();
           const container = await resolveContainer(containerPromise, username, client, stream);
           if (!container) return;
-          proxyToContainer(container.ip, stream, client, null, 'sftp');
+          proxyToContainer(container.ip, stream, client, {
+            subsystem: 'sftp'
+          });
         } else {
           reject();
         }
@@ -236,26 +275,66 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
   });
 });
 
-function proxyToContainer(ip, clientStream, client, command = null, subsystem = null) {
+function normalizePty(info) {
+  if (!info) return null;
+  return {
+    term: info.term,
+    cols: info.cols,
+    rows: info.rows,
+    width: info.width,
+    height: info.height,
+    modes: info.modes ?? null
+  };
+}
+
+function updatePty(current, info) {
+  if (!info) return current;
+  return {
+    term: current?.term ?? 'vt100',
+    cols: info.cols ?? current?.cols ?? 80,
+    rows: info.rows ?? current?.rows ?? 24,
+    width: info.width ?? current?.width ?? 640,
+    height: info.height ?? current?.height ?? 480,
+    modes: info.modes ?? current?.modes ?? null
+  };
+}
+
+function proxyToContainer(ip, clientStream, client, options = {}) {
+  const {
+    command = null,
+    subsystem = null,
+    getPty = () => null,
+    getEnv = () => ({}),
+    onStream = null
+  } = options;
   const conn = new SSHClient();
 
   conn.on('ready', () => {
-    const opts = { term: 'xterm-256color' };
+    const pty = getPty();
+    const env = getEnv();
 
     if (subsystem) {
       conn.subsys(subsystem, (err, containerStream) => {
         if (err) { clientStream.close(); conn.end(); return; }
-        pipeStreams(clientStream, containerStream, conn, client);
+        pipeStreams(clientStream, containerStream, conn, client, onStream);
       });
     } else if (command) {
-      conn.exec(command, opts, (err, containerStream) => {
+      const execOptions = {
+        env,
+        ...(pty ? { pty } : {})
+      };
+      conn.exec(command, execOptions, (err, containerStream) => {
         if (err) { clientStream.close(); conn.end(); return; }
-        pipeStreams(clientStream, containerStream, conn, client);
+        pipeStreams(clientStream, containerStream, conn, client, onStream);
       });
     } else {
-      conn.shell(opts, (err, containerStream) => {
+      const shellOptions = { env };
+      const openShell = pty
+        ? (callback) => conn.shell(pty, shellOptions, callback)
+        : (callback) => conn.shell(false, shellOptions, callback);
+      openShell((err, containerStream) => {
         if (err) { clientStream.close(); conn.end(); return; }
-        pipeStreams(clientStream, containerStream, conn, client);
+        pipeStreams(clientStream, containerStream, conn, client, onStream);
       });
     }
   });
@@ -274,8 +353,12 @@ function proxyToContainer(ip, clientStream, client, command = null, subsystem = 
   });
 }
 
-function pipeStreams(clientStream, containerStream, upstreamConn, client) {
+function pipeStreams(clientStream, containerStream, upstreamConn, client, onStream = null) {
+  onStream?.(containerStream);
   clientStream.pipe(containerStream).pipe(clientStream);
+  if (containerStream.stderr && clientStream.stderr) {
+    containerStream.stderr.pipe(clientStream.stderr);
+  }
 
   clientStream.on('close', () => {
     upstreamConn.end();
@@ -286,8 +369,14 @@ function pipeStreams(clientStream, containerStream, upstreamConn, client) {
     try { client.end(); } catch { }
   });
 
-  containerStream.on('exit', (code) => {
-    clientStream.exit(code ?? 0);
+  containerStream.on('exit', (code, signalName, didCoreDump, description) => {
+    if (typeof code === 'number') {
+      clientStream.exit(code);
+    } else if (signalName) {
+      clientStream.exit(signalName.replace(/^SIG/, ''), didCoreDump, description);
+    } else {
+      clientStream.exit(0);
+    }
     clientStream.close();
   });
 }
