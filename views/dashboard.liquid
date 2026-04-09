@@ -212,9 +212,9 @@
               <h4 class="font-medium text-lg mb-4">Add New SSH Key</h4>
               <div class="space-y-1">
                 <label class="text-sm font-medium">Public Key</label>
-                <textarea id="ssh-key-input" class="uk-textarea p-3 h-28 w-full" placeholder="ssh-ed25519 AAAA... or ssh-rsa AAAA..."></textarea>
+                <textarea id="ssh-key-input" class="uk-textarea p-3 h-28 w-full" placeholder="ssh-ed25519 AAAA... or ssh-ecdsa AAAA..."></textarea>
                 <div class="uk-form-help text-muted-foreground mt-1" id="ssh-key-add-status">
-                  Paste your public key here (ssh-ed25519, ssh-rsa, or ssh-ecdsa).
+                  Paste your public key here (ssh-ed25519 or ssh-ecdsa).
                 </div>
               </div>
               <div class="flex items-center justify-end mt-4">
@@ -571,7 +571,12 @@
     btn.addEventListener('click', async () => {
       btn.disabled = true;
       if (msgPanel) {
-        msgPanel.innerText = action + 'ing container...';
+        let actioning = action + 'ing';
+        if (action === 'Stop') actioning = 'stopping';
+        if (action === 'Reboot') actioning = 'rebooting';
+        if (action === 'Start') actioning = 'starting';
+
+        msgPanel.innerText = actioning;
         msgPanel.className = 'mt-4 text-sm font-medium text-muted-foreground';
       }
       try {
