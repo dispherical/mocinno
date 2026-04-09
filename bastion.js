@@ -202,7 +202,7 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
     client.on('session', (accept) => {
       const session = accept();
       let pty = null;
-      let env = {};
+      let env = Object.create(null);
       let upstreamStream = null;
 
       session.on('auth-agent', (accept, reject) => {
@@ -210,6 +210,10 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
       });
 
       session.on('env', (accept, reject, info) => {
+        if (!isValidEnvKey(info.key)) {
+          reject?.();
+          return;
+        }
         env[info.key] = info.value ?? info.val;
         accept?.();
       });
@@ -220,10 +224,12 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
       });
 
       session.on('window-change', (accept, reject, info) => {
-        pty = updatePty(pty, info);
-        if (upstreamStream?.setWindow && pty) {
-          upstreamStream.setWindow(pty.rows, pty.cols, pty.height, pty.width);
+        if (!pty) {
+          accept?.();
+          return;
         }
+        pty = updatePty(pty, info);
+        upstreamStream?.setWindow?.(pty.rows, pty.cols, pty.height, pty.width);
         accept?.();
       });
 
@@ -285,6 +291,10 @@ function normalizePty(info) {
     height: info.height,
     modes: info.modes ?? null
   };
+}
+
+function isValidEnvKey(key) {
+  return typeof key === 'string' && /^[A-Za-z_][A-Za-z0-9_]*$/.test(key);
 }
 
 function updatePty(current, info) {
