@@ -8,6 +8,13 @@
       "when": 1773364840133,
       "tag": "0000_tricky_loa",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775759941840,
+      "tag": "0001_goofy_felicia_hardy",
+      "breakpoints": true
     }
   ]
 }

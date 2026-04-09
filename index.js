@@ -786,7 +786,7 @@ app.post('/api/admin/applications/approve', async (c) => {
   });
 
   await waitForTask(node, result.data);
-  await db.createUser({ sub: application.sub, username: application.username, sshKey: application.ssh_key, vmid: parseInt(vmid), ip: allocated.ip });
+  await db.createUser({ sub: application.sub, username: application.username, sshKeys: [application.ssh_key], vmid: parseInt(vmid), ip: allocated.ip });
   await db.updateApplicationStatus(appId, 'approved', profile.email);
   await transporter.sendMail({
     from: process.env.SMTP_FROM,

@@ -4,7 +4,7 @@ export const usersTable = pgTable('users', {
   id: serial('id').primaryKey(),
   sub: text('sub').unique().notNull(),
   username: text('username').unique().notNull(),
-  ssh_key: text('ssh_key').notNull(),
+  ssh_keys: text("ssh_keys").array().notNull(),
   vmid: integer('vmid'),
   ip: text('ip'),
   created_at: timestamp('created_at').defaultNow(),
