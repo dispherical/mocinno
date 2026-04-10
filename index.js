@@ -207,6 +207,90 @@ const engine = new Liquid({
   cache: process.env.NODE_ENV == "production",
 })
 
+
+
+
+app.post('/password', async (c) => {
+  return c.json({ success: false });
+});
+
+app.post('/pubkey', async (c) => {
+  const body = await c.req.json();
+  const username = body.username;
+  const publicKey = body.publicKey;
+
+  if (!username || !publicKey) return c.json({ success: false });
+
+  const user = await db.findUserByUsername(username);
+  if (!user || !user.ssh_keys || user.ssh_keys.length === 0) {
+    return c.json({ success: false });
+  }
+
+  const clientKeyParts = publicKey.trim().split(' ');
+  const clientKeyData = clientKeyParts.length >= 2 ? clientKeyParts[1] : publicKey;
+
+  const matched = user.ssh_keys.some(k => {
+    const parts = k.trim().split(' ');
+    const data = parts.length >= 2 ? parts[1] : k;
+    return data === clientKeyData;
+  });
+
+  if (matched) {
+    return c.json({ success: true, authenticatedUsername: username });
+  }
+
+  return c.json({ success: false });
+});
+
+app.post('/config', async (c) => {
+  const body = await c.req.json();
+  const username = body.username;
+
+  if (!username) return c.json({ config: {} });
+
+  const user = await db.findUserByUsername(username);
+  if (!user || !user.vmid) return c.json({ config: {} });
+
+  const suspended = await isContainerSuspended(user.vmid);
+  if (suspended) {
+    return c.json({ config: {} });
+  }
+
+  let ip = await getContainerIP(user.vmid, user.ip);
+  const statusRes = await getContainerStatus(user.vmid);
+  const status = statusRes?.status;
+
+  if (status !== 'running') {
+    try {
+      const node = process.env.PVE_NODE;
+      const result = await pveFetch(`/nodes/${node}/lxc/${user.vmid}/status/start`, 'POST');
+      await waitForTask(node, result.data);
+      await new Promise(r => setTimeout(r, 3000));
+      ip = await getContainerIP(user.vmid, null);
+    } catch {
+      return c.json({ config: {} });
+    }
+  }
+
+  if (!ip) return c.json({ config: {} });
+
+  const bastionPrivateKey = readFileSync(process.env.BASTION_PROXY_KEY || './bastion_proxy_key', 'utf-8');
+
+  return c.json({
+    config: {
+      backend: "sshproxy",
+      sshproxy: {
+        server: ip,
+        port: 22,
+        usernamePassThrough: false,
+        username: "root",
+        privateKey: bastionPrivateKey,
+        strictHostKeyChecking: false
+      }
+    }
+  });
+});
+
 app.use('*', async (c, next) => {
   c.set('engine', engine)
   const session = c.get('session');
