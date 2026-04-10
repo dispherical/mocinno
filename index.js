@@ -310,7 +310,6 @@ app.post('/config', localOnly, denyForward, async (c) => {
         usernamePassThrough: false,
         username: "root",
         privateKey: bastionPrivateKey,
-        strictHostKeyChecking: false
       }
     }
   });
