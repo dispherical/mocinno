@@ -224,6 +224,7 @@ const localOnly = ipRestriction(
 );
 const denyForward = async function (c, next) {
   if (c.req.header('X-Forwarded-For') || c.req.header('X-Forwarded-Proto') || c.req.header('X-Forwarded-Host')) return c.json({ error: 'Forbidden.', success: false }, 403);
+  return next()
 }
 
 app.post('/password', localOnly, denyForward, async (c) => {
