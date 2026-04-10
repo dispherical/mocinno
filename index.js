@@ -165,12 +165,12 @@ function formatUptime(seconds) {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  
+
   const parts = [];
   if (d) parts.push(`${d}d`);
   if (h) parts.push(`${h}h`);
   if (m) parts.push(`${m}m`);
-  
+
   return parts.join(' ') || '0m';
 }
 
@@ -183,7 +183,7 @@ async function getNodeStats() {
       pveFetch(`/nodes/${node}/lxc`),
       pveFetch(`/nodes/${node}/storage/${process.env.ROOTFS.split(':')[0]}/status`)
     ]);
-    
+
     return {
       cpu_percent: (status.data.cpu * 100).toFixed(2),
       ram_used_gb: (status.data.memory.used / 1024 ** 3).toFixed(2),
@@ -199,7 +199,7 @@ async function getNodeStats() {
     }
   } catch (err) {
     console.error('Failed to fetch node stats:', err.message);
-  } 
+  }
 }
 
 const engine = new Liquid({
@@ -222,12 +222,15 @@ const localOnly = ipRestriction(
     return c.json({ error: 'Forbidden.', success: false }, 403);
   }
 );
+const denyForward = async function (c, next) {
+  if (c.req.header('X-Forwarded-For') || c.req.header('X-Forwarded-Proto') || c.req.header('X-Forwarded-Host')) return c.json({ error: 'Forbidden.', success: false }, 403);
+}
 
-app.post('/password', localOnly, async (c) => {
+app.post('/password', localOnly, denyForward, async (c) => {
   return c.json({ success: false });
 });
 
-app.post('/pubkey', localOnly, async (c) => {
+app.post('/pubkey', localOnly, denyForward, async (c) => {
   const body = await c.req.json();
   const username = body.username;
   const publicKey = body.publicKey;
@@ -255,7 +258,7 @@ app.post('/pubkey', localOnly, async (c) => {
   return c.json({ success: false });
 });
 
-app.post('/config', localOnly, async (c) => {
+app.post('/config', localOnly, denyForward, async (c) => {
   const body = await c.req.json();
   const username = body.username;
 
@@ -912,7 +915,7 @@ app.get('/admin', async (c) => {
     allApplications, invites, stats,
     appDomain: process.env.APP_DOMAIN || c.req.header('host')
   });
-  
+
   return c.html(html);
 });
 
