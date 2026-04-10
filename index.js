@@ -1,4 +1,6 @@
 import { Hono } from 'hono'
+import { getConnInfo } from 'hono/bun'
+import { ipRestriction } from 'hono/ip-restriction'
 import { sessionMiddleware, CookieStore } from 'hono-sessions'
 import { Liquid } from 'liquidjs'
 import crypto from 'node:crypto'
@@ -210,11 +212,22 @@ const engine = new Liquid({
 
 
 
-app.post('/password', async (c) => {
+const localOnly = ipRestriction(
+  getConnInfo,
+  {
+    denyList: [],
+    allowList: ['127.0.0.1', '::1', '::ffff:127.0.0.1'],
+  },
+  async (remote, c) => {
+    return c.json({ error: 'Forbidden.', success: false }, 403);
+  }
+);
+
+app.post('/password', localOnly, async (c) => {
   return c.json({ success: false });
 });
 
-app.post('/pubkey', async (c) => {
+app.post('/pubkey', localOnly, async (c) => {
   const body = await c.req.json();
   const username = body.username;
   const publicKey = body.publicKey;
@@ -242,7 +255,7 @@ app.post('/pubkey', async (c) => {
   return c.json({ success: false });
 });
 
-app.post('/config', async (c) => {
+app.post('/config', localOnly, async (c) => {
   const body = await c.req.json();
   const username = body.username;
 
