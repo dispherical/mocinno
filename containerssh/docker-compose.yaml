@@ -1,0 +1,27 @@
+services:
+  containerssh:
+    image: containerssh/containerssh:v0.5.2
+    ports:
+      - 0.0.0.0:22:2222
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+    - type: bind
+      source: ./config.yaml
+      target: /etc/containerssh/config.yaml
+    - type: bind
+      source: ./ssh_host_rsa_key
+      target: /var/secrets/ssh_host_rsa_key
+    - type: bind
+      source: ./ssh_host_ecdsa_key
+      target: /var/secrets/ssh_host_ecdsa_key
+    - type: bind
+      source: ./ssh_host_ed25519_key
+      target: /var/secrets/ssh_host_ed25519_key
+    - type: bind
+      source: /var/run/docker.sock
+      target: /var/run/docker.sock
+
+
+    user: "root"

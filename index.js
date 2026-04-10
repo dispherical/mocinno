@@ -216,7 +216,15 @@ const localOnly = ipRestriction(
   getConnInfo,
   {
     denyList: [],
-    allowList: ['127.0.0.1', '::1', '::ffff:127.0.0.1'],
+    allowList: [
+      '127.0.0.1',
+      '::1',
+      '::ffff:127.0.0.1',
+      '172.16.0.0/12',
+      '192.168.0.0/16',
+      'fc00::/7',
+      'fe80::/10'
+    ],
   },
   async (remote, c) => {
     return c.json({ error: 'Forbidden.', success: false }, 403);
