@@ -309,7 +309,8 @@ app.post('/config', localOnly, denyForward, async (c) => {
         port: 22,
         usernamePassThrough: false,
         username: "root",
-        privateKey: bastionPrivateKey
+        privateKey: bastionPrivateKey,
+        strictHostKeyChecking: false
       }
     }
   });
