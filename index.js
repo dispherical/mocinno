@@ -261,7 +261,7 @@ app.post('/pubkey', localOnly, denyForward, async (c) => {
   });
 
   if (matched) {
-    return c.json({ success: true, authenticatedUsername: username });
+    return c.json({ success: true });
   }
 
   return c.json({ success: false });

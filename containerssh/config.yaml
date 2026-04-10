@@ -3,14 +3,15 @@ ssh:
   banner: "Welcome back to Nest!"
   hostkeys:
     - /var/secrets/ssh_host_rsa_key
-    - /var/secrets/ssh_host_ecdsa_key
     - /var/secrets/ssh_host_ed25519_key
 log:
   level: debug
 auth:
-  url: "http://host.docker.internal:3001"
+  url: "http://localhost:3001"
+  password: false
+  pubkey: true
 configserver:
-  url: "http://host.docker.internal:3001/config"
+  url: "http://localhost:3001/config"
 backend: docker
 docker:
   connection:
