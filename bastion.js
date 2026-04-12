@@ -376,7 +376,8 @@ function pipeStreams(clientStream, containerStream, upstreamConn, client, onStre
 
   containerStream.on('close', () => {
     try { clientStream.close(); } catch { }
-    try { client.end(); } catch { }
+    // removing this seems to fix terminus
+    // try { client.end(); } catch { }
   });
 
   containerStream.on('exit', (code, signalName, didCoreDump, description) => {
