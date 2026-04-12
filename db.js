@@ -11,6 +11,8 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim
 const CONTAINER_CIDR = process.env.CONTAINER_CIDR || '10.0.0.0/24';
 const CONTAINER_GATEWAY = process.env.CONTAINER_GATEWAY || '';
 
+const RESERVED_IPS = new Set(['10.60.0.1', '10.60.0.2', '10.60.0.3']);
+
 function parseCIDR(cidr) {
   const [base, prefixStr] = cidr.split('/');
   const prefix = parseInt(prefixStr, 10);
@@ -36,6 +38,8 @@ export async function allocateIP() {
 
   for (let i = startHost; i <= endHost; i++) {
     const candidate = intToIP(i >>> 0);
+    if (RESERVED_IPS.has(candidate)) continue;
+    
     if (!usedIPs.has(candidate)) {
       try {
         await execAsync(`ping -c 1 -W 1 ${candidate}`);
