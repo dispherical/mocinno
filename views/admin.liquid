@@ -11,47 +11,53 @@
   </div>
 
   <div class="border-border my-6 border-t"></div>
-  
+
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h3 class="text-lg font-medium">Server Status</h3>
+      <h3 class="text-lg font-medium">Node Stats</h3>
     </div>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="border border-border rounded-md p-4">
-        <h4 class="text-sm font-medium text-muted-foreground">Total containers</h4>
-        <p class="text-xl font-bold">{{ stats.container_count }}</p>
-      </div>
-      <div class="border border-border rounded-md p-4">
-        <h4 class="text-sm font-medium text-muted-foreground">CPU Usage</h4>
-        <p class="text-xl font-bold">{{ stats.cpu_percent }}%</p>
-      </div>
-      <div class="border border-border rounded-md p-4">
-        <h4 class="text-sm font-medium text-muted-foreground">Ram Usage</h4>
-        <p class="text-xl font-bold">{{ stats.ram_used_gb }} GB / {{ stats.ram_total_gb }} GB ({{ stats.ram_percent }}%)</p>
-      </div>
-      <div class="border border-border rounded-md p-4">
-        <h4 class="text-sm font-medium text-muted-foreground">Storage Usage</h4>
-        <p class="text-xl font-bold">{{ stats.rootfs_used_gb }} GB / {{ stats.rootfs_total_gb }} GB ({{ stats.rootfs_percent }}%)</p>
-      </div>
-      <div class="border border-border rounded-md p-4">
-        <h4 class="text-sm font-medium text-muted-foreground">Load Avg. (&gt; {{ stats.core_count }} is bad)</h4>
-        <p class="text-xl font-bold">{{ stats.load_avg }}</p>
-      </div>
-      <div class="border border-border rounded-md p-4">
-        <h4 class="text-sm font-medium text-muted-foreground">Uptime</h4>
-        <p class="text-xl font-bold">{{ stats.uptime }}</p>
-      </div>
-    </div>
+
+    {% for node in stats %}
+        <div>
+            <h4 class="text-md font-medium mb-4">{{ node.name }}</h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border border-border rounded-md p-4">
+                    <h4 class="text-sm font-medium text-muted-foreground">Total containers</h4>
+                    <p class="text-xl font-bold">{{ node.stats.container_count }}</p>
+                </div>
+                <div class="border border-border rounded-md p-4">
+                    <h4 class="text-sm font-medium text-muted-foreground">CPU Usage</h4>
+                    <p class="text-xl font-bold">{{ node.stats.cpu_percent }}%</p>
+                </div>
+                <div class="border border-border rounded-md p-4">
+                    <h4 class="text-sm font-medium text-muted-foreground">Ram Usage</h4>
+                    <p class="text-xl font-bold">{{ node.stats.ram_used_gb }} GB / {{ node.stats.ram_total_gb }} GB ({{ node.stats.ram_percent }}%)</p>
+                </div>
+                <div class="border border-border rounded-md p-4">
+                    <h4 class="text-sm font-medium text-muted-foreground">Storage Usage</h4>
+                    <p class="text-xl font-bold">{{ node.stats.rootfs_used_gb }} GB / {{ node.stats.rootfs_total_gb }} GB ({{ node.stats.rootfs_percent }}%)</p>
+                </div>
+                <div class="border border-border rounded-md p-4">
+                    <h4 class="text-sm font-medium text-muted-foreground">Load Avg. (&gt; {{ node.stats.core_count }} is bad)</h4>
+                    <p class="text-xl font-bold">{{ node.stats.load_avg }}</p>
+                </div>
+                <div class="border border-border rounded-md p-4">
+                    <h4 class="text-sm font-medium text-muted-foreground">Uptime</h4>
+                    <p class="text-xl font-bold">{{ node.stats.uptime }}</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
   </div>
-  
+
   <div class="border-border my-6 border-t"></div>
 
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-medium">Pending Applications ({{ applications.size }})</h3>
     </div>
-    
+
     {% if applications.size > 0 %}
       <div class="border border-border rounded-md">
         <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
@@ -92,7 +98,7 @@
         <p class="text-muted-foreground text-sm">An invite can bypass ID verification. This is useful for hackathons, large gatherings, etc.</p>
       </div>
     </div>
-    
+
     <div class="flex gap-x-2 mt-4 max-w-2xl">
       <input type="number" id="invite-max-uses" class="uk-input" placeholder="Max Uses (Empty=Infinite)">
       <input type="datetime-local" id="invite-expires" class="uk-input" placeholder="Expires At">
@@ -141,14 +147,14 @@
         <h3 class="text-lg font-medium">Users</h3>
       </div>
     </div>
-    
+
     <div class="max-w-md">
       <div class="uk-inline w-full">
         <span class="uk-form-icon" uk-icon="icon: search"></span>
         <input type="text" id="user-search" class="uk-input" placeholder="Search by username, VMID, or IP...">
       </div>
     </div>
-    
+
     <div id="users-table-wrap" class="mt-4">
       <p class="text-muted-foreground text-sm">Loading...</p>
     </div>
@@ -161,7 +167,7 @@
         <h3 class="text-lg font-medium">All Applications</h3>
       </div>
     </div>
-    
+
     {% if allApplications.size > 0 %}
       <div class="border border-border rounded-md mt-4">
         <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
@@ -206,7 +212,7 @@
     const btn = document.getElementById('btn-create-invite');
     const maxUses = document.getElementById('invite-max-uses').value;
     const expiresAt = document.getElementById('invite-expires').value;
-    
+
     btn.disabled = true;
     try {
       const res = await fetch('/api/admin/invites/create', {
