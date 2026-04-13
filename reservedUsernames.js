@@ -1895,5 +1895,5 @@ module.exports = [
   "xerox",
   "xpo",
   "yum",
-  "zimmerbiomet"
-]
+  "zimmerbiomet",
+];
