@@ -10,7 +10,7 @@ import {
   isNotNull,
   sql,
 } from "drizzle-orm";
-import { db } from "./src/db/index.ts";
+import { db } from "./db/index.ts";
 import {
   usersTable,
   domainsTable,
@@ -18,7 +18,7 @@ import {
   certificatesTable,
   settingsTable,
   invitesTable,
-} from "./src/db/schema.ts";
+} from "./db/schema.ts";
 import { exec } from "child_process";
 import { promisify } from "util";
 
