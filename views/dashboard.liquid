@@ -55,8 +55,14 @@
                   </tr>
                   {% if user.ip %}
                     <tr>
-                      <td class="font-medium pl-4 py-3">IP</td>
+                      <td class="font-medium pl-4 py-3">Private IP</td>
                       <td class="py-3">{{ user.ip }}</td>
+                    </tr>
+                  {% endif %}
+                  {% if user.ipv6 %}
+                    <tr>
+                      <td class="font-medium pl-4 py-3">Public IPv6</td>
+                      <td class="py-3">{{ user.ipv6 }}</td>
                     </tr>
                   {% endif %}
                   {% if container %}
