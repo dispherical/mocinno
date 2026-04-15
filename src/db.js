@@ -29,9 +29,6 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
-const CONTAINER_CIDR = process.env.CONTAINER_CIDR || "10.0.0.0/24";
-const CONTAINER_GATEWAY = process.env.CONTAINER_GATEWAY || "";
-
 const RESERVED_IPS = new Set(["10.60.0.1", "10.60.0.2", "10.60.0.3"]);
 
 function parseCIDR(cidr) {
@@ -55,8 +52,8 @@ function intToIP(n) {
   ].join(".");
 }
 
-export async function allocateIP() {
-  const { network, broadcast, prefix } = parseCIDR(CONTAINER_CIDR);
+export async function allocateIP(cidr, gateway) {
+  const { network, broadcast, prefix } = parseCIDR(cidr);
   const startHost = network + 2;
   const endHost = broadcast - 1;
 
@@ -77,7 +74,7 @@ export async function allocateIP() {
         return {
           ip: candidate,
           prefix,
-          gateway: CONTAINER_GATEWAY || intToIP(network + 1),
+          gateway: gateway || intToIP(network + 1),
         };
       }
     }

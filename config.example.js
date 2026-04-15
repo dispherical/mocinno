@@ -4,8 +4,18 @@ module.exports = {
       name: "nest-prov-1",
       node: "nest-prov-1",
       location: "Helsinki, Uusimaa",
-      cidr: "10.60.0.2/16",
-      gateway: "10.60.0.1",
+
+      ipv4: {
+        cidr: "10.60.0.2/16",
+        gateway: "10.60.0.2",
+      },
+
+      ipv6: {
+        prefix: "2a01:4f9:3081:399c::",
+        cidr: 64,
+        gateway: "fe80::1",
+      },
+
       rootfs: "local-zfs:8",
       templates: [
         {

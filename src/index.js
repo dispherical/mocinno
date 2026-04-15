@@ -1282,7 +1282,11 @@ app.post("/api/admin/applications/approve", async (c) => {
   const vmid = await getNextVmid();
   const node = serverConfig.node || process.env.PVE_NODE;
   const password = crypto.randomBytes(12).toString("hex");
-  const allocated = await db.allocateIP();
+  const allocated = await db.allocateIP(
+    serverConfig.ipv4.cidr,
+    serverConfig.ipv4.gateway,
+  );
+
   const result = await pveFetch(`/nodes/${node}/lxc`, "POST", {
     vmid,
     ostemplate: templateConfig.template || process.env.OS_TEMPLATE,
@@ -1292,7 +1296,7 @@ app.post("/api/admin/applications/approve", async (c) => {
     cores: 1,
     memory: 1024,
     swap: 512,
-    net0: `name=eth0,bridge=vmbr4030,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${serverConfig.gateway || allocated.gateway},ip6=auto`,
+    net0: `name=eth0,bridge=vmbr4030,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${serverConfig.ipv4.gateway || allocated.gateway},ip6=auto`,
     hostname: application.username,
     "ssh-public-keys": `${bastionPubKey}\n${application.ssh_key}`,
     password,
