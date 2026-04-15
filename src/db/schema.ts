@@ -7,6 +7,7 @@ export const usersTable = pgTable("users", {
   ssh_keys: text("ssh_keys").array().notNull(),
   vmid: integer("vmid"),
   ip: text("ip"),
+  ipv6: text("ipv6"),
   created_at: timestamp("created_at").defaultNow(),
 });
 

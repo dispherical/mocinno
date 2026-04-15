@@ -15,6 +15,13 @@
       "when": 1775759941840,
       "tag": "0001_goofy_felicia_hardy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776274095299,
+      "tag": "0002_wandering_microbe",
+      "breakpoints": true
     }
   ]
 }
