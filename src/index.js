@@ -1025,24 +1025,30 @@ async function proxyRequest(req, target) {
   headers.set("X-Forwarded-Proto", "https");
   headers.set("X-Forwarded-Host", url.hostname);
 
-  const proxyRes = await fetch(targetUrl, {
-    method: req.method,
-    headers,
-    body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
-  });
+  try {
+    const proxyRes = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body:
+        req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+    });
 
-  const resHeaders = new Headers();
-  for (const [k, v] of proxyRes.headers) {
-    const lower = k.toLowerCase();
-    if (lower !== "transfer-encoding" && lower !== "connection") {
-      resHeaders.set(k, v);
+    const resHeaders = new Headers();
+    for (const [k, v] of proxyRes.headers) {
+      const lower = k.toLowerCase();
+      if (lower !== "transfer-encoding" && lower !== "connection") {
+        resHeaders.set(k, v);
+      }
     }
-  }
 
-  return new Response(proxyRes.body, {
-    status: proxyRes.status,
-    headers: resHeaders,
-  });
+    return new Response(proxyRes.body, {
+      status: proxyRes.status,
+      headers: resHeaders,
+    });
+  } catch (err) {
+    console.error("Error proxying request to", target, ":", err.message);
+    return new Response("Bad Gateway", { status: 502 });
+  }
 }
 
 let proxyServer = null;
