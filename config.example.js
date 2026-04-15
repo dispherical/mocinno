@@ -4,6 +4,7 @@ module.exports = {
       name: "nest-prov-1",
       node: "nest-prov-1",
       location: "Helsinki, Uusimaa",
+      hostIP: "10.60.0.2",
 
       ipv4: {
         cidr: "10.60.0.2/16",
