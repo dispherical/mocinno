@@ -861,7 +861,11 @@ app.get("/api/tls-ask", async (c) => {
 
     const domainRow = await db.getDomainByName(domain);
 
-    if (domainRow || domain === `${username}.hackclub.app`) {
+    if (
+      domainRow ||
+      domain === `${username}.hackclub.app` ||
+      domain == "dashboard.hackclub.app"
+    ) {
       return c.text("OK");
     }
 
