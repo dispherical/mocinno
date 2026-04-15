@@ -401,7 +401,7 @@ app.get("/dashboard", async (c) => {
     }
   }
 
-  const config = require("./config.js");
+  const config = require("../config.js");
   const html = await engine.renderFile("dashboard", {
     profile,
     user,
@@ -518,7 +518,7 @@ app.get("/api/username/check", async (c) => {
         "Invalid username. 3-32 chars, lowercase alphanumeric, hyphens, underscores. Must start with a letter and end with a letter or number.",
     });
   }
-  if (require("./reservedUsernames").includes(username.toLowerCase())) {
+  if (require("../reservedUsernames.js").includes(username.toLowerCase())) {
     return c.json({ available: false, error: "This username is reserved." });
   }
 
@@ -581,7 +581,7 @@ app.post("/api/application/submit", async (c) => {
         "Invalid username. 3-32 chars, lowercase alphanumeric, hyphens, underscores. Must start with a letter and end with a letter or number.",
     });
   }
-  if (require("./reservedUsernames").includes(username.toLowerCase())) {
+  if (require("../reservedUsernames.js").includes(username.toLowerCase())) {
     return c.json({ rror: "This username is reserved." });
   }
 
@@ -1142,7 +1142,7 @@ app.get("/admin", async (c) => {
   const allApplications = await db.getAllApplications();
   const invites = await db.getAllInvites();
 
-  const config = require("./config.js");
+  const config = require("../config.js");
   const nodes = config.servers.map((s) => s.node);
 
   const stats = await Promise.all(
@@ -1270,7 +1270,7 @@ app.post("/api/admin/applications/approve", async (c) => {
     return c.json({ error: "Application already processed" });
   }
 
-  const config = require("./config.js");
+  const config = require("../config.js");
   const serverConfig =
     config.servers.find((s) => s.name === application.server) ||
     config.servers[0];
