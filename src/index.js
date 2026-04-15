@@ -848,7 +848,27 @@ app.get("/api/tls-ask", async (c) => {
     c.status(400);
     return c.text("Missing domain");
   }
-  if (domain.endsWith(".hackclub.app")) return c.text("OK");
+  if (domain.endsWith(".hackclub.app")) {
+    const parts = domain.replace(".hackclub.app", "").split(".");
+    const username = parts[parts.length - 1];
+
+    const user = await db.findUserByUsername(username);
+
+    if (!user) {
+      c.status(404);
+      return c.text("Not found");
+    }
+
+    const domainRow = await db.getDomainByName(domain);
+
+    if (domainRow || domain === `${username}.hackclub.app`) {
+      return c.text("OK");
+    }
+
+    c.status(404);
+    return c.text("Not found");
+  }
+
   const appDomain = process.env.APP_DOMAIN;
   if (appDomain && domain === appDomain) return c.text("OK");
 
