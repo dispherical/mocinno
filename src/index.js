@@ -1290,7 +1290,7 @@ app.post("/api/admin/applications/approve", async (c) => {
     unprivileged: 1,
     features: "nesting=1",
     cores: 1,
-    memory: 512,
+    memory: 1024,
     swap: 512,
     net0: `name=eth0,bridge=vmbr4030,firewall=1,ip=${allocated.ip}/${allocated.prefix},gw=${serverConfig.gateway || allocated.gateway},ip6=auto`,
     hostname: application.username,
