@@ -581,7 +581,7 @@ app.post("/api/application/submit", async (c) => {
         "Invalid username. 3-32 chars, lowercase alphanumeric, hyphens, underscores. Must start with a letter and end with a letter or number.",
     });
   }
-  if (require("../reservedUsernames.js").includes(username.toLowerCase())) {
+  if (require("./reservedUsernames.js").includes(username.toLowerCase())) {
     return c.json({ rror: "This username is reserved." });
   }
 
@@ -1292,6 +1292,9 @@ app.post("/api/admin/applications/approve", async (c) => {
   if (serverConfig.ipv6) {
     net0 += `,ip6=${serverConfig.ipv6.prefix}${vmid}/${serverConfig.ipv6.cidr},gw6=${serverConfig.ipv6.gateway}`;
   }
+
+  console.log("net0: ", net0);
+  console.log("ipv6 config: ", serverConfig.ipv6);
 
   const result = await pveFetch(`/nodes/${node}/lxc`, "POST", {
     vmid,
