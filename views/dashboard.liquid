@@ -480,13 +480,13 @@
       sshKeyStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
       return;
     }
-    if (/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(val)) {
+    if (/^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\s+\S+/.test(val)) {
       sshKeyStatus.innerText = 'Looks good!';
       sshKeyStatus.className = 'uk-form-help text-green-600 mt-1.5';
       sshKeyValid = true;
       updateApplyBtn();
     } else {
-      sshKeyStatus.innerText = 'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, or ssh-ecdsa)';
+      sshKeyStatus.innerText = 'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, ecdsa-sha2-nistp256/384/521, or sk-* FIDO)';
       sshKeyStatus.className = 'uk-form-help text-destructive mt-1.5';
     }
   });
