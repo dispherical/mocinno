@@ -585,7 +585,7 @@ app.post("/api/application/submit", async (c) => {
     return c.json({ rror: "This username is reserved." });
   }
 
-  if (!sshKey || !/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(sshKey)) {
+  if (!sshKey || !/^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\.com)\s+\S+/.test(sshKey)) {
     c.status(400);
     return c.json({ error: "A valid SSH public key is required." });
   }
@@ -931,7 +931,7 @@ app.post("/api/ssh-keys/add", async (c) => {
   const body = await c.req.json();
   const key = body.key?.trim();
 
-  if (!key || !/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(key)) {
+  if (!key || !/^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\.com)\s+\S+/.test(key)) {
     c.status(400);
     return c.json({
       error:
