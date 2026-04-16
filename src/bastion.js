@@ -1,6 +1,5 @@
 import { Server, Client as SSHClient, utils } from "ssh2";
 import { readFileSync } from "node:fs";
-import net from "node:net";
 import * as db from "./db.js";
 
 const hostKey = readFileSync(
@@ -483,6 +482,6 @@ function pipeStreams(
 }
 
 const port = parseInt(process.env.BASTION_PORT || "2222");
-server.listen(port, "0.0.0.0", () => {
+server.listen(port, "::", () => {
   console.log(`[bastion] SSH bastion listening on port ${port}`);
 });
