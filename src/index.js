@@ -1339,6 +1339,7 @@ app.post("/api/admin/applications/approve", async (c) => {
     "ssh-public-keys": `${bastionPubKey}\n${application.ssh_key}`,
     password,
     start: 1,
+    onboot: 1,
   });
 
   await waitForTask(node, result.data);
