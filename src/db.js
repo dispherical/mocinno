@@ -120,10 +120,17 @@ export async function isUsernameTaken(username) {
   return !!app;
 }
 
-export async function createUser({ sub, username, sshKeys, vmid, ip }) {
+export async function createUser({ sub, username, sshKeys, vmid, ip, ipv6 }) {
   const [user] = await db
     .insert(usersTable)
-    .values({ sub, username, ssh_keys: sshKeys, vmid, ip: ip || null })
+    .values({
+      sub,
+      username,
+      ssh_keys: sshKeys,
+      vmid,
+      ip: ip || null,
+      ipv6: ipv6 || null,
+    })
     .returning();
   return user;
 }
