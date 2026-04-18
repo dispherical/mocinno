@@ -98,7 +98,7 @@ function verifyClientKey(ctx, allowedKeyStr) {
   const parsed = Array.isArray(allowedKey) ? allowedKey[0] : allowedKey;
   if (!ctx.key.data.equals(parsed.getPublicSSH())) return false;
   if (!ctx.signature) return true;
-  return parsed.verify(ctx.blob, ctx.signature);
+  return parsed.verify(ctx.blob, ctx.signature, ctx.sigAlgo);
 }
 
 function writeAndClose(stream, message) {
