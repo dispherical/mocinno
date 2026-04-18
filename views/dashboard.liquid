@@ -179,9 +179,7 @@
           <div id="tab-ssh-keys" class="space-y-6 pt-2 hidden">
             <div>
               <h2 class="text-2xl font-bold tracking-tight">SSH Keys</h2>
-              <p class="text-muted-foreground mt-1">
-                Manage the SSH public keys that can access your container.
-              </p>
+              <p class="text-muted-foreground mt-1">Manage the SSH public keys that can access your container.</p>
             </div>
             <div class="border-border border-t"></div>
 
@@ -218,7 +216,11 @@
               <h4 class="font-medium text-lg mb-4">Add New SSH Key</h4>
               <div class="space-y-1">
                 <label class="text-sm font-medium">Public Key</label>
-                <textarea id="ssh-key-input" class="uk-textarea p-3 h-28 w-full" placeholder="ssh-ed25519 AAAA... or ssh-ecdsa AAAA..."></textarea>
+                <textarea
+                  id="ssh-key-input"
+                  class="uk-textarea p-3 h-28 w-full"
+                  placeholder="ssh-ed25519 AAAA... or ssh-ecdsa AAAA..."
+                ></textarea>
                 <div class="uk-form-help text-muted-foreground mt-1" id="ssh-key-add-status">
                   Paste your public key here (ssh-ed25519 or ssh-ecdsa).
                 </div>
@@ -480,7 +482,8 @@
       sshKeyStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
       return;
     }
-    if (/^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\s+\S+/.test(val)) {
+
+    if (/^(?!.*\n)(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\s+\S+/.test(val)) {
       sshKeyStatus.innerText = 'Looks good!';
       sshKeyStatus.className = 'uk-form-help text-green-600 mt-1.5';
       sshKeyValid = true;
