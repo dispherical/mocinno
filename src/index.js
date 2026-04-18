@@ -61,7 +61,7 @@ async function setContainerDescription(vmid, description) {
 }
 
 const app = new Hono();
-app.use('/public/privacy.pdf', serveStatic({ path: '/privacy.pdf' }))
+app.use('/privacy.pdf', serveStatic({ path: '/public/privacy.pdf' }))
 const store = new CookieStore();
 app.use(
   "*",
