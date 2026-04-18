@@ -1054,6 +1054,7 @@ async function proxyRequest(req, target) {
       headers,
       body:
         req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+      redirect: "manual"
     });
 
     const resHeaders = new Headers();
