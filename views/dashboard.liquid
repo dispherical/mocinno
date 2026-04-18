@@ -347,6 +347,7 @@
                   </div>
 
                   <div class="pt-6 border-t border-border flex justify-end items-center">
+                    <p id="status-message-form" class="mr-4 text-sm font-medium">By clicking "Submit Application", I agree to the Acceptable Use Policy and <a href="https://dashboard.hackclub.app/privacy.pdf" target="_blank">Privacy Policy</a></p>
                     <p id="status-message-form" class="mr-4 text-sm font-medium"></p>
                     <button id="apply-btn" class="uk-btn uk-btn-primary" disabled>Submit Application</button>
                   </div>
@@ -483,13 +484,18 @@
       return;
     }
 
-    if (/^(ssh-(?:ed25519|rsa)|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)[ \t]+[A-Za-z0-9+/=]+(?:[ \t]+\S+)?$/.test(val)) {
+    if (
+      /^(ssh-(?:ed25519|rsa)|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)[ \t]+[A-Za-z0-9+/=]+(?:[ \t]+\S+)?$/.test(
+        val
+      )
+    ) {
       sshKeyStatus.innerText = 'Looks good!';
       sshKeyStatus.className = 'uk-form-help text-green-600 mt-1.5';
       sshKeyValid = true;
       updateApplyBtn();
     } else {
-      sshKeyStatus.innerText = 'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, ecdsa-sha2-nistp256/384/521, or sk-* FIDO)';
+      sshKeyStatus.innerText =
+        'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, ecdsa-sha2-nistp256/384/521, or sk-* FIDO)';
       sshKeyStatus.className = 'uk-form-help text-destructive mt-1.5';
     }
   });
@@ -734,7 +740,11 @@
       sshKeyAddBtn.disabled = true;
       return;
     }
-    if (/^(ssh-(?:ed25519|rsa)|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)[ \t]+[A-Za-z0-9+/=]+(?:[ \t]+\S+)?$/.test(val)) {
+    if (
+      /^(ssh-(?:ed25519|rsa)|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)[ \t]+[A-Za-z0-9+/=]+(?:[ \t]+\S+)?$/.test(
+        val
+      )
+    ) {
       sshKeyAddStatus.innerText = 'Looks good!';
       sshKeyAddStatus.className = 'uk-form-help text-green-600 mt-1';
       sshKeyAddBtn.disabled = false;
