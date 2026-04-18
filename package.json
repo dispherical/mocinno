@@ -4,8 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "bun run index.js",
-    "bastion": "bun run bastion.js"
+    "start": "bun run src/index.js",
+    "bastion": "bun run src/bastion.js"
   },
   "devDependencies": {
     "@types/bun": "latest",
