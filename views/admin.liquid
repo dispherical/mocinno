@@ -127,7 +127,7 @@
                 <td>{{ inv.max_uses | default: '∞' }}</td>
                 <td class="text-sm text-muted-foreground">{{ inv.expires_at | default: 'Never' }}</td>
                 <td>{{ inv.admin_email }}</td>
-                <td><code>https://{{ appDomain }}/invite/{{ inv.code }}</code></td>
+                <td><code>https://dashboard.{{ appDomain }}/invite/{{ inv.code }}</code></td>
                 <td class="text-right">
                   <button class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm" data-code="{{ inv.code }}">Revoke</button>
                 </td>
