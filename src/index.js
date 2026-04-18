@@ -7,6 +7,7 @@ import crypto from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:dns/promises";
 import * as db from "./db.js";
+import { serveStatic } from 'hono/bun'
 import {
   getChallengeResponse,
   issueCertificate,
