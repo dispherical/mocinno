@@ -91,16 +91,14 @@ async function findContainerByUsername(username) {
   return { vmid: user.vmid, ip, status, sshKeys: user.ssh_keys, suspended };
 }
 
-function verifyClientKey(ctx, allowedKeyStr) {
-  console.log(`[bastion] verify user=${ctx.username} keyAlgo=${ctx.key.algo} hashAlgo=${ctx.hashAlgo} hasSig=${!!ctx.signature}`);
-  
+function verifyClientKey(ctx, allowedKeyStr) {  
   if (!allowedKeyStr) return false;
   const allowedKey = utils.parseKey(allowedKeyStr);
   if (allowedKey instanceof Error) return false;
   const parsed = Array.isArray(allowedKey) ? allowedKey[0] : allowedKey;
   if (!ctx.key.data.equals(parsed.getPublicSSH())) return false;
   if (!ctx.signature) return true;
-  return parsed.verify(ctx.blob, ctx.signature, ctx.sigAlgo);
+  return parsed.verify(ctx.blob, ctx.signature, ctx.hashAlgo);
 }
 
 function writeAndClose(stream, message) {
