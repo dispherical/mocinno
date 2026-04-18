@@ -734,7 +734,7 @@
       sshKeyAddBtn.disabled = true;
       return;
     }
-    if (/^ssh-(ed25519|rsa|ecdsa)\s+\S+/.test(val)) {
+    if (/^(?!.*\n)(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\s+\S+/.test(val)) {
       sshKeyAddStatus.innerText = 'Looks good!';
       sshKeyAddStatus.className = 'uk-form-help text-green-600 mt-1';
       sshKeyAddBtn.disabled = false;
