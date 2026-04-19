@@ -1333,7 +1333,7 @@ app.post("/api/admin/applications/approve", async (c) => {
     unprivileged: 1,
     features: "nesting=1",
     cores: 1,
-    memory: 1024,
+    memory: 2048,
     swap: 512,
     net0,
     hostname: application.username,
