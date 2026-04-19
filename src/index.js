@@ -1038,7 +1038,6 @@ async function proxyRequest(req, target) {
   for (const [k, v] of req.headers) {
     const lower = k.toLowerCase();
     if (
-      lower !== "host" &&
       lower !== "connection" &&
       lower !== "transfer-encoding"
     ) {
