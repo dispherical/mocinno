@@ -1105,9 +1105,9 @@ async function proxyRequest(req, target) {
     }
 
     const setCookies =
-      proxyRes.headers.getSetCookie == "function"
+      proxyRes.headers.getSetCookie === "function"
         ? proxyRes.headers.getSetCookie()
-        : [];
+        : [proxyRes.headers.get("set-cookie")] || [];
 
     for (const cookie of setCookies) {
       resHeaders.append("Set-Cookie", cookie);
