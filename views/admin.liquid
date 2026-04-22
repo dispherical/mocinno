@@ -10,204 +10,247 @@
     <a href="/dashboard" class="uk-btn uk-btn-default">&larr; Back to Dashboard</a>
   </div>
 
+  <ul class="uk-subnav uk-subnav-pill mb-0" id="admin-tabs">
+    <li class="uk-active"><a href="#" data-target="tab-stats">Stats</a></li>
+    <li><a href="#" data-target="tab-applications">Applications{% if applications.size > 0 %} ({{ applications.size }}){% endif %}</a></li>
+    <li><a href="#" data-target="tab-invites">Invites</a></li>
+    <li><a href="#" data-target="tab-users">Users</a></li>
+  </ul>
+
   <div class="border-border my-6 border-t"></div>
 
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h3 class="text-lg font-medium">Node Stats</h3>
-    </div>
+  <div id="admin-tab-content" class="w-full relative">
+    <div id="tab-stats" class="space-y-6 block">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-medium">Node Stats</h3>
+      </div>
 
-    {% for node in stats %}
+      {% for node in stats %}
         <div>
-            <h4 class="text-md font-medium mb-4">{{ node.name }}</h4>
+          <h4 class="text-md font-medium mb-4">{{ node.name }}</h4>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="border border-border rounded-md p-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Total containers</h4>
-                    <p class="text-xl font-bold">{{ node.stats.container_count }}</p>
-                </div>
-                <div class="border border-border rounded-md p-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">CPU Usage</h4>
-                    <p class="text-xl font-bold">{{ node.stats.cpu_percent }}%</p>
-                </div>
-                <div class="border border-border rounded-md p-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Ram Usage</h4>
-                    <p class="text-xl font-bold">{{ node.stats.ram_used_gb }} GB / {{ node.stats.ram_total_gb }} GB ({{ node.stats.ram_percent }}%)</p>
-                </div>
-                <div class="border border-border rounded-md p-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Storage Usage</h4>
-                    <p class="text-xl font-bold">{{ node.stats.rootfs_used_gb }} GB / {{ node.stats.rootfs_total_gb }} GB ({{ node.stats.rootfs_percent }}%)</p>
-                </div>
-                <div class="border border-border rounded-md p-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Load Avg. (&gt; {{ node.stats.core_count }} is bad)</h4>
-                    <p class="text-xl font-bold">{{ node.stats.load_avg }}</p>
-                </div>
-                <div class="border border-border rounded-md p-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Uptime</h4>
-                    <p class="text-xl font-bold">{{ node.stats.uptime }}</p>
-                </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="border border-border rounded-md p-4">
+              <h4 class="text-sm font-medium text-muted-foreground">Total containers</h4>
+              <p class="text-xl font-bold">{{ node.stats.container_count }}</p>
             </div>
+            <div class="border border-border rounded-md p-4">
+              <h4 class="text-sm font-medium text-muted-foreground">CPU Usage</h4>
+              <p class="text-xl font-bold">{{ node.stats.cpu_percent }}%</p>
+            </div>
+            <div class="border border-border rounded-md p-4">
+              <h4 class="text-sm font-medium text-muted-foreground">Ram Usage</h4>
+              <p class="text-xl font-bold">{{ node.stats.ram_used_gb }} GB / {{ node.stats.ram_total_gb }} GB ({{ node.stats.ram_percent }}%)</p>
+            </div>
+            <div class="border border-border rounded-md p-4">
+              <h4 class="text-sm font-medium text-muted-foreground">Storage Usage</h4>
+              <p class="text-xl font-bold">{{ node.stats.rootfs_used_gb }} GB / {{ node.stats.rootfs_total_gb }} GB ({{ node.stats.rootfs_percent }}%)</p>
+            </div>
+            <div class="border border-border rounded-md p-4">
+              <h4 class="text-sm font-medium text-muted-foreground">Load Avg. (&gt; {{ node.stats.core_count }} is bad)</h4>
+              <p class="text-xl font-bold">{{ node.stats.load_avg }}</p>
+            </div>
+            <div class="border border-border rounded-md p-4">
+              <h4 class="text-sm font-medium text-muted-foreground">Uptime</h4>
+              <p class="text-xl font-bold">{{ node.stats.uptime }}</p>
+            </div>
+          </div>
         </div>
-    {% endfor %}
-  </div>
-
-  <div class="border-border my-6 border-t"></div>
-
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h3 class="text-lg font-medium">Pending Applications ({{ applications.size }})</h3>
+      {% endfor %}
     </div>
 
-    {% if applications.size > 0 %}
-      <div class="border border-border rounded-md">
-        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Username</th>
-              <th>Reason</th>
-              <th>Submitted</th>
-              <th class="w-48 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for app in applications %}
-              <tr id="app-{{ app.id }}">
-                <td class="font-medium">{{ app.email }}</td>
-                <td>{{ app.username }}</td>
-                <td class="max-w-[300px] break-words whitespace-normal text-sm">{{ app.reason }}</td>
-                <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
-                <td class="text-right space-x-1">
-                  <button class="approve-btn uk-btn uk-btn-primary uk-btn-sm" data-id="{{ app.id }}">Approve</button>
-                  <button class="reject-btn uk-btn uk-btn-destructive uk-btn-sm" data-id="{{ app.id }}">Reject</button>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <div id="tab-applications" class="space-y-6 hidden">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-medium">Pending Applications ({{ applications.size }})</h3>
       </div>
-    {% else %}
-      <p class="text-muted-foreground text-sm mt-4">No pending applications.</p>
-    {% endif %}
 
-    <div class="border-border my-6 border-t"></div>
-
-    <div class="flex items-center justify-between">
-      <div class="space-y-0.5">
-        <h3 class="text-lg font-medium">Admin Invites</h3>
-        <p class="text-muted-foreground text-sm">An invite can bypass ID verification. This is useful for hackathons, large gatherings, etc.</p>
-      </div>
-    </div>
-
-    <div class="flex gap-x-2 mt-4 max-w-2xl">
-      <input type="number" id="invite-max-uses" class="uk-input" placeholder="Max Uses (Empty=Infinite)">
-      <input type="datetime-local" id="invite-expires" class="uk-input" placeholder="Expires At">
-      <button id="btn-create-invite" class="uk-btn uk-btn-primary flex-none">Create Invite</button>
-    </div>
-
-    {% if invites.size > 0 %}
-      <div class="border border-border rounded-md mt-6">
-        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Uses</th>
-              <th>Max Uses</th>
-              <th>Expires</th>
-              <th>Created By</th>
-              <th>Link</th>
-              <th class="w-24 border-none text-right"></th>
-            </tr>
-          </thead>
-          <tbody id="invites-tbody">
-            {% for inv in invites %}
-              <tr id="invite-row-{{ inv.code }}">
-                <td class="font-medium">{{ inv.code }}</td>
-                <td>{{ inv.uses }}</td>
-                <td>{{ inv.max_uses | default: '∞' }}</td>
-                <td class="text-sm text-muted-foreground">{{ inv.expires_at | default: 'Never' }}</td>
-                <td>{{ inv.admin_email }}</td>
-                <td><code>https://dashboard.{{ appDomain }}/invite/{{ inv.code }}</code></td>
-                <td class="text-right">
-                  <button class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm" data-code="{{ inv.code }}">Revoke</button>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p id="no-invites-msg" class="text-muted-foreground text-sm mt-4">No invites created yet.</p>
-    {% endif %}
-
-    <div class="border-border my-6 border-t"></div>
-
-    <div class="flex items-center justify-between mb-4">
-      <div class="space-y-0.5">
-        <h3 class="text-lg font-medium">Users</h3>
-      </div>
-    </div>
-
-    <div class="max-w-md">
-      <div class="uk-inline w-full">
-        <span class="uk-form-icon" uk-icon="icon: search"></span>
-        <input type="text" id="user-search" class="uk-input" placeholder="Search by username, VMID, or IP...">
-      </div>
-    </div>
-
-    <div id="users-table-wrap" class="mt-4">
-      <p class="text-muted-foreground text-sm">Loading...</p>
-    </div>
-    <div id="users-paging" class="flex gap-x-2 items-center mt-4"></div>
-
-    <div class="border-border my-6 border-t"></div>
-
-    <div class="flex items-center justify-between mb-4">
-      <div class="space-y-0.5">
-        <h3 class="text-lg font-medium">All Applications</h3>
-      </div>
-    </div>
-
-    {% if allApplications.size > 0 %}
-      <div class="border border-border rounded-md mt-4">
-        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Username</th>
-              <th>Status</th>
-              <th>Reviewed By</th>
-              <th>Submitted</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for app in allApplications %}
+      {% if applications.size > 0 %}
+        <div class="border border-border rounded-md">
+          <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
+            <thead>
               <tr>
-                <td class="font-medium">{{ app.email }}</td>
-                <td>{{ app.username }}</td>
-                <td>
-                  <span>
-                    {{ app.status }}
-                  </span>
-                </td>
-                <td class="text-sm text-muted-foreground">{{ app.reviewed_by }}</td>
-                <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Reason</th>
+                <th>Submitted</th>
+                <th class="w-48 text-right">Actions</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="text-muted-foreground text-sm mt-4">No applications yet.</p>
-    {% endif %}
+            </thead>
+            <tbody>
+              {% for app in applications %}
+                <tr id="app-{{ app.id }}">
+                  <td class="font-medium">{{ app.email }}</td>
+                  <td>{{ app.username }}</td>
+                  <td class="max-w-[300px] break-words whitespace-normal text-sm">{{ app.reason }}</td>
+                  <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
+                  <td class="text-right space-x-1">
+                    <button class="approve-btn uk-btn uk-btn-primary uk-btn-sm" data-id="{{ app.id }}">Approve</button>
+                    <button class="reject-btn uk-btn uk-btn-destructive uk-btn-sm" data-id="{{ app.id }}">Reject</button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted-foreground text-sm mt-4">No pending applications.</p>
+      {% endif %}
 
-    <p id="admin-message" class="mt-4 font-medium"></p>
+      <div class="border-border my-6 border-t"></div>
+
+      <div class="flex items-center justify-between mb-4">
+        <div class="space-y-0.5">
+          <h3 class="text-lg font-medium">All Applications</h3>
+        </div>
+      </div>
+
+      {% if allApplications.size > 0 %}
+        <div class="border border-border rounded-md mt-4">
+          <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Status</th>
+                <th>Reviewed By</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for app in allApplications %}
+                <tr>
+                  <td class="font-medium">{{ app.email }}</td>
+                  <td>{{ app.username }}</td>
+                  <td>
+                    <span>
+                      {{ app.status }}
+                    </span>
+                  </td>
+                  <td class="text-sm text-muted-foreground">{{ app.reviewed_by }}</td>
+                  <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted-foreground text-sm mt-4">No applications yet.</p>
+      {% endif %}
+    </div>
+
+    <div id="tab-invites" class="space-y-6 hidden">
+      <div class="flex items-center justify-between">
+        <div class="space-y-0.5">
+          <h3 class="text-lg font-medium">Admin Invites</h3>
+          <p class="text-muted-foreground text-sm">An invite can bypass ID verification. This is useful for hackathons, large gatherings, etc.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-x-2 mt-4 max-w-2xl">
+        <input type="number" id="invite-max-uses" class="uk-input" placeholder="Max Uses (Empty=Infinite)">
+        <input type="datetime-local" id="invite-expires" class="uk-input" placeholder="Expires At">
+        <button id="btn-create-invite" class="uk-btn uk-btn-primary flex-none">Create Invite</button>
+      </div>
+
+      {% if invites.size > 0 %}
+        <div class="border border-border rounded-md mt-6">
+          <table class="uk-table uk-table-divider uk-table-hover uk-table-middle mb-0">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Uses</th>
+                <th>Max Uses</th>
+                <th>Expires</th>
+                <th>Created By</th>
+                <th>Link</th>
+                <th class="w-24 border-none text-right"></th>
+              </tr>
+            </thead>
+            <tbody id="invites-tbody">
+              {% for inv in invites %}
+                <tr id="invite-row-{{ inv.code }}">
+                  <td class="font-medium">{{ inv.code }}</td>
+                  <td>{{ inv.uses }}</td>
+                  <td>{{ inv.max_uses | default: '∞' }}</td>
+                  <td class="text-sm text-muted-foreground">{{ inv.expires_at | default: 'Never' }}</td>
+                  <td>{{ inv.admin_email }}</td>
+                  <td><code>https://dashboard.{{ appDomain }}/invite/{{ inv.code }}</code></td>
+                  <td class="text-right">
+                    <button class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm" data-code="{{ inv.code }}">Revoke</button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p id="no-invites-msg" class="text-muted-foreground text-sm mt-4">No invites created yet.</p>
+      {% endif %}
+    </div>
+
+    <div id="tab-users" class="space-y-6 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div class="space-y-0.5">
+          <h3 class="text-lg font-medium">Users</h3>
+        </div>
+      </div>
+
+      <div class="max-w-md">
+        <div class="uk-inline w-full">
+          <span class="uk-form-icon" uk-icon="icon: search"></span>
+          <input type="text" id="user-search" class="uk-input" placeholder="Search by username, VMID, or IP...">
+        </div>
+      </div>
+
+      <div id="users-table-wrap" class="mt-4">
+        <p class="text-muted-foreground text-sm">Loading...</p>
+      </div>
+      <div id="users-paging" class="flex gap-x-2 items-center mt-4"></div>
+    </div>
+
   </div>
+
+  <p id="admin-message" class="mt-4 font-medium"></p>
 </div>
 
 <script>
+  // ---------- Tab switching (with hash persistence) ----------
+  function activateTab(targetId, push) {
+    const link = document.querySelector(`#admin-tabs a[data-target="${targetId}"]`);
+    if (!link) return;
+    document.querySelectorAll('#admin-tabs li').forEach((li) => li.classList.remove('uk-active'));
+    link.parentElement.classList.add('uk-active');
+    document.querySelectorAll('#admin-tab-content > div').forEach((c) => {
+      c.classList.remove('block');
+      c.classList.add('hidden');
+    });
+    const tgt = document.getElementById(targetId);
+    if (tgt) {
+      tgt.classList.remove('hidden');
+      tgt.classList.add('block');
+    }
+    if (push) {
+      try { history.replaceState(null, '', '#' + targetId); } catch {}
+    }
+  }
+
+  document.querySelectorAll('#admin-tabs a').forEach((t) => {
+    t.addEventListener('click', (e) => {
+      e.preventDefault();
+      activateTab(t.dataset.target, true);
+    });
+  });
+
+  // Restore tab from hash on load (so location.reload() keeps you on the same tab)
+  (function () {
+    const hash = (location.hash || '').replace('#', '');
+    const valid = ['tab-stats', 'tab-applications', 'tab-invites', 'tab-users'];
+    if (valid.includes(hash)) activateTab(hash, false);
+  })();
+
   const adminMsg = document.getElementById('admin-message');
 
+  // ---------- Invites ----------
   document.getElementById('btn-create-invite')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-create-invite');
     const maxUses = document.getElementById('invite-max-uses').value;
@@ -251,6 +294,7 @@
     });
   });
 
+  // ---------- Users ----------
   let usersPage = 1;
   let usersQuery = '';
   let usersDebounce = null;
@@ -407,6 +451,7 @@
     }
   }
 
+  // ---------- Applications ----------
   document.querySelectorAll('.approve-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
