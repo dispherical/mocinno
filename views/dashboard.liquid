@@ -194,7 +194,7 @@
                 <tbody>
                   {% for k in user.ssh_keys %}
                     <tr data-key="{{ k }}">
-                      <td class="pl-4 font-mono text-sm text-muted-foreground break-all">{{ k }}</td>
+                      <td class="pl-4 font-mono text-sm text-muted-foreground" style="word-break: break-all; white-space: normal; overflow-wrap: anywhere;">{{ k }}</td>
                       <td class="text-right pr-4">
                         <button
                           class="ssh-key-rm-btn uk-btn uk-btn-text text-destructive hover:underline text-sm"
