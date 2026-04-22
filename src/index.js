@@ -1400,7 +1400,8 @@ app.post("/api/admin/applications/approve", async (c) => {
     subject: "Nest account approved!",
     text: `Your Nest account was approved. Congrats!
 
-Internal IP: ${allocated.ip}
+Internal IPv4: ${allocated.ip}
+Public IPv6: ${serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : "N/A"}
 Username: ${application.username}
 Operating System: ${templateConfig.name || process.env.OS_TEMPLATE}
 
@@ -1408,7 +1409,7 @@ To login to Nest, you may use ssh ${application.username}@hackclub.app
 
 From the Dashboard (https://dashboard.hackclub.app/dashboard), you can manage custom domains, reboot your container, stop your container, or even delete your Nest account.
 
-By default, you have 1 GB of RAM, 1 core of CPU, and 8 GB of storage. To increase this limit, you may contact the Nest team on slack via #nest-help`,
+By default, you have 2 GB of RAM, 2 CPU cores, and 8 GB of storage. To increase this limit, you may fill out this form: https://nest.fillout.com/resources`,
   });
   return c.json({ message: "Approved and container created", vmid, password });
 });
