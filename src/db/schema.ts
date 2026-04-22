@@ -8,6 +8,7 @@ export const usersTable = pgTable("users", {
   vmid: integer("vmid"),
   ip: text("ip"),
   ipv6: text("ipv6"),
+  node: text("node").default("nest-prox-2"),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -28,7 +29,6 @@ export const applicationsTable = pgTable("applications", {
   username: text("username").notNull(),
   ssh_key: text("ssh_key").notNull(),
   reason: text("reason").notNull(),
-  server: text("server").notNull().default("nest-prov-1"),
   template: text("template").notNull().default("Debian 13"),
 
   status: text("status").notNull().default("pending"),

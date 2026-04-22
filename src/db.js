@@ -211,12 +211,11 @@ export async function createApplication({
   username,
   sshKey,
   reason,
-  server,
   template,
 }) {
   const [app] = await db
     .insert(applicationsTable)
-    .values({ sub, email, username, ssh_key: sshKey, reason, server, template })
+    .values({ sub, email, username, ssh_key: sshKey, reason, template })
     .returning();
   return app;
 }

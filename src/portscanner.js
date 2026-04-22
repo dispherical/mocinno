@@ -1,3 +1,7 @@
+import * as db from "./db.js";
+
+const config = require("../config.js");
+
 const WINDOW_MS = 5 * 60 * 1000;
 const SLOW_BIG_HIT_THRESHOLD = 100;
 const SLOW_IP_THRESHOLD = 20;
@@ -17,8 +21,7 @@ const recentPorts = {};
 const lastSuspended = new Map();
 const ipToVmid = new Map();
 const vmidToName = new Map();
-
-import * as db from "./db.js";
+const vmidToNode = new Map();
 
 async function pveFetch(path, method = "GET", body = null) {
   const url = `${process.env.PVE_URL}${path}`;
@@ -47,36 +50,53 @@ async function pveFetch(path, method = "GET", body = null) {
 }
 
 async function refreshIPMap() {
-  const node = process.env.PVE_NODE;
+  const vmidsWithKnownIP = new Set();
 
   try {
     const users = await db.getAllUsers();
     for (const user of users) {
       if (user.ip && user.vmid) {
         ipToVmid.set(user.ip, user.vmid);
-        vmidToName.set(user.vmid, user.username);
+        vmidsWithKnownIP.add(user.vmid);
+      }
+      if (user.vmid) {
+        if (user.username) vmidToName.set(user.vmid, user.username);
+        if (user.node) vmidToNode.set(user.vmid, user.node);
       }
     }
-  } catch {}
-
-  try {
-    const list = await pveFetch(`/nodes/${node}/lxc`);
-    for (const ct of list.data) {
-      if (ct.name) vmidToName.set(ct.vmid, ct.name);
-      if (ipToVmid.has(ct.vmid)) continue;
-      try {
-        const ifaces = await pveFetch(
-          `/nodes/${node}/lxc/${ct.vmid}/interfaces`,
-        );
-        const eth0 = ifaces.data?.find((i) => i.name === "eth0");
-        const ip = eth0?.["inet"]?.split("/")[0];
-        if (ip) ipToVmid.set(ip, ct.vmid);
-      } catch {}
-    }
-    console.log(`IP map refreshed: ${ipToVmid.size} containers`);
   } catch (e) {
-    console.error("failed to refresh IP map:", e.message);
+    console.error("failed to load users from db:", e.message);
   }
+
+  for (const server of Object.values(config.servers)) {
+    const node = server.node;
+    try {
+      const list = await pveFetch(`/nodes/${node}/lxc`);
+      for (const ct of list.data) {
+        vmidToNode.set(ct.vmid, node);
+        if (ct.name && !vmidToName.has(ct.vmid)) {
+          vmidToName.set(ct.vmid, ct.name);
+        }
+        if (vmidsWithKnownIP.has(ct.vmid)) continue;
+
+        try {
+          const ifaces = await pveFetch(
+            `/nodes/${node}/lxc/${ct.vmid}/interfaces`,
+          );
+          const eth0 = ifaces.data?.find((i) => i.name === "eth0");
+          const ip = eth0?.["inet"]?.split("/")[0];
+          if (ip) {
+            ipToVmid.set(ip, ct.vmid);
+            vmidsWithKnownIP.add(ct.vmid);
+          }
+        } catch {}
+      }
+    } catch (e) {
+      console.error(`failed to list containers on ${node}:`, e.message);
+    }
+  }
+
+  console.log(`IP map refreshed: ${ipToVmid.size} containers`);
 }
 
 function getState(vmid) {
@@ -108,7 +128,8 @@ function isSequential(vmid, destIP, port) {
 }
 
 async function setContainerDescription(vmid, description) {
-  const node = process.env.PVE_NODE;
+  const node = vmidToNode.get(vmid);
+  if (!node) throw new Error(`unknown node for vmid ${vmid}`);
   await pveFetch(`/nodes/${node}/lxc/${vmid}/config`, "PUT", { description });
 }
 
@@ -118,15 +139,18 @@ async function suspendContainer(vmid, reason) {
   if (last && now - last < SUSPEND_COOLDOWN_MS) return;
   lastSuspended.set(vmid, now);
   console.error(`suspend! vmid ${vmid} — ${reason}`);
-  const node = process.env.PVE_NODE;
+
+  const node = vmidToNode.get(vmid);
+  if (!node) {
+    console.error(`failed to suspend vmid ${vmid}: unknown node`);
+    return;
+  }
+
   try {
     await setContainerDescription(vmid, `suspend: ${reason}`);
     await pveFetch(`/nodes/${node}/lxc/${vmid}/status/stop`, "POST");
   } catch (e) {
-    console.error(
-      `failed to suspend! Failed to suspend vmid ${vmid}:`,
-      e.message,
-    );
+    console.error(`failed to suspend vmid ${vmid}:`, e.message);
   }
   await notifySlack(vmid, reason);
 }

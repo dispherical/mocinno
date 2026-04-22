@@ -41,24 +41,25 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-async function getContainerConfig(vmid) {
-  const node = process.env.PVE_NODE;
+async function getContainerConfig(ct) {
   try {
-    const config = await pveFetch(`/nodes/${node}/lxc/${vmid}/config`);
+    const config = await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`);
     return config.data;
   } catch {
     return null;
   }
 }
 
-async function isContainerSuspended(vmid) {
-  const config = await getContainerConfig(vmid);
+async function isContainerSuspended(ct) {
+  const config = await getContainerConfig(ct);
+
   return config?.description?.toLowerCase().includes("suspend") ?? false;
 }
 
-async function setContainerDescription(vmid, description) {
-  const node = process.env.PVE_NODE;
-  await pveFetch(`/nodes/${node}/lxc/${vmid}/config`, "PUT", { description });
+async function setContainerDescription(ct, description) {
+  await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`, "PUT", {
+    description,
+  });
 }
 
 const app = new Hono();
@@ -143,11 +144,13 @@ async function checkDNSVerification(domain, username) {
   return false;
 }
 
-async function getContainerIP(vmid, userIp) {
+async function getContainerIP(ct, userIp) {
   if (userIp) return userIp;
-  const node = process.env.PVE_NODE;
+
   try {
-    const ifaces = await pveFetch(`/nodes/${node}/lxc/${vmid}/interfaces`);
+    const ifaces = await pveFetch(
+      `/nodes/${ct.node}/lxc/${ct.vmid}/interfaces`,
+    );
     const eth0 = ifaces.data?.find((i) => i.name === "eth0");
     return eth0?.["inet"]?.split("/")[0] ?? null;
   } catch {
@@ -155,10 +158,11 @@ async function getContainerIP(vmid, userIp) {
   }
 }
 
-async function getContainerStatus(vmid) {
-  const node = process.env.PVE_NODE;
+async function getContainerStatus(ct) {
   try {
-    const status = await pveFetch(`/nodes/${node}/lxc/${vmid}/status/current`);
+    const status = await pveFetch(
+      `/nodes/${ct.node}/lxc/${ct.vmid}/status/current`,
+    );
     return status.data;
   } catch {
     return null;
@@ -168,6 +172,24 @@ async function getContainerStatus(vmid) {
 async function getNextVmid() {
   const clusterNext = await pveFetch(`/cluster/nextid`);
   return clusterNext.data;
+}
+
+async function getNextNode() {
+  const config = require("../config.js");
+
+  const percentsAllocated = await Promise.all(
+    Object.entries(config.servers).map(async ([, { node, maxServers }]) => {
+      const { data } = await pveFetch(`/nodes/${node}/lxc`);
+      return { node, percent: data.length / maxServers };
+    }),
+  );
+
+  if (percentsAllocated.length === 0) return null;
+
+  percentsAllocated.sort((a, b) => a.percent - b.percent);
+  const best = percentsAllocated[0];
+
+  return best.node;
 }
 
 async function waitForTask(node, upid, timeoutMs = 30000) {
@@ -308,25 +330,26 @@ app.post("/config", localOnly, denyForward, async (c) => {
   const user = await db.findUserByUsername(username);
   if (!user || !user.vmid) return c.json({ config: {} });
 
-  const suspended = await isContainerSuspended(user.vmid);
+  const suspended = await isContainerSuspended(user);
   if (suspended) {
     return c.json({ config: {} });
   }
 
-  let ip = await getContainerIP(user.vmid, user.ip);
-  const statusRes = await getContainerStatus(user.vmid);
+  let ip = await getContainerIP(user, user.ip);
+  const statusRes = await getContainerStatus(user);
   const status = statusRes?.status;
 
   if (status !== "running") {
     try {
-      const node = process.env.PVE_NODE;
       const result = await pveFetch(
-        `/nodes/${node}/lxc/${user.vmid}/status/start`,
+        `/nodes/${user.node}/lxc/${user.vmid}/status/start`,
         "POST",
       );
-      await waitForTask(node, result.data);
+
+      await waitForTask(user.node, result.data);
       await new Promise((r) => setTimeout(r, 3000));
-      ip = await getContainerIP(user.vmid, null);
+
+      ip = await getContainerIP(user, null);
     } catch {
       return c.json({ config: {} });
     }
@@ -381,9 +404,9 @@ app.get("/dashboard", async (c) => {
   let eligible = false;
 
   if (user?.vmid) {
-    container = await getContainerStatus(user.vmid);
+    container = await getContainerStatus(user);
     domains = await db.getDomainsForUser(user.id);
-    suspended = await isContainerSuspended(user.vmid);
+    suspended = await isContainerSuspended(user);
   } else if (!user) {
     application = await db.getApplicationBySub(profile.sub);
     if (!application || application.status === "rejected") {
@@ -573,7 +596,6 @@ app.post("/api/application/submit", async (c) => {
   const username = body.username?.toLowerCase();
   const sshKey = body.sshKey?.trim();
   const reason = body.reason?.trim();
-  const server = body.server;
   const template = body.template;
 
   if (!username || !/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
@@ -622,7 +644,6 @@ app.post("/api/application/submit", async (c) => {
     username,
     sshKey,
     reason,
-    server,
     template,
   });
 
@@ -647,17 +668,17 @@ app.post("/api/container/start", async (c) => {
     return c.json({ error: "No container found" });
   }
 
-  if (await isContainerSuspended(user.vmid)) {
+  if (await isContainerSuspended(user)) {
     c.status(403);
     return c.json({ error: "Your container is suspended. Contact an admin." });
   }
 
-  const node = process.env.PVE_NODE;
   const result = await pveFetch(
-    `/nodes/${node}/lxc/${user.vmid}/status/start`,
+    `/nodes/${user.node}/lxc/${user.vmid}/status/start`,
     "POST",
   );
-  await waitForTask(node, result.data);
+  await waitForTask(user.node, result.data);
+
   return c.json({ message: "Container started" });
 });
 
@@ -674,17 +695,17 @@ app.post("/api/container/stop", async (c) => {
     return c.json({ error: "No container found" });
   }
 
-  if (await isContainerSuspended(user.vmid)) {
+  if (await isContainerSuspended(user)) {
     c.status(403);
     return c.json({ error: "Your container is suspended. Contact an admin." });
   }
 
-  const node = process.env.PVE_NODE;
   const result = await pveFetch(
-    `/nodes/${node}/lxc/${user.vmid}/status/stop`,
+    `/nodes/${user.node}/lxc/${user.vmid}/status/stop`,
     "POST",
   );
-  await waitForTask(node, result.data);
+  await waitForTask(user.node, result.data);
+
   return c.json({ message: "Container stopped" });
 });
 
@@ -701,17 +722,17 @@ app.post("/api/container/reboot", async (c) => {
     return c.json({ error: "No container found" });
   }
 
-  if (await isContainerSuspended(user.vmid)) {
+  if (await isContainerSuspended(user)) {
     c.status(403);
     return c.json({ error: "Your container is suspended. Contact an admin." });
   }
 
-  const node = process.env.PVE_NODE;
   const result = await pveFetch(
-    `/nodes/${node}/lxc/${user.vmid}/status/reboot`,
+    `/nodes/${user.node}/lxc/${user.vmid}/status/reboot`,
     "POST",
   );
-  await waitForTask(node, result.data);
+  await waitForTask(user.node, result.data);
+
   return c.json({ message: "Container rebooted" });
 });
 
@@ -738,7 +759,7 @@ app.post("/api/container/delete", async (c) => {
     return c.json({ error: "No container found" });
   }
 
-  if (await isContainerSuspended(user.vmid)) {
+  if (await isContainerSuspended(user)) {
     c.status(403);
     return c.json({
       error:
@@ -746,22 +767,21 @@ app.post("/api/container/delete", async (c) => {
     });
   }
 
-  const node = process.env.PVE_NODE;
-  const status = await getContainerStatus(user.vmid);
+  const status = await getContainerStatus(user);
 
   if (status?.status === "running") {
     const stopResult = await pveFetch(
-      `/nodes/${node}/lxc/${user.vmid}/status/stop`,
+      `/nodes/${user.node}/lxc/${user.vmid}/status/stop`,
       "POST",
     );
-    await waitForTask(node, stopResult.data);
+    await waitForTask(user.node, stopResult.data);
   }
 
   const deleteResult = await pveFetch(
-    `/nodes/${node}/lxc/${user.vmid}`,
+    `/nodes/${user.node}/lxc/${user.vmid}`,
     "DELETE",
   );
-  await waitForTask(node, deleteResult.data);
+  await waitForTask(user.node, deleteResult.data);
   await db.deleteUser(profile.sub);
 
   return c.json({ message: "Deleted", vmid: user.vmid });
@@ -811,7 +831,7 @@ app.post("/api/domains/add", async (c) => {
     return c.json({ error: "Domain is already taken" });
   }
 
-  const ip = await getContainerIP(user.vmid, user.ip);
+  const ip = await getContainerIP(user, user.ip);
   if (!ip) {
     c.status(500);
     return c.json({ error: "Could not determine container IP" });
@@ -974,9 +994,8 @@ app.post("/api/ssh-keys/add", async (c) => {
   await db.updateUserSSHKeys(profile.sub, newKeys);
 
   if (user.vmid) {
-    const node = process.env.PVE_NODE;
     try {
-      await pveFetch(`/nodes/${node}/lxc/${user.vmid}/config`, "PUT", {
+      await pveFetch(`/nodes/${user.node}/lxc/${user.vmid}/config`, "PUT", {
         "ssh-public-keys": `${bastionPubKey}\n${newKeys.join("\n")}`,
       });
     } catch (e) {
@@ -1025,9 +1044,8 @@ app.post("/api/ssh-keys/remove", async (c) => {
   await db.updateUserSSHKeys(profile.sub, newKeys);
 
   if (user.vmid) {
-    const node = process.env.PVE_NODE;
     try {
-      await pveFetch(`/nodes/${node}/lxc/${user.vmid}/config`, "PUT", {
+      await pveFetch(`/nodes/${user.node}/lxc/${user.vmid}/config`, "PUT", {
         "ssh-public-keys": `${bastionPubKey}\n${newKeys.join("\n")}`,
       });
     } catch (e) {
@@ -1283,8 +1301,8 @@ app.get("/api/admin/users", async (c) => {
     let container = null;
     let suspended = false;
     if (user.vmid) {
-      container = await getContainerStatus(user.vmid);
-      suspended = await isContainerSuspended(user.vmid);
+      container = await getContainerStatus(user);
+      suspended = await isContainerSuspended(user);
     }
     usersWithStatus.push({ ...user, container, suspended });
   }
@@ -1324,26 +1342,29 @@ app.post("/api/admin/applications/approve", async (c) => {
   }
 
   const application = await db.getApplicationById(appId);
+
   if (!application) {
     c.status(404);
     return c.json({ error: "Application not found" });
   }
+
   if (application.status !== "pending") {
     c.status(400);
     return c.json({ error: "Application already processed" });
   }
 
   const config = require("../config.js");
-  const serverConfig =
-    config.servers.find((s) => s.name === application.server) ||
-    config.servers[0];
+
+  const vmid = await getNextVmid();
+  const node = await getNextNode();
+
+  const serverConfig = config.servers.find((s) => s.node === node);
+
   const templateConfig = Array.isArray(serverConfig.templates)
     ? serverConfig.templates.find((t) => t.name === application.template) ||
       serverConfig.templates[0]
     : serverConfig.templates;
 
-  const vmid = await getNextVmid();
-  const node = serverConfig.node || process.env.PVE_NODE;
   const password = crypto.randomBytes(12).toString("hex");
   const allocated = await db.allocateIP(
     serverConfig.ipv4.cidr,
@@ -1388,7 +1409,8 @@ app.post("/api/admin/applications/approve", async (c) => {
     sshKeys: [application.ssh_key],
     vmid: parseInt(vmid),
     ip: allocated.ip,
-    ipv6: `${serverConfig.ipv6.prefix}${vmid}`,
+    ipv6: serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : null,
+    node,
   });
 
   await db.updateApplicationStatus(appId, "approved", profile.email);
@@ -1463,17 +1485,23 @@ app.post("/api/admin/users/suspend", async (c) => {
     return c.json({ error: "VMID required" });
   }
 
-  const node = process.env.PVE_NODE;
-  await setContainerDescription(vmid, `suspend: ${reason}`);
+  const user = await db.findUserByVmid(vmid);
+
+  if (!user) {
+    c.status(404);
+    return c.json({ error: "No account found" });
+  }
+
+  await setContainerDescription(user, `suspend: ${reason}`);
 
   try {
-    const status = await getContainerStatus(vmid);
+    const status = await getContainerStatus(user);
     if (status?.status === "running") {
       const stopResult = await pveFetch(
-        `/nodes/${node}/lxc/${vmid}/status/stop`,
+        `/nodes/${user.node}/lxc/${user.vmid}/status/stop`,
         "POST",
       );
-      await waitForTask(node, stopResult.data);
+      await waitForTask(user.node, stopResult.data);
     }
   } catch {}
 
@@ -1494,7 +1522,14 @@ app.post("/api/admin/users/unsuspend", async (c) => {
     return c.json({ error: "VMID required" });
   }
 
-  await setContainerDescription(vmid, "");
+  const user = await db.findUserByVmid(vmid);
+
+  if (!user) {
+    c.status(404);
+    return c.json({ error: "No account found" });
+  }
+
+  await setContainerDescription(user, "");
   return c.json({ message: `Container ${vmid} unsuspended` });
 });
 
@@ -1512,44 +1547,61 @@ app.post("/api/admin/users/update", async (c) => {
     return c.json({ error: "VMID required" });
   }
 
-  const node = process.env.PVE_NODE;
+  const user = await db.findUserByVmid(vmid);
+
+  if (!user) {
+    c.status(404);
+    return c.json({ error: "No account found" });
+  }
+
   const updates = {};
 
   if (body.cores !== undefined) {
     const cores = parseInt(body.cores);
+
     if (isNaN(cores) || cores < 1 || cores > 16) {
       c.status(400);
       return c.json({ error: "Cores must be 1-16" });
     }
+
     updates.cores = cores;
   }
 
   if (body.memory !== undefined) {
     const memory = parseInt(body.memory);
+
     if (isNaN(memory) || memory < 128 || memory > 32768) {
       c.status(400);
       return c.json({ error: "Memory must be 128-32768 MB" });
     }
+
     updates.memory = memory;
   }
 
   if (body.username !== undefined) {
     const username = body.username.toLowerCase();
+
     if (!/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
       c.status(400);
       return c.json({ error: "Invalid username" });
     }
+
     const taken = await db.isUsernameTaken(username);
     if (taken) {
       c.status(409);
       return c.json({ error: "Username already taken" });
     }
+
     await db.updateUsername(vmid, username);
     updates.hostname = username;
   }
 
   if (Object.keys(updates).length > 0) {
-    await pveFetch(`/nodes/${node}/lxc/${vmid}/config`, "PUT", updates);
+    await pveFetch(
+      `/nodes/${user.node}/lxc/${user.vmid}/config`,
+      "PUT",
+      updates,
+    );
   }
 
   return c.json({ message: "Updated" });

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "node" text DEFAULT 'nest-prox-2';

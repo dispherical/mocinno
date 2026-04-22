@@ -26,7 +26,8 @@ async function pveFetch(path, method = "GET", body = null) {
     options.body = params;
   }
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`PVE API Error: ${res.status}`);
+  if (!res.ok)
+    throw new Error(`PVE API Error: ${res.status} - ${await res.text()}`);
   return res.json();
 }
 
@@ -47,18 +48,17 @@ async function waitForTask(node, upid, timeoutMs = 30000) {
   throw new Error("Task timed out");
 }
 
-async function getContainerConfig(vmid) {
-  const node = process.env.PVE_NODE;
+async function getContainerConfig(ct) {
   try {
-    const config = await pveFetch(`/nodes/${node}/lxc/${vmid}/config`);
+    const config = await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`);
     return config.data;
   } catch {
     return null;
   }
 }
 
-async function isContainerSuspended(vmid) {
-  const config = await getContainerConfig(vmid);
+async function isContainerSuspended(ct) {
+  const config = await getContainerConfig(ct);
   return config?.description?.toLowerCase().includes("suspend") ?? false;
 }
 
@@ -66,13 +66,12 @@ async function findContainerByUsername(username) {
   const user = await db.findUserByUsername(username);
   if (!user?.vmid) return null;
 
-  const node = process.env.PVE_NODE;
   let status = "unknown";
   let ip = user.ip || null;
 
   try {
     const statusRes = await pveFetch(
-      `/nodes/${node}/lxc/${user.vmid}/status/current`,
+      `/nodes/${user.node}/lxc/${user.vmid}/status/current`,
     );
     status = statusRes.data.status;
   } catch {}
@@ -80,18 +79,25 @@ async function findContainerByUsername(username) {
   if (status === "running" && !ip) {
     try {
       const ifaces = await pveFetch(
-        `/nodes/${node}/lxc/${user.vmid}/interfaces`,
+        `/nodes/${user.node}/lxc/${user.vmid}/interfaces`,
       );
       const eth0 = ifaces.data?.find((i) => i.name === "eth0");
       ip = eth0?.["inet"]?.split("/")[0] || null;
     } catch {}
   }
 
-  const suspended = await isContainerSuspended(user.vmid);
-  return { vmid: user.vmid, ip, status, sshKeys: user.ssh_keys, suspended };
+  const suspended = await isContainerSuspended(user);
+  return {
+    vmid: user.vmid,
+    ip,
+    status,
+    sshKeys: user.ssh_keys,
+    suspended,
+    node: user.node,
+  };
 }
 
-function verifyClientKey(ctx, allowedKeyStr) {  
+function verifyClientKey(ctx, allowedKeyStr) {
   if (!allowedKeyStr) return false;
   const allowedKey = utils.parseKey(allowedKeyStr);
   if (allowedKey instanceof Error) return false;
@@ -144,17 +150,16 @@ async function resolveContainer(containerPromise, username, client, stream) {
         `\r\nYour container is ${container.status}. Starting it up...\r\n`,
       );
     try {
-      const node = process.env.PVE_NODE;
       const result = await pveFetch(
-        `/nodes/${node}/lxc/${container.vmid}/status/start`,
+        `/nodes/${container.node}/lxc/${container.vmid}/status/start`,
         "POST",
       );
-      await waitForTask(node, result.data);
+      await waitForTask(container.node, result.data);
       await new Promise((r) => setTimeout(r, 3000));
       if (!container.ip) {
         try {
           const ifaces = await pveFetch(
-            `/nodes/${node}/lxc/${container.vmid}/interfaces`,
+            `/nodes/${container.node}/lxc/${container.vmid}/interfaces`,
           );
           const eth0 = ifaces.data?.find((i) => i.name === "eth0");
           container.ip = eth0?.["inet"]?.split("/")[0];

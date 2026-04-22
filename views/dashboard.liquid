@@ -264,36 +264,19 @@
               {% if eligible %}
                 <div class="bg-white p-8 border border-border rounded-xl shadow-sm space-y-8">
                   <div class="space-y-3">
-                    <h3 class="text-lg font-medium">Select server location</h3>
-                    <p class="text-muted-foreground text-sm">Choose the server location closest to you.</p>
-                    <div class="mt-4 max-w-sm">
-                      <select id="server-input" class="uk-select h-10 w-full">
-                        {% for s in config.servers %}
-                          <option value="{{ s.name }}">{{ s.location }} - {{ s.name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div class="border-border border-t"></div>
-
-                  <div class="space-y-3">
                     <h3 class="text-lg font-medium">Select operating system</h3>
                     <p class="text-muted-foreground text-sm">Choose the OS template to initialize on your container.</p>
                     <div class="mt-4 max-w-sm">
-                      <select id="template-input" class="uk-select h-10 w-full">
-                        {% for s in config.servers %}
+                        <select id="template-input" class="uk-select h-10 w-full">
+                          {% assign s = config.servers[0] %}
                           {% if s.templates.name %}
-                            <option value="{{ s.templates.name }}" data-server="{{ s.name }}">
-                              {{ s.templates.name }}
-                            </option>
+                            <option value="{{ s.templates.name }}">{{ s.templates.name }}</option>
                           {% else %}
                             {% for t in s.templates %}
-                              <option value="{{ t.name }}" data-server="{{ s.name }}">{{ t.name }}</option>
+                              <option value="{{ t.name }}">{{ t.name }}</option>
                             {% endfor %}
                           {% endif %}
-                        {% endfor %}
-                      </select>
+                        </select>
                     </div>
                   </div>
 
@@ -400,7 +383,6 @@
   const usernameInput = document.getElementById('username-input');
   const usernameStatus = document.getElementById('username-status');
   const applyBtn = document.getElementById('apply-btn');
-  const serverInput = document.getElementById('server-input');
   const templateInput = document.getElementById('template-input');
 
   let usernameValid = false;
@@ -410,23 +392,6 @@
   function updateApplyBtn() {
     if (applyBtn) applyBtn.disabled = !(usernameValid && reasonValid);
   }
-
-  serverInput?.addEventListener('change', () => {
-    const selectedServer = serverInput.value;
-    if (!templateInput) return;
-
-    let firstValid = null;
-    Array.from(templateInput.options).forEach((opt) => {
-      const isMatch = opt.dataset.server === selectedServer;
-      if (isMatch) opt.style.display = '';
-      else opt.style.display = 'none';
-      if (isMatch && !firstValid) firstValid = opt.value;
-    });
-
-    if (firstValid) {
-      templateInput.value = firstValid;
-    }
-  });
 
   usernameInput?.addEventListener('input', () => {
     clearTimeout(checkTimeout);
@@ -514,7 +479,6 @@
     const username = usernameInput.value;
     const sshKey = sshKeyInput.value.trim();
     const reason = reasonInput.value.trim();
-    const server = serverInput ? serverInput.value : '';
     const template = templateInput ? templateInput.value : '';
 
     if (msgForm) {
@@ -526,13 +490,12 @@
     usernameInput.disabled = true;
     sshKeyInput.disabled = true;
     reasonInput.disabled = true;
-    if (serverInput) serverInput.disabled = true;
     if (templateInput) templateInput.disabled = true;
     try {
       const res = await fetch('/api/application/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, sshKey, reason, server, template }),
+        body: JSON.stringify({ username, sshKey, reason, template }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -550,7 +513,6 @@
         usernameInput.disabled = false;
         sshKeyInput.disabled = false;
         reasonInput.disabled = false;
-        if (serverInput) serverInput.disabled = false;
         if (templateInput) templateInput.disabled = false;
       }
     } catch (e) {
@@ -562,7 +524,6 @@
       usernameInput.disabled = false;
       sshKeyInput.disabled = false;
       reasonInput.disabled = false;
-      if (serverInput) serverInput.disabled = false;
       if (templateInput) templateInput.disabled = false;
     }
   });
@@ -723,11 +684,6 @@
       }
     });
   });
-
-  if (serverInput) {
-    const ev = new Event('change');
-    serverInput.dispatchEvent(ev);
-  }
 
   const newSshKeyInput = document.getElementById('ssh-key-input');
   const sshKeyAddStatus = document.getElementById('ssh-key-add-status');
