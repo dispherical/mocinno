@@ -1406,10 +1406,11 @@ Username: ${application.username}
 Operating System: ${templateConfig.name || process.env.OS_TEMPLATE}
 
 To login to Nest, you may use ssh ${application.username}@hackclub.app
+By default, you have 2 GB of RAM, 2 CPU cores, and 8 GB of storage. To increase this limit, you may fill out this form: https://nest.fillout.com/resources
 
 From the Dashboard (https://dashboard.hackclub.app/dashboard), you can manage custom domains, reboot your container, stop your container, or even delete your Nest account.
-
-By default, you have 2 GB of RAM, 2 CPU cores, and 8 GB of storage. To increase this limit, you may fill out this form: https://nest.fillout.com/resources`,
+If you need help with your server you can contact the nest admin on the #nest-help channel on the Hack Club Slack!
+`,
   });
   return c.json({ message: "Approved and container created", vmid, password });
 });
