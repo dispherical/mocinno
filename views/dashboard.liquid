@@ -194,7 +194,7 @@
                 <tbody>
                   {% for k in user.ssh_keys %}
                     <tr data-key="{{ k }}">
-                      <td class="pl-4 font-mono text-sm text-muted-foreground break-all">{{ k }}</td>
+                      <td class="pl-4 font-mono text-sm text-muted-foreground break-all text-wrap">{{ k }}</td>
                       <td class="text-right pr-4">
                         <button
                           class="ssh-key-rm-btn uk-btn uk-btn-text text-destructive hover:underline text-sm"
@@ -723,10 +723,12 @@
     const val = newSshKeyInput.value.trim();
     if (!val) {
       sshKeyAddStatus.innerText = 'Paste your public key here (ssh-ed25519, ssh-rsa, or ssh-ecdsa).';
+      sshKeyAddStatus.className = 'uk-form-help text-muted-foreground mt-1';
       sshKeyAddBtn.disabled = true;
       return;
     } else {
       sshKeyAddStatus.innerText = 'Looks good!';
+      sshKeyAddStatus.className = 'uk-form-help text-muted-foreground mt-1';
       sshKeyAddBtn.disabled = false;
     }
   });
