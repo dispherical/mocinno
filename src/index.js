@@ -1077,9 +1077,22 @@ async function proxyRequest(req, target) {
     const resHeaders = new Headers();
     for (const [k, v] of proxyRes.headers) {
       const lower = k.toLowerCase();
-      if (lower !== "transfer-encoding" && lower !== "connection") {
+      if (
+        lower !== "set-cookie" &&
+        lower !== "transfer-encoding" &&
+        lower !== "connection"
+      ) {
         resHeaders.set(k, v);
       }
+    }
+
+    const setCookies =
+      proxyRes.headers.getSetCookie == "function"
+        ? proxyRes.headers.getSetCookie()
+        : [];
+
+    for (const cookie of setCookies) {
+      resHeaders.append("Set-Cookie", cookie);
     }
 
     return new Response(proxyRes.body, {
