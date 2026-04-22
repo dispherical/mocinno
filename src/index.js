@@ -1117,11 +1117,14 @@ async function reloadProxy() {
   const proxyFetch = async (req) => {
     try {
       const host = new URL(req.url).hostname;
+
       if (appDomain && host === appDomain) {
         return proxyRequest(req, `127.0.0.1:${appPort}`);
       }
+
       const domainRow = await db.getDomainByName(host);
       if (!domainRow) return new Response("Not found", { status: 404 });
+
       return proxyRequest(req, domainRow.proxy);
     } catch (err) {
       console.error("Proxy error:", err.message);

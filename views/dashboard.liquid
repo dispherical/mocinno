@@ -164,7 +164,7 @@
                 </div>
                 <div class="space-y-1 flex-1">
                   <label class="text-sm font-medium">Target Port/Address</label>
-                  <input type="text" id="proxy-input" class="uk-input h-10" placeholder="Default: container:80">
+                  <input type="text" id="proxy-input" class="uk-input h-10" placeholder="container:80">
                 </div>
               </div>
               <div class="flex items-center justify-between mt-4">
@@ -639,14 +639,26 @@
 
   document.getElementById('domain-add-btn')?.addEventListener('click', async () => {
     const domain = document.getElementById('domain-input').value.trim();
+    if (!domain) return;
+
     const proxyInput = document.getElementById('proxy-input');
     const proxy = proxyInput ? proxyInput.value.trim() : '';
-    if (!domain) return;
+
+    if (proxy.startsWith("container")) {
+      domainMsg.innerText = "Proxy target should be <container ipv4>:<port>, not container:<port>";
+      domainMsg.className = 'uk-form-help text-destructive mt-0';
+    }
+
+    if (proxy.startsWith("http://") || proxy.startsWith("https://")) {
+      domainMsg.innerText = 'Proxy target should not include http(s)://';
+      domainMsg.className = 'uk-form-help text-destructive mt-0';
+    }
 
     if (domainMsg) {
       domainMsg.innerText = 'Adding...';
       domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
     }
+
     try {
       const payload = { domain };
       if (proxy) payload.proxy = proxy;
