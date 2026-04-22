@@ -1332,7 +1332,7 @@ app.post("/api/admin/applications/approve", async (c) => {
     rootfs: serverConfig.rootfs || process.env.ROOTFS,
     unprivileged: 1,
     features: "nesting=1",
-    cores: 1,
+    cores: 2,
     memory: 2048,
     swap: 512,
     net0,
