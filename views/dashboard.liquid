@@ -404,12 +404,11 @@
   const templateInput = document.getElementById('template-input');
 
   let usernameValid = false;
-  let sshKeyValid = false;
   let reasonValid = false;
   let checkTimeout;
 
   function updateApplyBtn() {
-    if (applyBtn) applyBtn.disabled = !(usernameValid && sshKeyValid && reasonValid);
+    if (applyBtn) applyBtn.disabled = !(usernameValid && reasonValid);
   }
 
   serverInput?.addEventListener('change', () => {
@@ -476,27 +475,12 @@
 
   sshKeyInput?.addEventListener('input', () => {
     const val = sshKeyInput.value.trim();
-    sshKeyValid = false;
+
     updateApplyBtn();
     if (!val) {
       sshKeyStatus.innerText = 'Paste your public key here.';
       sshKeyStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
       return;
-    }
-
-    if (
-      /^(ssh-(?:ed25519|rsa)|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)[ \t]+[A-Za-z0-9+/=]+(?:[ \t]+\S+)?$/.test(
-        val
-      )
-    ) {
-      sshKeyStatus.innerText = 'Looks good!';
-      sshKeyStatus.className = 'uk-form-help text-green-600 mt-1.5';
-      sshKeyValid = true;
-      updateApplyBtn();
-    } else {
-      sshKeyStatus.innerText =
-        'Must be a valid SSH public key (ssh-ed25519, ssh-rsa, ecdsa-sha2-nistp256/384/521, or sk-* FIDO)';
-      sshKeyStatus.className = 'uk-form-help text-destructive mt-1.5';
     }
   });
 
@@ -524,7 +508,8 @@
   });
 
   applyBtn?.addEventListener('click', async () => {
-    if (!usernameValid || !sshKeyValid || !reasonValid) return;
+    if (!usernameValid || !reasonValid) return;
+
     const username = usernameInput.value;
     const sshKey = sshKeyInput.value.trim();
     const reason = reasonInput.value.trim();
@@ -535,6 +520,7 @@
       msgForm.innerText = 'Submitting application...';
       msgForm.className = 'mr-4 text-sm font-medium text-muted-foreground';
     }
+
     applyBtn.disabled = true;
     usernameInput.disabled = true;
     sshKeyInput.disabled = true;

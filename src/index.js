@@ -7,7 +7,8 @@ import crypto from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:dns/promises";
 import * as db from "./db.js";
-import { serveStatic } from 'hono/bun'
+import { serveStatic } from "hono/bun";
+import { utils } from "ssh2";
 import {
   getChallengeResponse,
   issueCertificate,
@@ -61,7 +62,7 @@ async function setContainerDescription(vmid, description) {
 }
 
 const app = new Hono();
-app.get('/privacy.pdf', serveStatic({ path: './src/public/privacy.pdf' }))
+app.get("/privacy.pdf", serveStatic({ path: "./src/public/privacy.pdf" }));
 const store = new CookieStore();
 app.use(
   "*",
@@ -583,12 +584,23 @@ app.post("/api/application/submit", async (c) => {
     });
   }
   if (require("./reservedUsernames.js").includes(username.toLowerCase())) {
-    return c.json({ rror: "This username is reserved." });
+    return c.json({ error: "This username is reserved." });
   }
 
-  if (!sshKey || !/^(?!.*\n)(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\s+\S+/.test(sshKey)) {
+  try {
+    let parsed = utils.parseKey(sshKey);
+
+    if (parsed instanceof Error) {
+      c.status(400);
+      return c.json({ error: "Invalid SSH public key format." });
+    }
+  } catch (e) {
+    console.error("SSH key parsing error:", e.message);
+
     c.status(400);
-    return c.json({ error: "A valid SSH public key is required." });
+    return c.json({
+      error: "Invalid SSH public key format.",
+    });
   }
 
   if (!reason || reason.length < 10) {
@@ -932,11 +944,19 @@ app.post("/api/ssh-keys/add", async (c) => {
   const body = await c.req.json();
   const key = body.key?.trim();
 
-  if (!key || !/^(?!.*\n)(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\s+\S+/.test(key)) {
+  try {
+    let parsed = utils.parseKey(key);
+
+    if (parsed instanceof Error) {
+      c.status(400);
+      return c.json({ error: "Invalid SSH public key format." });
+    }
+  } catch (e) {
+    console.error("SSH key parsing error:", e.message);
+
     c.status(400);
     return c.json({
-      error:
-        "Invalid SSH public key (must be ssh-ed25519, ssh-rsa, or ssh-ecdsa)",
+      error: "Invalid SSH public key format.",
     });
   }
 
@@ -1037,10 +1057,7 @@ async function proxyRequest(req, target) {
   const headers = new Headers();
   for (const [k, v] of req.headers) {
     const lower = k.toLowerCase();
-    if (
-      lower !== "connection" &&
-      lower !== "transfer-encoding"
-    ) {
+    if (lower !== "connection" && lower !== "transfer-encoding") {
       headers.set(k, v);
     }
   }
@@ -1054,7 +1071,7 @@ async function proxyRequest(req, target) {
       headers,
       body:
         req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
-      redirect: "manual"
+      redirect: "manual",
     });
 
     const resHeaders = new Headers();
