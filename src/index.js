@@ -1070,55 +1070,35 @@ async function buildServerNames() {
 
 async function proxyRequest(req, target) {
   const url = new URL(req.url);
-  const targetUrl = `http://${target}${url.pathname}${url.search}`;
+  const targetUrl = new URL(req.url);
 
-  const headers = new Headers();
-  for (const [k, v] of req.headers) {
-    const lower = k.toLowerCase();
-    if (lower !== "connection" && lower !== "transfer-encoding") {
-      headers.set(k, v);
-    }
-  }
-  headers.set("X-Forwarded-For", req.headers.get("X-Forwarded-For") || "");
-  headers.set("X-Forwarded-Proto", "https");
-  headers.set("X-Forwarded-Host", url.hostname);
+  targetUrl.protocol = "http:";
+  targetUrl.host = target;
+
+  const proxyReq = new Request(targetUrl, {
+    method: req.method,
+    headers: req.headers,
+    body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+    redirect: "manual",
+  });
+
+  proxyReq.headers.set(
+    "X-Forwarded-For",
+    req.headers.get("X-Forwarded-For") || "",
+  );
+  proxyReq.headers.set("X-Forwarded-Proto", "https");
+  proxyReq.headers.set("X-Forwarded-Host", url.hostname);
 
   try {
-    const proxyRes = await fetch(targetUrl, {
-      method: req.method,
-      headers,
-      body:
-        req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
-      redirect: "manual",
-    });
+    const proxyRes = await fetch(proxyReq);
 
-    const resHeaders = new Headers();
-    for (const [k, v] of proxyRes.headers) {
-      const lower = k.toLowerCase();
-      if (
-        lower !== "set-cookie" &&
-        lower !== "transfer-encoding" &&
-        lower !== "connection"
-      ) {
-        resHeaders.set(k, v);
-      }
-    }
+    const res = new Response(proxyRes.body, proxyRes);
 
-    const setCookies =
-      proxyRes.headers.getSetCookie === "function"
-        ? proxyRes.headers.getSetCookie()
-        : [proxyRes.headers.get("set-cookie")] || [];
+    ["connection", "transfer-encoding"].forEach((h) => res.headers.delete(h));
 
-    for (const cookie of setCookies) {
-      resHeaders.append("Set-Cookie", cookie);
-    }
-
-    return new Response(proxyRes.body, {
-      status: proxyRes.status,
-      headers: resHeaders,
-    });
+    return res;
   } catch (err) {
-    console.error("Error proxying request to", target, ":", err.message);
+    console.error("Proxy error:", err);
     return new Response("Bad Gateway", { status: 502 });
   }
 }
