@@ -102,6 +102,14 @@ export async function findUserByUsername(username) {
   return user ?? null;
 }
 
+export async function findUserByVmid(vmid) {
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.vmid, vmid));
+  return user ?? null;
+}
+
 export async function isUsernameTaken(username) {
   const [user] = await db
     .select({ id: usersTable.id })
