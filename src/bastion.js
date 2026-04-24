@@ -1,6 +1,7 @@
 import { Server, Client as SSHClient, utils } from "ssh2";
 import { readFileSync } from "node:fs";
 import * as db from "./db.js";
+import { specialHosts } from "./config.js";
 
 const hostKey = readFileSync(
   process.env.BASTION_HOST_KEY || "./bastion_host_key",
@@ -8,6 +9,16 @@ const hostKey = readFileSync(
 const bastionPrivateKey = readFileSync(
   process.env.BASTION_PROXY_KEY || "./bastion_proxy_key",
 );
+
+function parseTarget(target) {
+  const idx = target.lastIndexOf(":");
+  if (idx === -1) return { host: target, port: 22 };
+  const port = Number(target.slice(idx + 1));
+  return {
+    host: target.slice(0, idx),
+    port: Number.isFinite(port) && port > 0 ? port : 22,
+  };
+}
 
 async function pveFetch(path, method = "GET", body = null) {
   const url = `${process.env.PVE_URL}${path}`;
@@ -200,8 +211,12 @@ async function resolveContainer(containerPromise, username, client, stream) {
     return null;
   }
 
+  const port = container.port || 22;
+  const label = container.vmid
+    ? `vmid ${container.vmid}`
+    : `special:${container.upstreamUser}`;
   console.log(
-    `[bastion] Routing ${username} -> ${container.ip}:22 (vmid ${container.vmid})`,
+    `[bastion] Routing ${username} -> ${container.ip}:${port} (${label})`,
   );
   return container;
 }
@@ -219,6 +234,25 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
 
     if (ctx.method !== "publickey") {
       return ctx.reject(["publickey"]);
+    }
+
+    const special = specialHosts?.[username];
+    if (special) {
+      const keys = special.authorized_keys || [];
+      const allowAny = keys.includes("*");
+      if (!allowAny && !keys.some((key) => verifyClientKey(ctx, key))) {
+        console.warn(`[bastion] Key rejected for special host ${username}`);
+        return ctx.reject(["publickey"]);
+      }
+      const { host, port } = parseTarget(special.target);
+      containerPromise = Promise.resolve({
+        ip: host,
+        port,
+        status: "running",
+        suspended: false,
+        upstreamUser: username,
+      });
+      return ctx.accept();
     }
 
     try {
@@ -300,6 +334,8 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
           onStream: (stream) => {
             upstreamStream = stream;
           },
+          username: container.upstreamUser,
+          port: container.port,
         });
       });
 
@@ -319,6 +355,8 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
           onStream: (stream) => {
             upstreamStream = stream;
           },
+          username: container.upstreamUser,
+          port: container.port,
         });
       });
 
@@ -334,6 +372,8 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
           if (!container) return;
           proxyToContainer(container.ip, stream, client, {
             subsystem: "sftp",
+            username: container.upstreamUser,
+            port: container.port,
           });
         } else {
           reject();
@@ -382,6 +422,8 @@ function proxyToContainer(ip, clientStream, client, options = {}) {
     getPty = () => null,
     getEnv = () => ({}),
     onStream = null,
+    username = "root",
+    port = 22,
   } = options;
   const conn = new SSHClient();
 
@@ -439,8 +481,8 @@ function proxyToContainer(ip, clientStream, client, options = {}) {
 
   conn.connect({
     host: ip,
-    port: 22,
-    username: "root",
+    port,
+    username,
     privateKey: bastionPrivateKey,
   });
 }
