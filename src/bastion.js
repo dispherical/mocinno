@@ -1,7 +1,7 @@
 import { Server, Client as SSHClient, utils } from "ssh2";
 import { readFileSync } from "node:fs";
 import * as db from "./db.js";
-import { specialHosts } from "./config.js";
+import { specialHosts } from "../config.js";
 
 const hostKey = readFileSync(
   process.env.BASTION_HOST_KEY || "./bastion_host_key",
