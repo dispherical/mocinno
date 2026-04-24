@@ -214,9 +214,9 @@ async function resolveContainer(containerPromise, username, client, stream) {
   const port = container.port || 22;
   const label = container.vmid
     ? `vmid ${container.vmid}`
-    : `special:${container.upstreamUser}`;
+    : `special:${username}`;
   console.log(
-    `[bastion] Routing ${username} -> ${container.ip}:${port} (${label})`,
+    `[bastion] Routing ${username} -> ${container.upstreamUser ?? "root"}@${container.ip}:${port} (${label})`,
   );
   return container;
 }
@@ -250,7 +250,7 @@ const server = new Server({ hostKeys: [hostKey] }, (client) => {
         port,
         status: "running",
         suspended: false,
-        upstreamUser: username,
+        upstreamUser: special.username || username,
       });
       return ctx.accept();
     }
