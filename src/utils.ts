@@ -1,4 +1,5 @@
-import { resolve } from "dns/promises";
+import { resolve } from "node:dns/promises";
+import * as crypto from "node:crypto";
 
 export async function checkDNSVerification(domain: string, username: string) {
   try {
@@ -34,4 +35,25 @@ export function formatUptime(seconds: number) {
   if (m) parts.push(`${m}m`);
 
   return parts.join(" ") || "0m";
+}
+
+export function isFQDN(domain: string) {
+  return /^(?!-)[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test(domain);
+}
+
+export function isWhitelisted(domain: string, username: string) {
+  return (
+    domain === `${username}.hackclub.app` ||
+    domain.endsWith(`.${username}.hackclub.app`) ||
+    domain.endsWith(`.${username}.localhost`) ||
+    domain.endsWith(`${username}.localhost`)
+  );
+}
+
+export function generateState(length = 16) {
+  return crypto
+    .randomBytes(length)
+    .toString("base64")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, length);
 }

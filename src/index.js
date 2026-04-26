@@ -24,14 +24,6 @@ const bastionPubKey = readFileSync(
   "utf-8",
 ).trim();
 
-function generateState(length = 16) {
-  return crypto
-    .randomBytes(length)
-    .toString("base64")
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(0, length);
-}
-
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: 587,
@@ -59,19 +51,6 @@ app.use(
     },
   }),
 );
-
-function isFQDN(domain) {
-  return /^(?!-)[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test(domain);
-}
-
-function isWhitelisted(domain, username) {
-  return (
-    domain === `${username}.hackclub.app` ||
-    domain.endsWith(`.${username}.hackclub.app`) ||
-    domain.endsWith(`.${username}.localhost`) ||
-    domain.endsWith(`${username}.localhost`)
-  );
-}
 
 const engine = new Liquid({
   root: "./views",
