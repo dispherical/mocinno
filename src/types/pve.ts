@@ -221,5 +221,7 @@ export type NodeLXCIndex = Array<
     vmid: number;
     status: "stopped" | "running";
     name: string;
+    cpu: number;
+    cpus: number;
   }
 >;
