@@ -1,6 +1,8 @@
 import * as db from "./db.js";
-
-const config = require("../config.js");
+import config from "config";
+import * as env from "./env";
+import { pveFetch } from "./pve-utils.js";
+import type { NodeLXCIndex } from "./types/pve.js";
 
 const CPU_THRESHOLD = 0.9;
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
@@ -8,31 +10,13 @@ const NOTIFY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const MIN_DATA_POINTS = 40;
 const lastNotified = new Map();
 
-async function pveFetch(path, method = "GET", body = null) {
-  const url = `${process.env.PVE_URL}${path}`;
-  const options = {
-    method,
-    headers: {
-      Authorization: `PVEAPIToken=${process.env.PVE_TOKEN}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-    },
-    tls: { rejectUnauthorized: false },
-  };
-  if (body) {
-    const params = new URLSearchParams();
-    Object.entries(body).forEach(([k, v]) => params.append(k, v));
-    options.body = params;
-  }
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    throw new Error(`PVE API Error: ${res.status} - ${await res.text()}`);
-  }
-  return res.json();
-}
-
-async function notifySlack(vmid, username, avgCpu, cores) {
-  const url = process.env.SLACK_WEBHOOK_URL;
+async function notifySlack(
+  vmid: number,
+  username: string,
+  avgCpu: number,
+  cores: string,
+) {
+  const url = env.SLACK_WEBHOOK_URL;
   if (!url) return;
   try {
     await fetch(url, {
@@ -60,16 +44,31 @@ async function notifySlack(vmid, username, avgCpu, cores) {
       }),
     });
   } catch (e) {
-    console.error(`slack notification failed:`, e.message);
+    if (e instanceof Error) {
+      console.error(`slack notification failed:`, e.message);
+    } else {
+      console.error(`slack notification failed, unknown error:`, e);
+    }
   }
 }
 
-async function checkNode(node, vmidToName, liveVmids) {
+async function checkNode(
+  node: string,
+  vmidToName: Map<number, string>,
+  liveVmids: Set<number>,
+) {
   let list;
   try {
-    list = await pveFetch(`/nodes/${node}/lxc`);
+    list = await pveFetch<{ data: NodeLXCIndex }>(`/nodes/${node}/lxc`);
   } catch (e) {
-    console.error(`failed to list containers on ${node}:`, e.message);
+    if (e instanceof Error) {
+      console.error(`failed to fetch container list on ${node}:`, e.message);
+    } else {
+      console.error(
+        `failed to fetch container list on ${node}, unknown error:`,
+        e,
+      );
+    }
     return;
   }
 
@@ -78,7 +77,7 @@ async function checkNode(node, vmidToName, liveVmids) {
     if (ct.status !== "running") continue;
 
     try {
-      const rrd = await pveFetch(
+      const rrd = await pveFetch<{ data: { cpu: number }[] }>(
         `/nodes/${node}/lxc/${ct.vmid}/rrddata?timeframe=day&cf=AVERAGE`,
       );
       const points = rrd.data.filter((p) => typeof p.cpu === "number");
@@ -97,26 +96,37 @@ async function checkNode(node, vmidToName, liveVmids) {
       console.log(
         `high cpu: vmid ${ct.vmid} (${username}) on ${node} avg ${(avg * 100).toFixed(1)}%`,
       );
-      await notifySlack(ct.vmid, username, avg, cores);
+      await notifySlack(ct.vmid, username, avg, cores.toString());
     } catch (e) {
-      console.error(`failed to check vmid ${ct.vmid} on ${node}:`, e.message);
+      if (e instanceof Error) {
+        console.error(`failed to check vmid ${ct.vmid} on ${node}:`, e.message);
+      } else {
+        console.error(
+          `failed to check vmid ${ct.vmid} on ${node}, unknown error:`,
+          e,
+        );
+      }
     }
   }
 }
 
 async function checkAllContainers() {
-  const vmidToName = new Map();
+  const vmidToName = new Map<number, string>();
   try {
     const users = await db.getAllUsers();
     for (const u of users) {
       if (u.vmid) vmidToName.set(u.vmid, u.username);
     }
   } catch (e) {
-    console.error("failed to load users:", e.message);
+    if (e instanceof Error) {
+      console.error("failed to load users:", e.message);
+    } else {
+      console.error("failed to load users, unknown error:", e);
+    }
   }
 
   const nodes = Object.values(config.servers).map((s) => s.node);
-  const liveVmids = new Set();
+  const liveVmids = new Set<number>();
 
   await Promise.all(
     nodes.map((node) => checkNode(node, vmidToName, liveVmids)),
@@ -133,7 +143,11 @@ console.log("cpu monitor starting");
   try {
     await checkAllContainers();
   } catch (e) {
-    console.error("check run failed:", e.message);
+    if (e instanceof Error) {
+      console.error("check run failed:", e.message);
+    } else {
+      console.error("check run failed, unknown error:", e);
+    }
   }
   setTimeout(loop, CHECK_INTERVAL_MS);
 })();

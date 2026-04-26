@@ -1,9 +1,12 @@
-module.exports = {
+import type { Config } from "@/types/config";
+
+export default {
   servers: [
     {
       name: "nest-prov-1",
       node: "nest-prov-1",
       location: "Helsinki, Uusimaa",
+      maxServers: 100,
       hostIP: "10.60.0.2",
 
       ipv4: {
@@ -34,4 +37,4 @@ module.exports = {
       ],
     },
   ],
-};
+} as Config;
