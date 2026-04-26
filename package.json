@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "start": "bun run src/index.ts",
-    "bastion": "bun run src/bastion.js"
+    "start:dev": "bun run src/index.ts --watch",
+    "bastion": "bun run src/bastion.js",
+    "bastion:dev": "bun run src/bastion.js --watch"
   },
   "devDependencies": {
     "@types/bun": "latest",
