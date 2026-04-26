@@ -55,7 +55,14 @@ export const BASTION_PROXY_KEY_PUB = isUndefinedOrEmpty(
   "./bastion_proxy_key.pub",
 );
 
+export const BASTION_PROXY_KEY = isUndefinedOrEmpty(
+  Bun.env.BASTION_PROXY_KEY,
+  "./bastion_proxy_key",
+);
+
 export const BASTION_PUB_KEY = readFileSync(
   BASTION_PROXY_KEY_PUB,
   "utf-8",
 ).trim();
+
+export const BASTION_PRIV_KEY = readFileSync(BASTION_PROXY_KEY, "utf-8").trim();

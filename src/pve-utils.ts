@@ -43,7 +43,11 @@ export async function pveFetch<T>(
   return res.json() as Promise<T>;
 }
 
-export async function getContainerConfig(ct: { node: string; vmid: number }) {
+export async function getContainerConfig(ct: {
+  node: string | null;
+  vmid: number | null;
+}) {
+  if (!ct.node || !ct.vmid) return null;
   try {
     const config: { data: NodeLXCConfig } = await pveFetch(
       `/nodes/${ct.node}/lxc/${ct.vmid}/config`,
@@ -54,24 +58,29 @@ export async function getContainerConfig(ct: { node: string; vmid: number }) {
   }
 }
 
-export async function isContainerSuspended(ct: { node: string; vmid: number }) {
+export async function isContainerSuspended(ct: {
+  node: string | null;
+  vmid: number | null;
+}) {
   const config = await getContainerConfig(ct);
   return config?.description?.toLowerCase().includes("suspend") ?? false;
 }
 
 export async function setContainerDescription(
-  ct: { node: string; vmid: number },
+  ct: { node: string | null; vmid: number | null },
   description: string,
 ) {
+  if (!ct.node || !ct.vmid) return;
   await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`, "PUT", {
     description,
   });
 }
 
 export async function getContainerIP(
-  ct: { node: string; vmid: number },
+  ct: { node: string | null; vmid: number | null },
   userIp: string | null,
 ) {
+  if (!ct.node || !ct.vmid) return null;
   if (userIp) return userIp;
   try {
     const ifaces: { data: NodeLXCInterfaces } = await pveFetch(
@@ -84,7 +93,11 @@ export async function getContainerIP(
   }
 }
 
-export async function getContainerStatus(ct: { node: string; vmid: number }) {
+export async function getContainerStatus(ct: {
+  node: string | null;
+  vmid: number | null;
+}) {
+  if (!ct.node || !ct.vmid) return null;
   try {
     const status: { data: NodeLXCStatusCurrent } = await pveFetch(
       `/nodes/${ct.node}/lxc/${ct.vmid}/status/current`,
@@ -101,10 +114,11 @@ export async function getNextVmid() {
 }
 
 export async function waitForTask(
-  node: string,
+  node: string | null,
   upid: string,
   timeoutMs = 30000,
 ) {
+  if (!node) return;
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const status: { data: NodeTaskStatus } = await pveFetch(

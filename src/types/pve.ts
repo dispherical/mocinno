@@ -114,6 +114,7 @@ interface FullNodeLXCStatusCurrent {
   tags: string;
   template: boolean;
   uptime: number;
+  status: "stopped" | "running";
 }
 
 export type NodeLXCStatusCurrent = Partial<FullNodeLXCStatusCurrent>;
@@ -207,3 +208,5 @@ export interface NodeStorageStatus {
   total: number;
   used: number;
 }
+
+export type NodeLXCStatusStart = string;

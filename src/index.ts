@@ -12,14 +12,13 @@ import { serveStatic } from "hono/bun";
 import { denyForward, localOnly } from "./middleware";
 import { proxyRequest, reloadProxy } from "./utils";
 
+import internalRoutes from "@/routes/internal";
+import webRoutes from "@/routes/web";
+import userRoutes from "@/routes/user";
+
 const app = new Hono();
 
 app.get("/privacy.pdf", serveStatic({ path: "./src/public/privacy.pdf" }));
-
-// wtf is this route used for
-app.post("/password", localOnly, denyForward, async (c) => {
-  return c.json({ success: false });
-});
 
 const store = new CookieStore();
 
@@ -37,6 +36,16 @@ app.use(
     },
   }),
 );
+
+// wtf is this route used for
+app.post("/password", localOnly, denyForward, async (c) => {
+  return c.json({ success: false });
+});
+
+app.route("", internalRoutes);
+
+app.route("", webRoutes);
+app.route("", userRoutes);
 
 const serve = Bun.serve({
   fetch: app.fetch,
