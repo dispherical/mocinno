@@ -66,3 +66,29 @@ export const BASTION_PUB_KEY = readFileSync(
 ).trim();
 
 export const BASTION_PRIV_KEY = readFileSync(BASTION_PROXY_KEY, "utf-8").trim();
+
+export const OAUTH_CLIENT_ID = (() => {
+  if (!isUndefinedOrEmpty(Bun.env.OAUTH_CLIENT_ID, undefined)) {
+    throw new Error("OAUTH_CLIENT_ID environment variable is required");
+  }
+
+  return Bun.env.OAUTH_CLIENT_ID as string;
+})();
+
+export const OAUTH_CLIENT_SECRET = (() => {
+  if (!isUndefinedOrEmpty(Bun.env.OAUTH_CLIENT_SECRET, undefined)) {
+    throw new Error("OAUTH_CLIENT_SECRET environment variable is required");
+  }
+
+  return Bun.env.OAUTH_CLIENT_SECRET as string;
+})();
+
+export const OAUTH_CLIENT_REDIRECT_URI = (() => {
+  if (!isUndefinedOrEmpty(Bun.env.OAUTH_CLIENT_REDIRECT_URI, undefined)) {
+    throw new Error(
+      "OAUTH_CLIENT_REDIRECT_URI environment variable is required",
+    );
+  }
+
+  return Bun.env.OAUTH_CLIENT_REDIRECT_URI as string;
+})();

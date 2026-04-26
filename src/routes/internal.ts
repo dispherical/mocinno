@@ -92,4 +92,9 @@ app.post("/config", localOnly, denyForward, async (c) => {
   });
 });
 
+// wtf is this route used for
+app.post("/password", localOnly, denyForward, async (c) => {
+  return c.json({ success: false });
+});
+
 export default app;

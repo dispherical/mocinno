@@ -15,6 +15,8 @@ import { proxyRequest, reloadProxy } from "./utils";
 import internalRoutes from "@/routes/internal";
 import webRoutes from "@/routes/web";
 import userRoutes from "@/routes/user";
+import authRoutes from "@/routes/auth";
+import applicationRoutes from "@/routes/application";
 
 const app = new Hono();
 
@@ -37,15 +39,12 @@ app.use(
   }),
 );
 
-// wtf is this route used for
-app.post("/password", localOnly, denyForward, async (c) => {
-  return c.json({ success: false });
-});
-
 app.route("", internalRoutes);
 
 app.route("", webRoutes);
 app.route("", userRoutes);
+app.route("", authRoutes);
+app.route("", applicationRoutes);
 
 const serve = Bun.serve({
   fetch: app.fetch,

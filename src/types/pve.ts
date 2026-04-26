@@ -210,3 +210,6 @@ export interface NodeStorageStatus {
 }
 
 export type NodeLXCStatusStart = string;
+export type NodeLXCStatusStop = string;
+export type NodeLXCStatusReboot = string;
+export type NodeLXCDelete = string;
