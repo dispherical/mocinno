@@ -78,7 +78,6 @@ function verifyClientKey(
   },
   allowedKeyStr: string,
 ) {
-  if (!ctx.blob) return false;
   if (!allowedKeyStr) return false;
   const allowedKey = utils.parseKey(allowedKeyStr);
   if (allowedKey instanceof Error) return false;
