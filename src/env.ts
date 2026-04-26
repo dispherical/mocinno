@@ -119,7 +119,8 @@ export const SLACK_WEBHOOK_URL = isUndefinedOrEmpty(
 export const ZEROSSL_EAB_KID = (() => {
   if (
     !isUndefinedOrEmpty(Bun.env.ZEROSSL_EAB_KID, undefined) &&
-    NODE_ENV === "production"
+    NODE_ENV === "production" &&
+    !DISABLE_SSL
   ) {
     throw new Error("ZEROSSL_EAB_KID environment variable is required");
   }
@@ -129,7 +130,8 @@ export const ZEROSSL_EAB_KID = (() => {
 export const ZEROSSL_EAB_HMAC_KEY = (() => {
   if (
     !isUndefinedOrEmpty(Bun.env.ZEROSSL_EAB_HMAC_KEY, undefined) &&
-    NODE_ENV === "production"
+    NODE_ENV === "production" &&
+    !DISABLE_SSL
   ) {
     throw new Error("ZEROSSL_EAB_HMAC_KEY environment variable is required");
   }
