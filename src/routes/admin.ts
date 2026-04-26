@@ -79,7 +79,7 @@ app.post("/api/admin/invites/create", async (c) => {
 
   const body = await c.req.json();
   const code = crypto.randomBytes(8).toString("hex");
-  const maxUses = parseInt(body.maxUses) || null;
+  const maxUses = parseInt(body.maxUses) || 0;
   const expiresAt = body.expiresAt || null;
 
   const invite = await db.createInvite({
@@ -243,7 +243,7 @@ app.post("/api/admin/applications/approve", async (c) => {
     sub: application.sub,
     username: application.username,
     sshKeys: [application.ssh_key],
-    vmid: vmid.toFixed(0),
+    vmid: vmid,
     ip: allocated.ip,
     ipv6: serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : null,
     node,

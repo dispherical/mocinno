@@ -146,7 +146,7 @@ export async function createUser({
   vmid: number;
   ip: string | null;
   ipv6: string | null;
-  node: string;
+  node: string | null;
 }) {
   const [user] = await db
     .insert(usersTable)
