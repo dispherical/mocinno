@@ -104,6 +104,11 @@ app.get("/api/tls-ask", async (c) => {
     const parts = domain.replace(".hackclub.app", "").split(".");
     const username = parts[parts.length - 1];
 
+    if (!username) {
+      c.status(400);
+      return c.text("Invalid domain");
+    }
+
     const user = await db.findUserByUsername(username);
 
     if (!user) {

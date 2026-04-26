@@ -40,8 +40,8 @@ async function getClient() {
   return _client;
 }
 
-export function getChallengeResponse(token: string) {
-  return challenges.get(token) ?? null;
+export function getChallengeResponse(token: string | undefined) {
+  return token ? challenges.get(token) : null;
 }
 
 export async function issueCertificate(domain: string) {

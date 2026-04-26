@@ -90,7 +90,7 @@ Bun.serve({
       try {
         const appDomain = env.APP_DOMAIN;
         if (appDomain && host === appDomain) {
-          const appPort = env.MOCINNO_PORT.toFixed(0);
+          const appPort = env.MOCINNO_PORT;
           return proxyRequest(req, `127.0.0.1:${appPort}`);
         }
         const domainRow = await db.getDomainByName(host);

@@ -111,7 +111,7 @@ export async function reloadProxy() {
   const serverNames = await buildServerNames();
   if (Object.keys(serverNames).length === 0) return;
 
-  const appPort = env.MOCINNO_PORT.toFixed(0);
+  const appPort = env.MOCINNO_PORT;
   const appDomain = env.APP_DOMAIN;
 
   const proxyFetch = async (req: Request) => {
