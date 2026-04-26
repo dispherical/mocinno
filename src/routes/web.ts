@@ -1,28 +1,11 @@
 import * as db from "../db";
-import { Liquid } from "liquidjs";
 import { getContainerStatus, isContainerSuspended } from "@/pve-utils";
 import { route } from "@/middleware";
 
-const engine = new Liquid({
-  root: "./views",
-  extname: ".liquid",
-  outputEscape: "escape",
-  cache: process.env.NODE_ENV == "production",
-});
-
 const app = route.createApp();
 
-app.use("*", async (c, next) => {
-  c.set("engine", engine);
-  const session = c.get("session");
-
-  // allowing sudo mode in development without 2fa
-  if (process.env.NODE_ENV !== "production") session.flash("sudo", true);
-  await next();
-});
-
 app.get("/", async (c) => {
-  const html = await engine.renderFile("home");
+  const html = await c.get("engine").renderFile("home");
   return c.html(html);
 });
 
@@ -69,7 +52,7 @@ app.get("/dashboard", async (c) => {
   }
 
   const config = await import("config");
-  const html = await engine.renderFile("dashboard", {
+  const html = await c.get("engine").renderFile("dashboard", {
     profile,
     user,
     container,

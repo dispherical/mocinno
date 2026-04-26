@@ -14,7 +14,7 @@ import { formatUptime } from "./utils";
 export async function pveFetch<T>(
   path: string,
   method = "GET",
-  body: Record<string, string> | null = null,
+  body: Record<string, string | number | boolean> | null = null,
 ): Promise<T> {
   const url = `${process.env.PVE_URL}${path}`;
   const options: RequestInit & { tls: { rejectUnauthorized: boolean } } = {
@@ -31,7 +31,7 @@ export async function pveFetch<T>(
 
   if (body) {
     const params = new URLSearchParams();
-    Object.entries(body).forEach(([k, v]) => params.append(k, v));
+    Object.entries(body).forEach(([k, v]) => params.append(k, v.toString()));
     options.body = params;
   }
 

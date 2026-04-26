@@ -43,6 +43,7 @@ export const APP_DOMAIN = isUndefinedOrEmpty(Bun.env.APP_DOMAIN, undefined);
 export const SMTP_HOST = isUndefinedOrEmpty(Bun.env.SMTP_HOST, "localhost");
 export const SMTP_PORT = Number(isUndefinedOrEmpty(Bun.env.SMTP_PORT, 587));
 export const SMTP_USER = isUndefinedOrEmpty(Bun.env.SMTP_USER, undefined);
+export const SMTP_FROM = isUndefinedOrEmpty(Bun.env.SMTP_FROM, undefined);
 export const SMTP_PASSWORD = isUndefinedOrEmpty(
   Bun.env.SMTP_PASSWORD,
   undefined,
@@ -92,3 +93,8 @@ export const OAUTH_CLIENT_REDIRECT_URI = (() => {
 
   return Bun.env.OAUTH_CLIENT_REDIRECT_URI as string;
 })();
+
+export const OS_TEMPLATE = isUndefinedOrEmpty(
+  Bun.env.OS_TEMPLATE,
+  "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst",
+);

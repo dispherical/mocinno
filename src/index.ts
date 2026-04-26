@@ -1,6 +1,5 @@
 import { CookieStore, sessionMiddleware } from "hono-sessions";
 import * as env from "./env";
-import { Hono } from "hono";
 import {
   getChallengeResponse,
   getOrIssueCertificate,
@@ -9,7 +8,8 @@ import {
 } from "./cert";
 import * as db from "./db";
 import { serveStatic } from "hono/bun";
-import { denyForward, localOnly } from "./middleware";
+import { route } from "./middleware";
+import { Liquid } from "liquidjs";
 import { proxyRequest, reloadProxy } from "./utils";
 
 import internalRoutes from "@/routes/internal";
@@ -17,8 +17,9 @@ import webRoutes from "@/routes/web";
 import userRoutes from "@/routes/user";
 import authRoutes from "@/routes/auth";
 import applicationRoutes from "@/routes/application";
+import adminRoutes from "@/routes/admin";
 
-const app = new Hono();
+const app = route.createApp();
 
 app.get("/privacy.pdf", serveStatic({ path: "./src/public/privacy.pdf" }));
 
@@ -39,12 +40,29 @@ app.use(
   }),
 );
 
+const engine = new Liquid({
+  root: "./views",
+  extname: ".liquid",
+  outputEscape: "escape",
+  cache: process.env.NODE_ENV == "production",
+});
+
+app.use("*", async (c, next) => {
+  c.set("engine", engine);
+  const session = c.get("session");
+
+  // allowing sudo mode in development without 2fa
+  if (process.env.NODE_ENV !== "production") session.flash("sudo", true);
+  await next();
+});
+
 app.route("", internalRoutes);
 
 app.route("", webRoutes);
 app.route("", userRoutes);
 app.route("", authRoutes);
 app.route("", applicationRoutes);
+app.route("", adminRoutes);
 
 const serve = Bun.serve({
   fetch: app.fetch,

@@ -56,7 +56,7 @@ interface FullNodeLXCConfig {
   hookscript: string;
   hostname: string;
   lock: Lock;
-  lxc: Array<unknown>;
+  //lxc: Array<unknown>;
   memory: number;
   //mp is also not an array
   nameserver: string;
@@ -213,3 +213,4 @@ export type NodeLXCStatusStart = string;
 export type NodeLXCStatusStop = string;
 export type NodeLXCStatusReboot = string;
 export type NodeLXCDelete = string;
+export type NodeLXCPost = string;
