@@ -1,8 +1,7 @@
-import { Hono } from "hono";
-import { type Session } from "hono-sessions";
 import * as db from "../db";
 import { Liquid } from "liquidjs";
 import { getContainerStatus, isContainerSuspended } from "@/pve-utils";
+import { route } from "@/middleware";
 
 const engine = new Liquid({
   root: "./views",
@@ -11,13 +10,7 @@ const engine = new Liquid({
   cache: process.env.NODE_ENV == "production",
 });
 
-const app = new Hono<{
-  Variables: {
-    session: Session;
-    session_key_rotation: boolean;
-    engine: Liquid;
-  };
-}>();
+const app = route.createApp();
 
 app.use("*", async (c, next) => {
   c.set("engine", engine);

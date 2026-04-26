@@ -1,13 +1,8 @@
-import { Hono } from "hono";
-import { type Session } from "hono-sessions";
 import * as db from "@/db";
 import { utils } from "ssh2";
+import { route } from "@/middleware";
 
-const app = new Hono<{
-  Variables: {
-    session: Session;
-  };
-}>();
+const app = route.createApp();
 
 app.get("/api/username/check", async (c) => {
   const username = c.req.query("username")?.toLowerCase();

@@ -19,16 +19,11 @@ import {
   reloadProxy,
 } from "@/utils";
 import * as db from "@/db";
-import { Hono } from "hono";
 import * as env from "@/env";
-import type { Session } from "hono-sessions";
 import { utils } from "ssh2";
+import { route } from "@/middleware";
 
-const app = new Hono<{
-  Variables: {
-    session: Session;
-  };
-}>();
+const app = route.createApp();
 
 app.post("/api/container/start", async (c) => {
   const profile = c.get("session").get("profile");

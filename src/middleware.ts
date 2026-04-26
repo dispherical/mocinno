@@ -1,6 +1,8 @@
 import { getConnInfo } from "hono/bun";
 import { ipRestriction } from "hono/ip-restriction";
-import { createMiddleware } from "hono/factory";
+import { createMiddleware, createFactory } from "hono/factory";
+import type { Liquid } from "liquidjs";
+import type { Session } from "hono-sessions";
 
 export const localOnly = ipRestriction(
   getConnInfo,
@@ -30,3 +32,11 @@ export const denyForward = createMiddleware(async (c, next) => {
     return c.json({ error: "Forbidden.", success: false }, 403);
   return next();
 });
+
+export const route = createFactory<{
+  Variables: {
+    session: Session;
+    session_key_rotation: boolean;
+    engine: Liquid;
+  };
+}>();

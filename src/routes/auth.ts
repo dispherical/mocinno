@@ -1,15 +1,10 @@
 import { exchangeCodeForProfile } from "@/hca";
 import { generateState } from "@/utils";
-import { Hono } from "hono";
-import { type Session } from "hono-sessions";
 import * as db from "@/db";
 import * as env from "@/env";
+import { route } from "@/middleware";
 
-const app = new Hono<{
-  Variables: {
-    session: Session;
-  };
-}>();
+const app = route.createApp();
 
 app.get("/flow/authorization/:mode/start", async (c) => {
   const mode = c.req.param("mode");

@@ -1,4 +1,4 @@
-import { denyForward, localOnly } from "@/middleware";
+import { denyForward, localOnly, route } from "@/middleware";
 import {
   getContainerIP,
   getContainerStatus,
@@ -8,10 +8,9 @@ import {
 } from "@/pve-utils";
 import * as db from "@/db";
 import * as env from "@/env";
-import { Hono } from "hono";
 import type { NodeLXCStatusStart } from "@/types/pve";
 
-const app = new Hono();
+const app = route.createApp();
 
 app.post("/pubkey", localOnly, denyForward, async (c) => {
   const body = await c.req.json();
