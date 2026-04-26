@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 const isUndefinedOrEmpty = <T>(
   value: string | undefined,
   replace_value: T | undefined,
@@ -36,6 +38,8 @@ export const ENCRYPTION_KEY = (() => {
 export const DISABLE_SSL =
   isUndefinedOrEmpty(Bun.env.DISABLE_SSL, "false").toLowerCase() === "true";
 
+export const APP_DOMAIN = isUndefinedOrEmpty(Bun.env.APP_DOMAIN, undefined);
+
 export const SMTP_HOST = isUndefinedOrEmpty(Bun.env.SMTP_HOST, "localhost");
 export const SMTP_PORT = Number(isUndefinedOrEmpty(Bun.env.SMTP_PORT, 587));
 export const SMTP_USER = isUndefinedOrEmpty(Bun.env.SMTP_USER, undefined);
@@ -45,3 +49,13 @@ export const SMTP_PASSWORD = isUndefinedOrEmpty(
 );
 
 export const ROOTFS = isUndefinedOrEmpty(Bun.env.ROOTFS, "local-zfs:8");
+
+export const BASTION_PROXY_KEY_PUB = isUndefinedOrEmpty(
+  Bun.env.BASTION_PROXY_KEY_PUB,
+  "./bastion_proxy_key.pub",
+);
+
+export const BASTION_PUB_KEY = readFileSync(
+  BASTION_PROXY_KEY_PUB,
+  "utf-8",
+).trim();

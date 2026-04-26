@@ -1,10 +1,25 @@
 import { CookieStore, sessionMiddleware } from "hono-sessions";
 import * as env from "./env";
 import { Hono } from "hono";
-import { getOrIssueCertificate, renewExpiringCertificates } from "./cert";
-import * as db from "./db.js";
+import {
+  getChallengeResponse,
+  getOrIssueCertificate,
+  isPublicDomain,
+  renewExpiringCertificates,
+} from "./cert";
+import * as db from "./db";
+import { serveStatic } from "hono/bun";
+import { denyForward, localOnly } from "./middleware";
+import { proxyRequest, reloadProxy } from "./utils";
 
 const app = new Hono();
+
+app.get("/privacy.pdf", serveStatic({ path: "./src/public/privacy.pdf" }));
+
+// wtf is this route used for
+app.post("/password", localOnly, denyForward, async (c) => {
+  return c.json({ success: false });
+});
 
 const store = new CookieStore();
 
@@ -30,25 +45,65 @@ const serve = Bun.serve({
   hostname: env.MOCINNO_HOSTNAME,
 });
 
+Bun.serve({
+  port: process.env.PORT || 80,
+  hostname: "0.0.0.0",
+  async fetch(req) {
+    const url = new URL(req.url);
+    if (url.pathname.startsWith("/.well-known/acme-challenge/")) {
+      const token = url.pathname.split("/").pop();
+      const keyAuth = getChallengeResponse(token);
+      if (keyAuth)
+        return new Response(keyAuth, {
+          headers: { "Content-Type": "application/octet-stream" },
+        });
+      return new Response("Not found", { status: 404 });
+    }
+    const host = req.headers.get("host")?.split(":")[0] || "";
+    if (env.DISABLE_SSL || !isPublicDomain(host)) {
+      try {
+        const appDomain = env.APP_DOMAIN;
+        if (appDomain && host === appDomain) {
+          const appPort = env.MOCINNO_PORT.toFixed(0);
+          return proxyRequest(req, `127.0.0.1:${appPort}`);
+        }
+        const domainRow = await db.getDomainByName(host);
+        if (!domainRow) return new Response("Not found", { status: 404 });
+        return proxyRequest(req, domainRow.proxy);
+      } catch (err) {
+        if (err instanceof Error) {
+          console.error("HTTP proxy error:", err.message);
+        } else {
+          console.error("HTTP proxy error:", err);
+        }
+        return new Response("Bad Gateway", { status: 502 });
+      }
+    }
+    return Response.redirect(
+      `https://${req.headers.get("host")}${url.pathname}${url.search}`,
+      301,
+    );
+  },
+});
+
 console.log("Mocinno is running on port %s (%s)", serve.port, serve.hostname);
 
 (async () => {
   if (!env.DISABLE_SSL) {
-    const appDomain = process.env.APP_DOMAIN;
-    if (appDomain) {
+    if (env.APP_DOMAIN) {
       try {
-        await getOrIssueCertificate(appDomain);
-        console.log(`Certificate ready for ${appDomain}`);
+        await getOrIssueCertificate(env.APP_DOMAIN);
+        console.log(`Certificate ready for ${env.APP_DOMAIN}`);
       } catch (err) {
         if (err instanceof Error) {
           console.error(
-            `Failed to issue certificate for ${appDomain}:`,
+            `Failed to issue certificate for ${env.APP_DOMAIN}:`,
             err.message,
           );
           return;
         }
         console.error(
-          `Failed to issue certificate for ${appDomain}, error unknown:`,
+          `Failed to issue certificate for ${env.APP_DOMAIN}, error unknown:`,
           err,
         );
       }

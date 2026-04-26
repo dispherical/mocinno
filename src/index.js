@@ -16,41 +16,9 @@ import {
   getOrIssueCertificate,
   isPublicDomain,
 } from "./cert.js";
-import nodemailer from "nodemailer";
 import { pveFetch, setContainerDescription, isContainerSuspended, getContainerConfig } from './pve-utils.js';
 
-const bastionPubKey = readFileSync(
-  process.env.BASTION_PROXY_KEY_PUB || "./bastion_proxy_key.pub",
-  "utf-8",
-).trim();
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
-
 const app = new Hono();
-app.get("/privacy.pdf", serveStatic({ path: "./src/public/privacy.pdf" }));
-const store = new CookieStore();
-app.use(
-  "*",
-  sessionMiddleware({
-    store,
-    encryptionKey: process.env.ENCRYPTION_KEY,
-    expireAfterSeconds: 900,
-    autoExtendExpiration: true,
-    cookieOptions: {
-      sameSite: "Lax",
-      path: "/",
-      httpOnly: true,
-    },
-  }),
-);
 
 const engine = new Liquid({
   root: "./views",
@@ -58,34 +26,6 @@ const engine = new Liquid({
   outputEscape: "escape",
   cache: process.env.NODE_ENV == "production",
 });
-
-const localOnly = ipRestriction(
-  getConnInfo,
-  {
-    denyList: [],
-    allowList: [
-      "127.0.0.1",
-      "::1",
-      "::ffff:127.0.0.1",
-      "172.16.0.0/12",
-      "192.168.0.0/16",
-      "fc00::/7",
-      "fe80::/10",
-    ],
-  },
-  async (remote, c) => {
-    return c.json({ error: "Forbidden.", success: false }, 403);
-  },
-);
-const denyForward = async function (c, next) {
-  if (
-    c.req.header("X-Forwarded-For") ||
-    c.req.header("X-Forwarded-Proto") ||
-    c.req.header("X-Forwarded-Host")
-  )
-    return c.json({ error: "Forbidden.", success: false }, 403);
-  return next();
-};
 
 app.post("/password", localOnly, denyForward, async (c) => {
   return c.json({ success: false });
@@ -856,126 +796,6 @@ app.post("/api/ssh-keys/remove", async (c) => {
   }
 
   return c.json({ message: "SSH key removed" });
-});
-
-async function buildServerNames() {
-  const certs = await db.getAllCertificates();
-  const serverNames = {};
-  for (const cert of certs) {
-    serverNames[cert.domain] = { cert: cert.cert, key: cert.key };
-  }
-  return serverNames;
-}
-
-async function proxyRequest(req, target) {
-  const url = new URL(req.url);
-  const targetUrl = new URL(req.url);
-
-  targetUrl.protocol = "http:";
-  targetUrl.host = target;
-
-  const proxyReq = new Request(targetUrl, {
-    method: req.method,
-    headers: req.headers,
-    body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
-    redirect: "manual",
-  });
-
-  proxyReq.headers.set(
-    "X-Forwarded-For",
-    req.headers.get("X-Forwarded-For") || "",
-  );
-  proxyReq.headers.set("X-Forwarded-Proto", "https");
-  proxyReq.headers.set("X-Forwarded-Host", url.hostname);
-
-  try {
-    const proxyRes = await fetch(proxyReq);
-
-    const res = new Response(proxyRes.body, proxyRes);
-
-    ["connection", "transfer-encoding"].forEach((h) => res.headers.delete(h));
-
-    return res;
-  } catch (err) {
-    console.error("Proxy error:", err);
-    return new Response("Bad Gateway", { status: 502 });
-  }
-}
-
-let proxyServer = null;
-
-async function reloadProxy() {
-  const serverNames = await buildServerNames();
-  if (Object.keys(serverNames).length === 0) return;
-
-  const appPort = parseInt(process.env.MOCINNO_PORT) || 3000;
-  const appDomain = process.env.APP_DOMAIN;
-
-  const proxyFetch = async (req) => {
-    try {
-      const host = new URL(req.url).hostname;
-
-      if (appDomain && host === appDomain) {
-        return proxyRequest(req, `127.0.0.1:${appPort}`);
-      }
-
-      const domainRow = await db.getDomainByName(host);
-      if (!domainRow) return new Response("Not found", { status: 404 });
-
-      return proxyRequest(req, domainRow.proxy);
-    } catch (err) {
-      console.error("Proxy error:", err.message);
-      return new Response("Bad Gateway", { status: 502 });
-    }
-  };
-
-  if (proxyServer) proxyServer.stop(true);
-
-  if (process.env.DISABLE_SSL !== "true") {
-    proxyServer = Bun.serve({
-      port: 443,
-      hostname: "0.0.0.0",
-      tls: { serverNames },
-      fetch: proxyFetch,
-    });
-  }
-}
-
-Bun.serve({
-  port: process.env.PORT || 80,
-  hostname: "0.0.0.0",
-  async fetch(req) {
-    const url = new URL(req.url);
-    if (url.pathname.startsWith("/.well-known/acme-challenge/")) {
-      const token = url.pathname.split("/").pop();
-      const keyAuth = getChallengeResponse(token);
-      if (keyAuth)
-        return new Response(keyAuth, {
-          headers: { "Content-Type": "application/octet-stream" },
-        });
-      return new Response("Not found", { status: 404 });
-    }
-    const host = req.headers.get("host")?.split(":")[0] || "";
-    if (process.env.DISABLE_SSL === "true" || !isPublicDomain(host)) {
-      try {
-        const appDomain = process.env.APP_DOMAIN;
-        if (appDomain && host === appDomain) {
-          const appPort = parseInt(process.env.MOCINNO_PORT) || 3000;
-          return proxyRequest(req, `127.0.0.1:${appPort}`);
-        }
-        const domainRow = await db.getDomainByName(host);
-        if (!domainRow) return new Response("Not found", { status: 404 });
-        return proxyRequest(req, domainRow.proxy);
-      } catch (err) {
-        console.error("HTTP proxy error:", err.message);
-        return new Response("Bad Gateway", { status: 502 });
-      }
-    }
-    return Response.redirect(
-      `https://${req.headers.get("host")}${url.pathname}${url.search}`,
-      301,
-    );
-  },
 });
 
 app.post("/api/proxy/reload", async (c) => {
