@@ -1,6 +1,12 @@
-import * as db from "./db.js";
-
-const config = require("../config.js");
+import * as db from "./db";
+import config from "config";
+import { pveFetch, setContainerDescription } from "./pve-utils";
+import type {
+  NodeLXCIndex,
+  NodeLXCInterfaces,
+  NodeLXCStatusStop,
+} from "./types/pve";
+import * as env from "./env";
 
 const WINDOW_MS = 5 * 60 * 1000;
 const SLOW_BIG_HIT_THRESHOLD = 100;
@@ -16,38 +22,20 @@ const SAFE_PORTS = new Set([
 
 const SUSPEND_COOLDOWN_MS = 300_000;
 
-const containers = new Map();
-const recentPorts = {};
+const containers = new Map<
+  number,
+  {
+    bigHits: number;
+    uniqueIPs: Set<string>;
+    portsPerDest: Map<string, Set<number>>;
+    lastReset: number;
+  }
+>();
+const recentPorts: Record<string, number[]> = {};
 const lastSuspended = new Map();
 const ipToVmid = new Map();
 const vmidToName = new Map();
 const vmidToNode = new Map();
-
-async function pveFetch(path, method = "GET", body = null) {
-  const url = `${process.env.PVE_URL}${path}`;
-  const options = {
-    method,
-    headers: {
-      Authorization: `PVEAPIToken=${process.env.PVE_TOKEN}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-    },
-    tls: { rejectUnauthorized: false },
-  };
-
-  if (body) {
-    const params = new URLSearchParams();
-    Object.entries(body).forEach(([k, v]) => params.append(k, v));
-    options.body = params;
-  }
-
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`PVE API Error: ${res.status} - ${err}`);
-  }
-  return res.json();
-}
 
 async function refreshIPMap() {
   const vmidsWithKnownIP = new Set();
@@ -65,13 +53,17 @@ async function refreshIPMap() {
       }
     }
   } catch (e) {
-    console.error("failed to load users from db:", e.message);
+    if (e instanceof Error) {
+      console.error("failed to load users from db:", e.message);
+    } else {
+      console.error("failed to load users from db, unknown error:", e);
+    }
   }
 
   for (const server of Object.values(config.servers)) {
     const node = server.node;
     try {
-      const list = await pveFetch(`/nodes/${node}/lxc`);
+      const list = await pveFetch<{ data: NodeLXCIndex }>(`/nodes/${node}/lxc`);
       for (const ct of list.data) {
         vmidToNode.set(ct.vmid, node);
         if (ct.name && !vmidToName.has(ct.vmid)) {
@@ -80,7 +72,7 @@ async function refreshIPMap() {
         if (vmidsWithKnownIP.has(ct.vmid)) continue;
 
         try {
-          const ifaces = await pveFetch(
+          const ifaces = await pveFetch<{ data: NodeLXCInterfaces }>(
             `/nodes/${node}/lxc/${ct.vmid}/interfaces`,
           );
           const eth0 = ifaces.data?.find((i) => i.name === "eth0");
@@ -89,17 +81,36 @@ async function refreshIPMap() {
             ipToVmid.set(ip, ct.vmid);
             vmidsWithKnownIP.add(ct.vmid);
           }
-        } catch {}
+        } catch (e) {
+          if (e instanceof Error) {
+            console.error(
+              `failed to get interfaces for vmid ${ct.vmid} on ${node}:`,
+              e.message,
+            );
+          } else {
+            console.error(
+              `failed to get interfaces for vmid ${ct.vmid} on ${node}, unknown error:`,
+              e,
+            );
+          }
+        }
       }
     } catch (e) {
-      console.error(`failed to list containers on ${node}:`, e.message);
+      if (e instanceof Error) {
+        console.error(`failed to list containers on ${node}:`, e.message);
+      } else {
+        console.error(
+          `failed to list containers on ${node}, unknown error:`,
+          e,
+        );
+      }
     }
   }
 
   console.log(`IP map refreshed: ${ipToVmid.size} containers`);
 }
 
-function getState(vmid) {
+function getState(vmid: number) {
   const now = Date.now();
   let state = containers.get(vmid);
   if (!state || now - state.lastReset > WINDOW_MS) {
@@ -117,23 +128,17 @@ function getState(vmid) {
   return state;
 }
 
-function isSequential(vmid, destIP, port) {
+function isSequential(vmid: number, destIP: string, port: number) {
   const key = `${vmid}:${destIP}`;
   if (!recentPorts[key]) recentPorts[key] = [];
   const ports = recentPorts[key];
   ports.push(port);
   if (ports.length > SEQUENTIAL_PORT_TRIGGER + 1) ports.shift();
   if (ports.length < SEQUENTIAL_PORT_TRIGGER) return false;
-  return ports.every((p, i) => i === 0 || p === ports[i - 1] + 1);
+  return ports.every((p, i) => i === 0 || p === ports[i - 1]! + 1);
 }
 
-async function setContainerDescription(vmid, description) {
-  const node = vmidToNode.get(vmid);
-  if (!node) throw new Error(`unknown node for vmid ${vmid}`);
-  await pveFetch(`/nodes/${node}/lxc/${vmid}/config`, "PUT", { description });
-}
-
-async function suspendContainer(vmid, reason) {
+async function suspendContainer(vmid: number, reason: string) {
   const now = Date.now();
   const last = lastSuspended.get(vmid);
   if (last && now - last < SUSPEND_COOLDOWN_MS) return;
@@ -147,16 +152,26 @@ async function suspendContainer(vmid, reason) {
   }
 
   try {
-    await setContainerDescription(vmid, `suspend: ${reason}`);
-    await pveFetch(`/nodes/${node}/lxc/${vmid}/status/stop`, "POST");
+    await setContainerDescription(
+      { node: vmidToNode.get(vmid), vmid },
+      `suspend: ${reason}`,
+    );
+    await pveFetch<{ data: NodeLXCStatusStop }>(
+      `/nodes/${node}/lxc/${vmid}/status/stop`,
+      "POST",
+    );
   } catch (e) {
-    console.error(`failed to suspend vmid ${vmid}:`, e.message);
+    if (e instanceof Error) {
+      console.error(`failed to suspend vmid ${vmid}:`, e.message);
+    } else {
+      console.error(`failed to suspend vmid ${vmid}, unknown error:`, e);
+    }
   }
   await notifySlack(vmid, reason);
 }
 
-async function notifySlack(vmid, reason) {
-  const url = process.env.SLACK_WEBHOOK_URL;
+async function notifySlack(vmid: number, reason: string) {
+  const url = env.SLACK_WEBHOOK_URL;
   if (!url) return;
   const username = vmidToName.get(vmid) || "unknown";
   try {
@@ -191,11 +206,15 @@ async function notifySlack(vmid, reason) {
       }),
     });
   } catch (e) {
-    console.error(`error! Slack notification failed:`, e.message);
+    if (e instanceof Error) {
+      console.error(`error! Slack notification failed:`, e.message);
+    } else {
+      console.error(`error! Slack notification failed, unknown error:`, e);
+    }
   }
 }
 
-function parseTcpdumpLine(line) {
+function parseTcpdumpLine(line: string) {
   const match = line.match(
     /IP (\d+\.\d+\.\d+\.\d+)\.(\d+) > (\d+\.\d+\.\d+\.\d+)\.(\d+):/,
   );
@@ -208,12 +227,12 @@ function parseTcpdumpLine(line) {
   return {
     srcIP,
     destIP: match[3],
-    destPort: parseInt(match[4], 10),
+    destPort: parseInt(match[4]!, 10),
     vmid,
   };
 }
 
-function onConnection(vmid, destIP, destPort) {
+function onConnection(vmid: number, destIP: string, destPort: number) {
   const state = getState(vmid);
   const isBigHit = !SAFE_PORTS.has(destPort);
 
@@ -223,12 +242,12 @@ function onConnection(vmid, destIP, destPort) {
   if (isBigHit) {
     if (!state.portsPerDest.has(destIP))
       state.portsPerDest.set(destIP, new Set());
-    state.portsPerDest.get(destIP).add(destPort);
+    state.portsPerDest.get(destIP)!.add(destPort);
 
-    if (state.portsPerDest.get(destIP).size >= UNIQUE_PORTS_THRESHOLD) {
+    if (state.portsPerDest.get(destIP)!.size >= UNIQUE_PORTS_THRESHOLD) {
       suspendContainer(
         vmid,
-        `port scan on ${destIP}: ${state.portsPerDest.get(destIP).size} unique ports`,
+        `port scan on ${destIP}: ${state.portsPerDest.get(destIP)!.size} unique ports`,
       );
       return;
     }
@@ -289,6 +308,7 @@ async function main() {
       if (!line.trim()) continue;
       const parsed = parseTcpdumpLine(line);
       if (parsed) {
+        if (!parsed.destIP) continue;
         onConnection(parsed.vmid, parsed.destIP, parsed.destPort);
       }
     }

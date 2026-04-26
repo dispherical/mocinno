@@ -98,3 +98,10 @@ export const OS_TEMPLATE = isUndefinedOrEmpty(
   Bun.env.OS_TEMPLATE,
   "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst",
 );
+
+export const ADMIN_EMAILS = isUndefinedOrEmpty(Bun.env.ADMIN_EMAILS, "");
+
+export const SLACK_WEBHOOK_URL = isUndefinedOrEmpty(
+  Bun.env.SLACK_WEBHOOK_URL,
+  undefined,
+);

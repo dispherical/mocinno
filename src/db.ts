@@ -20,30 +20,33 @@ import {
   invitesTable,
 } from "./db/schema.ts";
 import { exec } from "child_process";
+import * as env from "./env";
 import { promisify } from "util";
+
+// A lot of this file has been lazily converted to typescript, please don't expect quality
 
 const execAsync = promisify(exec);
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+const ADMIN_EMAILS = (env.ADMIN_EMAILS || "")
   .split(",")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
 const RESERVED_IPS = new Set(["10.60.0.1", "10.60.0.2", "10.60.0.3"]);
 
-function parseCIDR(cidr) {
+function parseCIDR(cidr: string) {
   const [base, prefixStr] = cidr.split("/");
-  const prefix = parseInt(prefixStr, 10);
-  const parts = base.split(".").map(Number);
+  const prefix = parseInt(prefixStr!, 10);
+  const parts = base!.split(".").map(Number);
   const baseInt =
-    (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
+    (parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!;
   const mask = ~((1 << (32 - prefix)) - 1) >>> 0;
   const network = (baseInt & mask) >>> 0;
   const broadcast = (network | ~mask) >>> 0;
   return { network, broadcast, prefix };
 }
 
-function intToIP(n) {
+function intToIP(n: number) {
   return [
     (n >>> 24) & 0xff,
     (n >>> 16) & 0xff,
@@ -52,7 +55,7 @@ function intToIP(n) {
   ].join(".");
 }
 
-export async function allocateIP(cidr, gateway) {
+export async function allocateIP(cidr: string, gateway: string) {
   const { network, broadcast, prefix } = parseCIDR(cidr);
   const startHost = network + 2;
   const endHost = broadcast - 1;
@@ -82,11 +85,11 @@ export async function allocateIP(cidr, gateway) {
   throw new Error("No available IPs in CIDR range");
 }
 
-export function isAdmin(email) {
+export function isAdmin(email: string) {
   return ADMIN_EMAILS.includes(email?.toLowerCase());
 }
 
-export async function findUserBySub(sub) {
+export async function findUserBySub(sub: string) {
   const [user] = await db
     .select()
     .from(usersTable)
@@ -94,7 +97,7 @@ export async function findUserBySub(sub) {
   return user ?? null;
 }
 
-export async function findUserByUsername(username) {
+export async function findUserByUsername(username: string) {
   const [user] = await db
     .select()
     .from(usersTable)
@@ -102,7 +105,7 @@ export async function findUserByUsername(username) {
   return user ?? null;
 }
 
-export async function findUserByVmid(vmid) {
+export async function findUserByVmid(vmid: number) {
   const [user] = await db
     .select()
     .from(usersTable)
@@ -110,7 +113,7 @@ export async function findUserByVmid(vmid) {
   return user ?? null;
 }
 
-export async function isUsernameTaken(username) {
+export async function isUsernameTaken(username: string) {
   const [user] = await db
     .select({ id: usersTable.id })
     .from(usersTable)
@@ -136,6 +139,14 @@ export async function createUser({
   ip,
   ipv6,
   node,
+}: {
+  sub: string;
+  username: string;
+  sshKeys: string[];
+  vmid: number;
+  ip: string | null;
+  ipv6: string | null;
+  node: string;
 }) {
   const [user] = await db
     .insert(usersTable)
@@ -152,7 +163,7 @@ export async function createUser({
   return user;
 }
 
-export async function updateUserSSHKeys(sub, keys) {
+export async function updateUserSSHKeys(sub: string, keys: string[]) {
   const [user] = await db
     .update(usersTable)
     .set({ ssh_keys: keys })
@@ -161,12 +172,12 @@ export async function updateUserSSHKeys(sub, keys) {
   return user ?? null;
 }
 
-export async function deleteUser(sub) {
+export async function deleteUser(sub: string) {
   await db.delete(applicationsTable).where(eq(applicationsTable.sub, sub));
   await db.delete(usersTable).where(eq(usersTable.sub, sub));
 }
 
-export async function getDomainsForUser(userId) {
+export async function getDomainsForUser(userId: number) {
   return db
     .select()
     .from(domainsTable)
@@ -174,7 +185,15 @@ export async function getDomainsForUser(userId) {
     .orderBy(asc(domainsTable.created_at));
 }
 
-export async function addDomain({ userId, domain, proxy }) {
+export async function addDomain({
+  userId,
+  domain,
+  proxy,
+}: {
+  userId: number;
+  domain: string;
+  proxy: string;
+}) {
   const [row] = await db
     .insert(domainsTable)
     .values({ user_id: userId, domain, proxy })
@@ -182,7 +201,7 @@ export async function addDomain({ userId, domain, proxy }) {
   return row;
 }
 
-export async function removeDomain(userId, domain) {
+export async function removeDomain(userId: number, domain: string) {
   const [row] = await db
     .delete(domainsTable)
     .where(
@@ -192,7 +211,7 @@ export async function removeDomain(userId, domain) {
   return row ?? null;
 }
 
-export async function domainExists(domain) {
+export async function domainExists(domain: string) {
   const [row] = await db
     .select({ id: domainsTable.id })
     .from(domainsTable)
@@ -200,7 +219,7 @@ export async function domainExists(domain) {
   return !!row;
 }
 
-export async function domainOwnedBy(domain, userId) {
+export async function domainOwnedBy(domain: string, userId: number) {
   const [row] = await db
     .select({ id: domainsTable.id })
     .from(domainsTable)
@@ -229,6 +248,13 @@ export async function createApplication({
   sshKey,
   reason,
   template,
+}: {
+  sub: string;
+  email: string;
+  username: string;
+  sshKey: string;
+  reason: string;
+  template: string;
 }) {
   const [app] = await db
     .insert(applicationsTable)
@@ -252,7 +278,7 @@ export async function getAllApplications() {
     .orderBy(desc(applicationsTable.created_at));
 }
 
-export async function getApplicationById(id) {
+export async function getApplicationById(id: number) {
   const [app] = await db
     .select()
     .from(applicationsTable)
@@ -260,7 +286,7 @@ export async function getApplicationById(id) {
   return app ?? null;
 }
 
-export async function getApplicationBySub(sub) {
+export async function getApplicationBySub(sub: string) {
   const [app] = await db
     .select()
     .from(applicationsTable)
@@ -270,7 +296,11 @@ export async function getApplicationBySub(sub) {
   return app ?? null;
 }
 
-export async function updateApplicationStatus(id, status, reviewedBy) {
+export async function updateApplicationStatus(
+  id: number,
+  status: string,
+  reviewedBy: string,
+) {
   const [app] = await db
     .update(applicationsTable)
     .set({ status, reviewed_by: reviewedBy, reviewed_at: new Date() })
@@ -283,7 +313,15 @@ export async function getAllUsers() {
   return db.select().from(usersTable).orderBy(desc(usersTable.created_at));
 }
 
-export async function searchUsers({ query, limit = 50, offset = 0 }) {
+export async function searchUsers({
+  query,
+  limit = 50,
+  offset = 0,
+}: {
+  query?: string;
+  limit?: number;
+  offset?: number;
+}) {
   if (query) {
     const likePattern = `%${query}%`;
     const whereClause = or(
@@ -298,11 +336,16 @@ export async function searchUsers({ query, limit = 50, offset = 0 }) {
       .orderBy(desc(usersTable.created_at))
       .limit(limit)
       .offset(offset);
-    const [{ total }] = await db
+    const rowCount = await db
       .select({ total: count() })
       .from(usersTable)
       .where(whereClause);
-    return { users: rows, total: Number(total) };
+
+    if (!rowCount[0]?.total) {
+      return { users: rows, total: 0 };
+    }
+
+    return { users: rows, total: Number(rowCount[0].total) };
   }
   const rows = await db
     .select()
@@ -310,11 +353,15 @@ export async function searchUsers({ query, limit = 50, offset = 0 }) {
     .orderBy(desc(usersTable.created_at))
     .limit(limit)
     .offset(offset);
-  const [{ total }] = await db.select({ total: count() }).from(usersTable);
-  return { users: rows, total: Number(total) };
+  const rowCount = await db.select({ total: count() }).from(usersTable);
+  if (!rowCount[0]?.total) {
+    return { users: rows, total: 0 };
+  }
+
+  return { users: rows, total: Number(rowCount[0].total) };
 }
 
-export async function updateUsername(vmid, newUsername) {
+export async function updateUsername(vmid: number, newUsername: string) {
   const [user] = await db
     .update(usersTable)
     .set({ username: newUsername })
@@ -323,7 +370,7 @@ export async function updateUsername(vmid, newUsername) {
   return user ?? null;
 }
 
-export async function getDomainByName(domain) {
+export async function getDomainByName(domain: string) {
   const [row] = await db
     .select()
     .from(domainsTable)
@@ -331,7 +378,7 @@ export async function getDomainByName(domain) {
   return row ?? null;
 }
 
-export async function getSetting(key) {
+export async function getSetting(key: string) {
   const [row] = await db
     .select({ value: settingsTable.value })
     .from(settingsTable)
@@ -339,14 +386,24 @@ export async function getSetting(key) {
   return row?.value ?? null;
 }
 
-export async function setSetting(key, value) {
+export async function setSetting(key: string, value: string) {
   await db
     .insert(settingsTable)
     .values({ key, value })
     .onConflictDoUpdate({ target: settingsTable.key, set: { value } });
 }
 
-export async function saveCertificate({ domain, cert, key, expiresAt }) {
+export async function saveCertificate({
+  domain,
+  cert,
+  key,
+  expiresAt,
+}: {
+  domain: string;
+  cert: string;
+  key: string;
+  expiresAt: string;
+}) {
   const [row] = await db
     .insert(certificatesTable)
     .values({ domain, cert, key, expires_at: new Date(expiresAt) })
@@ -363,7 +420,7 @@ export async function saveCertificate({ domain, cert, key, expiresAt }) {
   return row;
 }
 
-export async function getCertificate(domain) {
+export async function getCertificate(domain: string) {
   const [row] = await db
     .select()
     .from(certificatesTable)
@@ -371,7 +428,7 @@ export async function getCertificate(domain) {
   return row ?? null;
 }
 
-export async function deleteCertificate(domain) {
+export async function deleteCertificate(domain: string) {
   await db
     .delete(certificatesTable)
     .where(eq(certificatesTable.domain, domain));
@@ -393,7 +450,17 @@ export async function getExpiringCertificates(withinDays = 30) {
     .orderBy(asc(certificatesTable.expires_at));
 }
 
-export async function createInvite({ code, adminEmail, maxUses, expiresAt }) {
+export async function createInvite({
+  code,
+  adminEmail,
+  maxUses,
+  expiresAt,
+}: {
+  code: string;
+  adminEmail: string;
+  maxUses: number;
+  expiresAt: string;
+}) {
   const [invite] = await db
     .insert(invitesTable)
     .values({
@@ -406,7 +473,7 @@ export async function createInvite({ code, adminEmail, maxUses, expiresAt }) {
   return invite;
 }
 
-export async function getInvite(code) {
+export async function getInvite(code: string) {
   const [invite] = await db
     .select()
     .from(invitesTable)
@@ -414,7 +481,7 @@ export async function getInvite(code) {
   return invite ?? null;
 }
 
-export async function incrementInvite(code) {
+export async function incrementInvite(code: string) {
   await db
     .update(invitesTable)
     .set({ uses: sql`${invitesTable.uses} + 1` })
@@ -425,7 +492,7 @@ export async function getAllInvites() {
   return db.select().from(invitesTable).orderBy(desc(invitesTable.created_at));
 }
 
-export async function deleteInvite(code) {
+export async function deleteInvite(code: string) {
   await db.delete(invitesTable).where(eq(invitesTable.code, code));
 }
 

@@ -214,3 +214,12 @@ export type NodeLXCStatusStop = string;
 export type NodeLXCStatusReboot = string;
 export type NodeLXCDelete = string;
 export type NodeLXCPost = string;
+
+// types are not 1:1 but i'm lazy rn
+export type NodeLXCIndex = Array<
+  Partial<FullNodeLXCConfig> & {
+    vmid: number;
+    status: "stopped" | "running";
+    name: string;
+  }
+>;
