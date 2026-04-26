@@ -6,8 +6,8 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "start:dev": "bun run src/index.ts --watch",
-    "bastion": "bun run src/bastion.js",
-    "bastion:dev": "bun run src/bastion.js --watch"
+    "bastion": "bun run src/bastion.ts",
+    "bastion:dev": "bun run src/bastion.ts --watch"
   },
   "devDependencies": {
     "@types/bun": "latest",
