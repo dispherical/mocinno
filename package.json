@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/nodemailer": "^8.0.0",
     "drizzle-kit": "^0.31.9"
   },
   "peerDependencies": {

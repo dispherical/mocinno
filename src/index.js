@@ -17,6 +17,7 @@ import {
   isPublicDomain,
 } from "./cert.js";
 import nodemailer from "nodemailer";
+import { pveFetch, setContainerDescription, isContainerSuspended, getContainerConfig } from './pve-utils.js';
 
 const bastionPubKey = readFileSync(
   process.env.BASTION_PROXY_KEY_PUB || "./bastion_proxy_key.pub",
@@ -41,27 +42,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-async function getContainerConfig(ct) {
-  try {
-    const config = await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`);
-    return config.data;
-  } catch {
-    return null;
-  }
-}
-
-async function isContainerSuspended(ct) {
-  const config = await getContainerConfig(ct);
-
-  return config?.description?.toLowerCase().includes("suspend") ?? false;
-}
-
-async function setContainerDescription(ct, description) {
-  await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`, "PUT", {
-    description,
-  });
-}
-
 const app = new Hono();
 app.get("/privacy.pdf", serveStatic({ path: "./src/public/privacy.pdf" }));
 const store = new CookieStore();
@@ -80,34 +60,6 @@ app.use(
   }),
 );
 
-async function pveFetch(path, method = "GET", body = null) {
-  const url = `${process.env.PVE_URL}${path}`;
-  const options = {
-    method,
-    headers: {
-      Authorization: `PVEAPIToken=${process.env.PVE_TOKEN}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  };
-
-  if (body) {
-    const params = new URLSearchParams();
-    Object.entries(body).forEach(([k, v]) => params.append(k, v));
-    options.body = params;
-  }
-
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`PVE API Error: ${res.status} - ${err}`);
-  }
-  return res.json();
-}
-
 function isFQDN(domain) {
   return /^(?!-)[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test(domain);
 }
@@ -119,138 +71,6 @@ function isWhitelisted(domain, username) {
     domain.endsWith(`.${username}.localhost`) ||
     domain.endsWith(`${username}.localhost`)
   );
-}
-
-async function checkDNSVerification(domain, username) {
-  try {
-    const records = await resolve(domain, "TXT");
-    for (const record of records) {
-      const txt = record.join("");
-      if (txt === `domain-verification=${username}`) return true;
-    }
-  } catch {}
-
-  try {
-    const cnames = await resolve(domain, "CNAME");
-    for (const cname of cnames) {
-      if (
-        cname === `${username}.hackclub.app` ||
-        cname === `${username}.hackclub.app.`
-      )
-        return true;
-    }
-  } catch {}
-
-  return false;
-}
-
-async function getContainerIP(ct, userIp) {
-  if (userIp) return userIp;
-
-  try {
-    const ifaces = await pveFetch(
-      `/nodes/${ct.node}/lxc/${ct.vmid}/interfaces`,
-    );
-    const eth0 = ifaces.data?.find((i) => i.name === "eth0");
-    return eth0?.["inet"]?.split("/")[0] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-async function getContainerStatus(ct) {
-  try {
-    const status = await pveFetch(
-      `/nodes/${ct.node}/lxc/${ct.vmid}/status/current`,
-    );
-    return status.data;
-  } catch {
-    return null;
-  }
-}
-
-async function getNextVmid() {
-  const clusterNext = await pveFetch(`/cluster/nextid`);
-  return clusterNext.data;
-}
-
-async function getNextNode() {
-  const config = require("../config.js");
-
-  const percentsAllocated = await Promise.all(
-    Object.entries(config.servers).map(async ([, { node, maxServers }]) => {
-      const { data } = await pveFetch(`/nodes/${node}/lxc`);
-      return { node, percent: data.length / maxServers };
-    }),
-  );
-
-  if (percentsAllocated.length === 0) return null;
-
-  percentsAllocated.sort((a, b) => a.percent - b.percent);
-  const best = percentsAllocated[0];
-
-  return best.node;
-}
-
-async function waitForTask(node, upid, timeoutMs = 30000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const status = await pveFetch(
-      `/nodes/${node}/tasks/${encodeURIComponent(upid)}/status`,
-    );
-    if (status.data.status === "stopped") {
-      if (status.data.exitstatus !== "OK") {
-        throw new Error(`Task failed: ${status.data.exitstatus}`);
-      }
-      return status.data;
-    }
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-  throw new Error("Task timed out");
-}
-
-function formatUptime(seconds) {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-
-  const parts = [];
-  if (d) parts.push(`${d}d`);
-  if (h) parts.push(`${h}h`);
-  if (m) parts.push(`${m}m`);
-
-  return parts.join(" ") || "0m";
-}
-
-async function getNodeStats(node) {
-  try {
-    const [status, containers, rootfs] = await Promise.all([
-      pveFetch(`/nodes/${node}/status`),
-      pveFetch(`/nodes/${node}/lxc`),
-      pveFetch(
-        `/nodes/${node}/storage/${process.env.ROOTFS.split(":")[0]}/status`,
-      ),
-    ]);
-
-    return {
-      cpu_percent: (status.data.cpu * 100).toFixed(2),
-      ram_used_gb: (status.data.memory.used / 1024 ** 3).toFixed(2),
-      ram_total_gb: (status.data.memory.total / 1024 ** 3).toFixed(2),
-      ram_percent: (
-        (status.data.memory.used / status.data.memory.total) *
-        100
-      ).toFixed(2),
-      rootfs_used_gb: (rootfs.data.used / 1024 ** 3).toFixed(2),
-      rootfs_total_gb: (rootfs.data.total / 1024 ** 3).toFixed(2),
-      rootfs_percent: ((rootfs.data.used / rootfs.data.total) * 100).toFixed(2),
-      container_count: containers.data.length,
-      load_avg: status.data.loadavg.join(" / "),
-      core_count: status.data.cpuinfo.cpus,
-      uptime: formatUptime(status.data.uptime),
-    };
-  } catch (err) {
-    console.error("Failed to fetch node stats:", err.message);
-  }
 }
 
 const engine = new Liquid({
