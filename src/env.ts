@@ -68,6 +68,16 @@ export const BASTION_PUB_KEY = readFileSync(
 
 export const BASTION_PRIV_KEY = readFileSync(BASTION_PROXY_KEY, "utf-8").trim();
 
+export const BASTION_HOST_KEY = isUndefinedOrEmpty(
+  Bun.env.BASTION_HOST_KEY,
+  "./bastion_host_key",
+);
+
+export const BASTION_HOST_PRIV_KEY = readFileSync(
+  BASTION_HOST_KEY,
+  "utf-8",
+).trim();
+
 export const OAUTH_CLIENT_ID = (() => {
   if (!isUndefinedOrEmpty(Bun.env.OAUTH_CLIENT_ID, undefined)) {
     throw new Error("OAUTH_CLIENT_ID environment variable is required");
@@ -105,3 +115,23 @@ export const SLACK_WEBHOOK_URL = isUndefinedOrEmpty(
   Bun.env.SLACK_WEBHOOK_URL,
   undefined,
 );
+
+export const ZEROSSL_EAB_KID = (() => {
+  if (
+    !isUndefinedOrEmpty(Bun.env.ZEROSSL_EAB_KID, undefined) &&
+    NODE_ENV === "production"
+  ) {
+    throw new Error("ZEROSSL_EAB_KID environment variable is required");
+  }
+  return Bun.env.ZEROSSL_EAB_KID as string;
+})();
+
+export const ZEROSSL_EAB_HMAC_KEY = (() => {
+  if (
+    !isUndefinedOrEmpty(Bun.env.ZEROSSL_EAB_HMAC_KEY, undefined) &&
+    NODE_ENV === "production"
+  ) {
+    throw new Error("ZEROSSL_EAB_HMAC_KEY environment variable is required");
+  }
+  return Bun.env.ZEROSSL_EAB_HMAC_KEY as string;
+})();

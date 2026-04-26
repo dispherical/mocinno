@@ -1,11 +1,12 @@
 import acme from "acme-client";
-import * as db from "./db.js";
+import * as db from "./db";
+import * as env from "./env";
 
 const ZEROSSL_DIRECTORY = "https://acme.zerossl.com/v2/DV90";
 
 const NON_PUBLIC_TLDS = /(\.localhost|\.local|\.internal|\.home\.arpa)$/i;
 
-export function isPublicDomain(domain) {
+export function isPublicDomain(domain: string) {
   if (!domain || domain === "localhost") return false;
   if (NON_PUBLIC_TLDS.test(domain)) return false;
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(domain)) return false;
@@ -13,9 +14,9 @@ export function isPublicDomain(domain) {
   return true;
 }
 
-const challenges = new Map();
+const challenges = new Map<string, string>();
 
-let _client = null;
+let _client: acme.Client | null = null;
 
 async function getClient() {
   if (_client) return _client;
@@ -31,19 +32,19 @@ async function getClient() {
     directoryUrl: ZEROSSL_DIRECTORY,
     accountKey: accountKeyPem,
     externalAccountBinding: {
-      kid: process.env.ZEROSSL_EAB_KID,
-      hmacKey: process.env.ZEROSSL_EAB_HMAC_KEY,
+      kid: env.ZEROSSL_EAB_KID,
+      hmacKey: env.ZEROSSL_EAB_HMAC_KEY,
     },
   });
 
   return _client;
 }
 
-export function getChallengeResponse(token) {
+export function getChallengeResponse(token: string) {
   return challenges.get(token) ?? null;
 }
 
-export async function issueCertificate(domain) {
+export async function issueCertificate(domain: string) {
   if (!isPublicDomain(domain)) return null;
   const client = await getClient();
   const [key, csr] = await acme.crypto.createCsr({ commonName: domain });
@@ -74,12 +75,13 @@ export async function issueCertificate(domain) {
   return { cert: certPem.toString(), key: key.toString() };
 }
 
-export async function getOrIssueCertificate(domain) {
+export async function getOrIssueCertificate(domain: string) {
   if (!isPublicDomain(domain)) return null;
   const existing = await db.getCertificate(domain);
   if (existing) {
     const daysLeft =
-      (new Date(existing.expires_at) - Date.now()) / (1000 * 60 * 60 * 24);
+      (new Date(existing.expires_at).getTime() - Date.now()) /
+      (1000 * 60 * 60 * 24);
     if (daysLeft > 30) return existing;
   }
   return await issueCertificate(domain);
@@ -92,10 +94,14 @@ export async function renewExpiringCertificates() {
       await issueCertificate(cert.domain);
       console.log(`Renewed certificate for ${cert.domain}`);
     } catch (err) {
-      console.error(
-        `Failed to renew certificate for ${cert.domain}:`,
-        err.message,
-      );
+      if (err instanceof Error) {
+        console.error(
+          `Failed to renew certificate for ${cert.domain}:`,
+          err.message,
+        );
+      } else {
+        console.error(`Failed to renew certificate for ${cert.domain}:`, err);
+      }
     }
   }
 }
