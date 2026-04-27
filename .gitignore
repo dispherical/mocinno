@@ -38,4 +38,4 @@ bastion_proxy_key
 bastion_proxy_key.pub
 
 *.sqlite
-config.ts
+/config.ts

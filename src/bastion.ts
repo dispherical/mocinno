@@ -86,7 +86,7 @@ function verifyClientKey(
     : allowedKey;
   if (!ctx.key.data.equals(parsed.getPublicSSH())) return false;
   if (!ctx.signature) return true;
-  return parsed.verify(ctx.blob, ctx.signature, ctx.hashAlgo);
+  return parsed.verify(ctx.blob!, ctx.signature, ctx.hashAlgo);
 }
 
 function writeAndClose(stream: ServerChannel, message: string) {
