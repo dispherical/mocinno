@@ -1,6 +1,7 @@
 import * as db from "@/db";
 import { utils } from "ssh2";
 import { route } from "@/middleware";
+import reservedUsernames from "@/reservedUsernames";
 
 const app = route.createApp();
 
@@ -13,7 +14,7 @@ app.get("/api/username/check", async (c) => {
         "Invalid username. 3-32 chars, lowercase alphanumeric, hyphens, underscores. Must start with a letter and end with a letter or number.",
     });
   }
-  if (require("../reservedUsernames.ts").includes(username.toLowerCase())) {
+  if (reservedUsernames.includes(username.toLowerCase())) {
     return c.json({ available: false, error: "This username is reserved." });
   }
 
@@ -75,7 +76,7 @@ app.post("/api/application/submit", async (c) => {
         "Invalid username. 3-32 chars, lowercase alphanumeric, hyphens, underscores. Must start with a letter and end with a letter or number.",
     });
   }
-  if (require("../reservedUsernames.ts").includes(username.toLowerCase())) {
+  if (reservedUsernames.includes(username.toLowerCase())) {
     return c.json({ error: "This username is reserved." });
   }
 
