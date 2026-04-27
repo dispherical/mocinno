@@ -7,7 +7,11 @@
     "start": "bun run src/index.ts",
     "start:dev": "bun run src/index.ts --watch",
     "bastion": "bun run src/bastion.ts",
-    "bastion:dev": "bun run src/bastion.ts --watch"
+    "bastion:dev": "bun run src/bastion.ts --watch",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@types/bun": "latest",
