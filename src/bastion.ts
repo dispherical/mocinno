@@ -543,7 +543,7 @@ function proxyToContainer(
     host: ip,
     port,
     username,
-    privateKey: env.BASTION_PRIV_KEY,
+    privateKey: env.BASTION_PROXY_PRIV_KEY,
   });
 }
 

@@ -8,6 +8,10 @@ Hiya! Welcome to mocinno.
 
 This may not be important but the name comes from the Resplendent quetzal (Pharomachrus mocinno). Quetzal is a dinosaur? Something like that. 
 
+## Contributing without a proxmox install
+
+I came across a [mock api on github](https://github.com/jrjsmrtn/mock-pve-api/) that should help with this
+
 ## What changed?
 
 | What changed         | Description                                                                                        | New Nest                               | Old Nest                                     |

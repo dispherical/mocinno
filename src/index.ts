@@ -18,6 +18,7 @@ import userRoutes from "@/routes/user";
 import authRoutes from "@/routes/auth";
 import applicationRoutes from "@/routes/application";
 import adminRoutes from "@/routes/admin";
+import publicRoutes from "@/routes/public";
 
 const app = route.createApp();
 
@@ -63,6 +64,7 @@ app.route("", userRoutes);
 app.route("", authRoutes);
 app.route("", applicationRoutes);
 app.route("", adminRoutes);
+app.route("", publicRoutes);
 
 const serve = Bun.serve({
   fetch: app.fetch,
