@@ -48,7 +48,7 @@ const app = route.createApp();
 
 app.get("/api/stats", async (c) => {
   if (!nodeStats) {
-    c.status(404);
+    c.status(503);
     return c.json({
       error: "Stats not available yet, please try again later.",
     });
