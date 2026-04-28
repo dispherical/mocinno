@@ -51,30 +51,33 @@ export const SMTP_PASSWORD = isUndefinedOrEmpty(
 
 export const ROOTFS = isUndefinedOrEmpty(Bun.env.ROOTFS, "local-zfs:8");
 
-export const BASTION_PROXY_KEY_PUB = isUndefinedOrEmpty(
+export const ENV_BASTION_PROXY_KEY_PUB = isUndefinedOrEmpty(
   Bun.env.BASTION_PROXY_KEY_PUB,
   "./bastion_proxy_key.pub",
 );
 
-export const BASTION_PROXY_KEY = isUndefinedOrEmpty(
+export const ENV_BASTION_PROXY_KEY = isUndefinedOrEmpty(
   Bun.env.BASTION_PROXY_KEY,
   "./bastion_proxy_key",
 );
 
-export const BASTION_PUB_KEY = readFileSync(
-  BASTION_PROXY_KEY_PUB,
+export const BASTION_PROXY_PUB_KEY = readFileSync(
+  ENV_BASTION_PROXY_KEY_PUB,
   "utf-8",
 ).trim();
 
-export const BASTION_PRIV_KEY = readFileSync(BASTION_PROXY_KEY, "utf-8").trim();
+export const BASTION_PROXY_PRIV_KEY = readFileSync(
+  ENV_BASTION_PROXY_KEY,
+  "utf-8",
+).trim();
 
-export const BASTION_HOST_KEY = isUndefinedOrEmpty(
+export const ENV_BASTION_HOST_KEY = isUndefinedOrEmpty(
   Bun.env.BASTION_HOST_KEY,
   "./bastion_host_key",
 );
 
 export const BASTION_HOST_PRIV_KEY = readFileSync(
-  BASTION_HOST_KEY,
+  ENV_BASTION_HOST_KEY,
   "utf-8",
 ).trim();
 

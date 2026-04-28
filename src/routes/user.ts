@@ -340,7 +340,7 @@ app.post("/api/ssh-keys/add", async (c) => {
   if (user.vmid) {
     try {
       await pveFetch(`/nodes/${user.node}/lxc/${user.vmid}/config`, "PUT", {
-        "ssh-public-keys": `${env.BASTION_PUB_KEY}\n${newKeys.join("\n")}`,
+        "ssh-public-keys": `${env.BASTION_PROXY_PUB_KEY}\n${newKeys.join("\n")}`,
       });
     } catch (e) {
       if (e instanceof Error) {
@@ -397,7 +397,7 @@ app.post("/api/ssh-keys/remove", async (c) => {
   if (user.vmid) {
     try {
       await pveFetch(`/nodes/${user.node}/lxc/${user.vmid}/config`, "PUT", {
-        "ssh-public-keys": `${env.BASTION_PUB_KEY}\n${newKeys.join("\n")}`,
+        "ssh-public-keys": `${env.BASTION_PROXY_PUB_KEY}\n${newKeys.join("\n")}`,
       });
     } catch (e) {
       if (e instanceof Error) {

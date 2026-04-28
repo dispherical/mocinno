@@ -85,7 +85,7 @@ app.post("/config", localOnly, denyForward, async (c) => {
         port: 22,
         usernamePassThrough: false,
         username: "root",
-        privateKey: env.BASTION_PRIV_KEY,
+        privateKey: env.BASTION_PROXY_PRIV_KEY,
       },
     },
   });

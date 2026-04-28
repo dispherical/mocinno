@@ -226,7 +226,7 @@ app.post("/api/admin/applications/approve", async (c) => {
       swap: 512,
       net0,
       hostname: application.username,
-      "ssh-public-keys": `${env.BASTION_PUB_KEY}\n${application.ssh_key}`,
+      "ssh-public-keys": `${env.BASTION_PROXY_PUB_KEY}\n${application.ssh_key}`,
       password,
       start: 1,
       onboot: 1,
