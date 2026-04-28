@@ -14,7 +14,7 @@ interface StatStructure {
 let nodeStats: StatStructure | null = null;
 
 // requests every 3 minutes, clarification because cron expressions can be confusing
-Bun.cron("*/1 * * * *", async () => {
+Bun.cron("*/3 * * * *", async () => {
   try {
     const config = await import("config");
 
