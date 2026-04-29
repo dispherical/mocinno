@@ -17,7 +17,7 @@ app.get("/flow/authorization/:mode/start", async (c) => {
     client_id: env.OAUTH_CLIENT_ID,
     redirect_uri: env.OAUTH_CLIENT_REDIRECT_URI,
     response_type: "code",
-    scope: "openid profile email verification_status",
+    scope: "openid profile email verification_status slack_id",
     state: state,
   });
 

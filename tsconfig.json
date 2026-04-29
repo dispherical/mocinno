@@ -27,6 +27,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "paths": {
       "@/*": ["./src/*"],
+      "@email": ["./emails/*"],
       "config": ["./config.ts"]
     }
   }
