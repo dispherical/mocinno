@@ -3,6 +3,7 @@
 import {
   Body,
   Button,
+  CodeInline,
   Column,
   Container,
   Head,
@@ -47,7 +48,7 @@ export const ApprovedEmail = ({
                     <Row>
                       <Column className="w-[32px] align-middle">
                         <Img
-                          src="https://hackclub.app/nest.png"
+                          src="https://hackclub.app/favicon.png"
                           alt="Nest Logo"
                           width={48}
                           className="block"
@@ -63,7 +64,7 @@ export const ApprovedEmail = ({
                 </Row>
               </Section>
 
-              <Section className="bg-bg-2 mobile:px-6 mobile:py-12 rounded-[8px] px-[40px] py-[64px] text-center">
+              <Section className="bg-bg-2 mobile:px-6 mobile:py-12 rounded-[8px] px-[40px] py-[128px] text-center">
                 <Section className="mb-3">
                   <Heading as="h1" className="font-28 text-fg m-0 font-sans">
                     Nest account approved!
@@ -71,10 +72,8 @@ export const ApprovedEmail = ({
                 </Section>
 
                 <Text className="font-16 text-fg-2 mx-auto mt-0 mb-8 max-w-[380px] text-center font-sans">
-                  Thank you for signing up for Nest.
-                  <br />
-                  To verify your account, we just need to confirm your email
-                  address.
+                  Your Nest account has been approved, you can login using{" "}
+                  <CodeInline>{username}@hackclub.app</CodeInline>
                 </Text>
 
                 <Section className="mb-6 text-center">
@@ -85,24 +84,6 @@ export const ApprovedEmail = ({
                     Manage account
                   </Button>
                 </Section>
-              </Section>
-
-              {/* Footer */}
-              <Section className="bg-bg">
-                <Row>
-                  <Column className="px-6 py-10 text-center">
-                    <Text className="font-13 text-fg-3 mx-auto mt-0 mb-8 max-w-[280px] text-center font-sans">
-                      Barebones is the catchy slogan that perfectly encapsulates
-                      the vision of our company.
-                    </Text>
-                    <Text className="font-11 text-fg-3 mt-4 mb-5 text-center font-sans">
-                      {/* What should we put here honestly */}
-                      123 Market Street, Floor 1
-                      <br />
-                      Tech City, CA, 94102
-                    </Text>
-                  </Column>
-                </Row>
               </Section>
             </Section>
           </Section>
