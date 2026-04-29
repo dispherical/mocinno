@@ -73,7 +73,15 @@ export const ApprovedEmail = ({
 
                 <Text className="font-16 text-fg-2 mx-auto mt-0 mb-8 max-w-[380px] text-center font-sans">
                   Your Nest account has been approved, you can login using{" "}
-                  <CodeInline>{username}@hackclub.app</CodeInline>
+                  <CodeInline>{username.toLowerCase()}@hackclub.app</CodeInline>
+                  <br />
+                  By default you have 2GB of RAM, 2 CPU cores and 16GB of
+                  storage, but you can request more resources{" "}
+                  <a href="https://nest.fillout.com/resources">
+                    through this form
+                  </a>
+                  <br />
+                  From the button below you can manage your ssh keys and domains
                 </Text>
 
                 <Section className="mb-6 text-center">
