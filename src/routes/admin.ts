@@ -22,6 +22,39 @@ import transporter from "@/mail";
 
 const app = route.createApp();
 
+let nodeStats:
+  | {
+      name: string;
+      stats: Awaited<ReturnType<typeof getNodeStats>>;
+    }[]
+  | null = null;
+
+async function requestNodeStats() {
+  try {
+    const config = await import("config");
+
+    const nodes = config.default.servers.map((s) => s.node);
+
+    const stats = await Promise.all(
+      nodes.map(async (node) => {
+        const stats = await getNodeStats(node);
+        return { name: node, stats };
+      }),
+    );
+
+    nodeStats = stats;
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Failed to update admin node stats:", err.message);
+      return;
+    }
+    console.error("Failed to update admin node stats:", err);
+  }
+}
+
+// Every min
+Bun.cron("* * * * *", requestNodeStats);
+
 app.post("/api/proxy/reload", async (c) => {
   const profile = c.get("session").get("profile");
   if (!profile || !db.isAdmin(profile.email)) {
@@ -47,15 +80,9 @@ app.get("/admin", async (c) => {
   const allApplications = await db.getAllApplications();
   const invites = await db.getAllInvites();
 
-  const config = await import("config");
-  const nodes = config.default.servers.map((s) => s.node);
-
-  const stats = await Promise.all(
-    nodes.map(async (node) => {
-      const stats = await getNodeStats(node);
-      return { name: node, stats };
-    }),
-  );
+  if (nodeStats === null) {
+    await requestNodeStats();
+  }
 
   const html = await engine.renderFile("admin", {
     profile,
@@ -63,7 +90,7 @@ app.get("/admin", async (c) => {
     applications,
     allApplications,
     invites,
-    stats,
+    stats: nodeStats,
     appDomain: process.env.APP_DOMAIN || c.req.header("host"),
   });
 
@@ -191,6 +218,8 @@ app.post("/api/admin/applications/approve", async (c) => {
         "Something has gone terribly wrong, the server configuration can't be found",
     });
   }
+
+  setTimeout(requestNodeStats, 0);
 
   const templateConfig = Array.isArray(serverConfig.templates)
     ? serverConfig.templates.find((t) => t.name === application.template) ||
@@ -330,6 +359,8 @@ app.post("/api/admin/users/suspend", async (c) => {
     return c.json({ error: "No account found" });
   }
 
+  setTimeout(requestNodeStats, 0);
+
   await setContainerDescription(user, `suspend: ${reason}`);
 
   try {
@@ -367,6 +398,8 @@ app.post("/api/admin/users/unsuspend", async (c) => {
     return c.json({ error: "No account found" });
   }
 
+  setTimeout(requestNodeStats, 0);
+
   await setContainerDescription(user, "");
   return c.json({ message: `Container ${vmid} unsuspended` });
 });
@@ -391,6 +424,8 @@ app.post("/api/admin/users/update", async (c) => {
     c.status(404);
     return c.json({ error: "No account found" });
   }
+
+  setTimeout(requestNodeStats, 0);
 
   const updates: NodeLXCConfig = {};
 
