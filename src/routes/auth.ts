@@ -12,7 +12,7 @@ app.get("/flow/authorization/:mode/start", async (c) => {
 
   const state = generateState();
   session.set("oauth_state", { state, mode });
-  const origin = new URL(c.req.url).origin
+  const origin = new URL(c.req.url).origin.replace("http://","https://")
   const params = new URLSearchParams({
     client_id: env.OAUTH_CLIENT_ID,
     redirect_uri: `${origin}/flow/authorization/goalpost`,
@@ -36,7 +36,7 @@ app.get("/flow/authorization/goalpost", async (c) => {
 
   if (!code || !stored || state !== stored.state)
     return c.redirect("/flow/authorization/login/start");
-  const origin = new URL(c.req.url).origin
+  const origin = new URL(c.req.url).origin.replace("http://","https://")
   const profile = await exchangeCodeForProfile(
     code,
     `${origin}/flow/authorization/goalpost`,
