@@ -12,10 +12,10 @@ app.get("/flow/authorization/:mode/start", async (c) => {
 
   const state = generateState();
   session.set("oauth_state", { state, mode });
-
+  const origin = new URL(c.req.url).origin
   const params = new URLSearchParams({
     client_id: env.OAUTH_CLIENT_ID,
-    redirect_uri: env.OAUTH_CLIENT_REDIRECT_URI,
+    redirect_uri: `${origin}/flow/authorization/goalpost`,
     response_type: "code",
     scope: "openid profile email verification_status",
     state: state,
@@ -36,10 +36,10 @@ app.get("/flow/authorization/goalpost", async (c) => {
 
   if (!code || !stored || state !== stored.state)
     return c.redirect("/flow/authorization/login/start");
-
+  const origin = new URL(c.req.url).origin
   const profile = await exchangeCodeForProfile(
     code,
-    env.OAUTH_CLIENT_REDIRECT_URI,
+    `${origin}/flow/authorization/goalpost`,
   );
 
   if (!profile) return c.redirect("/flow/authorization/login/start");
