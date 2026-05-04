@@ -73,32 +73,46 @@ export async function buildServerNames() {
 export async function proxyRequest(req: Request, target: string) {
   const url = new URL(req.url);
   const targetUrl = new URL(req.url);
-
   targetUrl.protocol = "http:";
   targetUrl.host = target;
 
-  const proxyReq = new Request(targetUrl.toString(), {
-    method: req.method,
-    headers: req.headers,
-    body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
-    redirect: "manual",
-  });
+  const reqHeaders = new Headers(req.headers);
 
-  proxyReq.headers.set(
-    "X-Forwarded-For",
-    req.headers.get("X-Forwarded-For") || "",
-  );
-  proxyReq.headers.set("X-Forwarded-Proto", "https");
-  proxyReq.headers.set("X-Forwarded-Host", url.hostname);
+  reqHeaders.delete("accept-encoding");
+
+  reqHeaders.delete("connection");
+  reqHeaders.delete("keep-alive");
+  reqHeaders.delete("transfer-encoding");
+  reqHeaders.delete("upgrade");
+  reqHeaders.delete("proxy-connection");
+  reqHeaders.delete("te");
+  reqHeaders.delete("trailer");
+
+  const xff = req.headers.get("x-forwarded-for");
+  reqHeaders.set("x-forwarded-for", xff || "");
+  reqHeaders.set("x-forwarded-proto", url.protocol.replace(":", ""));
+  reqHeaders.set("x-forwarded-host", url.hostname);
 
   try {
-    const proxyRes = await fetch(proxyReq);
+    const proxyRes = await fetch(targetUrl.toString(), {
+      method: req.method,
+      headers: reqHeaders,
+      body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+      redirect: "manual",
+    });
 
-    const res = new Response(proxyRes.body, proxyRes);
+    const resHeaders = new Headers(proxyRes.headers);
+    resHeaders.delete("content-encoding");
+    resHeaders.delete("content-length");
+    resHeaders.delete("transfer-encoding");
+    resHeaders.delete("connection");
+    resHeaders.delete("keep-alive");
 
-    ["connection", "transfer-encoding"].forEach((h) => res.headers.delete(h));
-
-    return res;
+    return new Response(proxyRes.body, {
+      status: proxyRes.status,
+      statusText: proxyRes.statusText,
+      headers: resHeaders,
+    });
   } catch (err) {
     console.error("Proxy error:", err);
     return new Response("Bad Gateway", { status: 502 });
