@@ -10,7 +10,14 @@ import * as db from "./db";
 import { serveStatic } from "hono/bun";
 import { route } from "./middleware";
 import { Liquid } from "liquidjs";
-import { proxyRequest, reloadProxy } from "./utils";
+import {
+  isWebSocketUpgrade,
+  proxyRequest,
+  proxyWebSocket,
+  reloadProxy,
+  wsHandlers,
+  type WSData,
+} from "./utils";
 
 import internalRoutes from "@/routes/internal";
 import webRoutes from "@/routes/web";
@@ -73,10 +80,11 @@ const serve = Bun.serve({
   hostname: env.MOCINNO_HOSTNAME,
 });
 
-Bun.serve({
+Bun.serve<WSData, {}>({
   port: process.env.PORT || 80,
   hostname: "0.0.0.0",
-  async fetch(req) {
+  websocket: wsHandlers,
+  async fetch(req, server) {
     const url = new URL(req.url);
     if (url.pathname.startsWith("/.well-known/acme-challenge/")) {
       const token = url.pathname.split("/").pop();
@@ -90,14 +98,22 @@ Bun.serve({
     const host = req.headers.get("host")?.split(":")[0] || "";
     if (env.DISABLE_SSL || !isPublicDomain(host)) {
       try {
+        let target: string;
         const appDomain = env.APP_DOMAIN;
         if (appDomain && host === appDomain) {
-          const appPort = env.MOCINNO_PORT;
-          return proxyRequest(req, `127.0.0.1:${appPort}`);
+          target = `127.0.0.1:${env.MOCINNO_PORT}`;
+        } else {
+          const domainRow = await db.getDomainByName(host);
+          if (!domainRow) return new Response("Not found", { status: 404 });
+          target = domainRow.proxy;
         }
-        const domainRow = await db.getDomainByName(host);
-        if (!domainRow) return new Response("Not found", { status: 404 });
-        return proxyRequest(req, domainRow.proxy);
+        if (isWebSocketUpgrade(req)) {
+          return (
+            proxyWebSocket(req, target, server) ??
+            new Response("WebSocket upgrade failed", { status: 500 })
+          );
+        }
+        return proxyRequest(req, target);
       } catch (err) {
         if (err instanceof Error) {
           console.error("HTTP proxy error:", err.message);
