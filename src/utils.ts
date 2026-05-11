@@ -113,7 +113,7 @@ export async function proxyRequest(req: Request, target: string) {
       headers: resHeaders,
     });
   } catch (err) {
-    console.error(`Proxy error while proxying ${req.host} to ${target}:\n`, err);
+    console.error(`Proxy error while proxying ${url.host} to ${target}:\n`, err);
     return new Response("Bad Gateway", { status: 502 });
   }
 }
