@@ -1,6 +1,8 @@
 import { route } from "@/middleware";
 import * as db from "@/db";
 import {
+  disableStartOnBoot,
+  enableStartOnBoot,
   getContainerStatus,
   getNextNode,
   getNextVmid,
@@ -362,6 +364,7 @@ app.post("/api/admin/users/suspend", async (c) => {
   setTimeout(requestNodeStats, 0);
 
   await setContainerDescription(user, `suspend: ${reason}`);
+  await disableStartOnBoot(user);
 
   try {
     const status = await getContainerStatus(user);
@@ -401,6 +404,8 @@ app.post("/api/admin/users/unsuspend", async (c) => {
   setTimeout(requestNodeStats, 0);
 
   await setContainerDescription(user, "");
+  await enableStartOnBoot(user);
+
   return c.json({ message: `Container ${vmid} unsuspended` });
 });
 
