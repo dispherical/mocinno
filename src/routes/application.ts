@@ -63,6 +63,45 @@ app.post("/api/application/submit", async (c) => {
     });
   }
 
+  try {
+    const result = await fetch(
+      `https://hackatime.hackclub.com/api/v1/users/${profile.slack_id}/trust_factor`,
+      {
+        headers: {
+          "User-Agent": "Nest/1.0 (+https://hackclub.app)",
+        },
+      },
+    );
+
+    if (!result.ok) {
+      console.error(
+        `Failed to check hackatime ban status: ${result.status} - ${await result.text()}`,
+      );
+
+      c.status(500);
+      return c.json({ error: "Failed to check hackatime ban status." });
+    }
+
+    const data = (await result.json()) as {
+      trust_level: string;
+      trust_value: number;
+    };
+
+    if (data.trust_level === "red") {
+      c.status(403);
+
+      return c.json({
+        error:
+          "You are not eligible for nest as you currently have a fraud ban.",
+      });
+    }
+  } catch (e) {
+    console.error("Error checking hackatime ban status:", e);
+
+    c.status(500);
+    return c.json({ error: "Failed to check hackatime ban status." });
+  }
+
   const body = await c.req.json();
   const username = body.username?.toLowerCase();
   const sshKey = body.sshKey?.trim();
