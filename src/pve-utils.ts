@@ -76,6 +76,26 @@ export async function setContainerDescription(
   });
 }
 
+export async function enableStartOnBoot(ct: {
+  node: string | null;
+  vmid: number | null;
+}) {
+  if (!ct.node || !ct.vmid) return;
+  await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`, "PUT", {
+    onboot: 1,
+  });
+}
+
+export async function disableStartOnBoot(ct: {
+  node: string | null;
+  vmid: number | null;
+}) {
+  if (!ct.node || !ct.vmid) return;
+  await pveFetch(`/nodes/${ct.node}/lxc/${ct.vmid}/config`, "PUT", {
+    onboot: 0,
+  });
+}
+
 export async function getContainerIP(
   ct: { node: string | null; vmid: number | null },
   userIp: string | null,
