@@ -24,9 +24,11 @@ app.get("/dashboard", async (c) => {
     proxy: string;
     created_at: Date | null;
   }[] = [];
+
   let suspended = false;
   let application = null;
   let eligible = false;
+  let hackatime_ban = false;
 
   if (user?.vmid) {
     container = await getContainerStatus(user);
@@ -49,6 +51,32 @@ app.get("/dashboard", async (c) => {
         eligible = true;
       }
     }
+
+    try {
+      const result = await fetch(
+        `https://hackatime.hackclub.com/api/v1/users/${profile.slack_id}/trust_factor`,
+        {
+          headers: {
+            "User-Agent": "Nest/1.0 (+https://hackclub.app)",
+          },
+        },
+      );
+
+      if (result.ok) {
+        const data = (await result.json()) as {
+          trust_level: string;
+          trust_value: number;
+        };
+
+        hackatime_ban = data.trust_level === "red";
+      } else {
+        console.error(
+          `Failed to check hackatime ban status: ${result.status} - ${await result.text()}`,
+        );
+      }
+    } catch (err) {
+      console.error(`Error checking hackatime ban status: ${err}`);
+    }
   }
 
   const config = await import("config");
@@ -61,6 +89,7 @@ app.get("/dashboard", async (c) => {
     suspended,
     application,
     eligible,
+    hackatime_ban,
     config: config.default,
   });
 

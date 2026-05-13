@@ -11,6 +11,7 @@ interface UserProfile {
   family_name: string;
   email: string;
   email_verified: boolean;
+  slack_id: string;
   verification_status:
     | "verified"
     | "pending"

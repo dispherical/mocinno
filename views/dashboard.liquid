@@ -247,7 +247,7 @@
               {% endif %}
             {% endif %}
             {% if application == null or application.status == 'rejected' %}
-              {% if eligible %}
+              {% if eligible and hackatime_ban == false %}
                 <div class="bg-white p-8 border border-border rounded-xl shadow-sm space-y-8">
                   <div class="space-y-3">
                     <h3 class="text-lg font-medium">Select operating system</h3>
@@ -314,6 +314,18 @@
                     <p id="status-message-form" class="mr-4 text-sm font-medium"></p>
                     <button id="apply-btn" class="uk-btn uk-btn-primary" disabled>Submit Application</button>
                   </div>
+                </div>
+              {% elsif hackatime_ban == true %}
+                <div class="p-6 border border-destructive/40 rounded-xl bg-destructive/10 shadow-sm text-center">
+                  <p class="mb-4 text-destructive font-medium">You are not currently eligible for Nest.</p>
+
+                  <p class="text-sm text-muted-foreground">
+                      You currently have an active hackatime/fraud ban. If you believe this ban is a mistake please contact @fraudsquad on Slack.
+                  </p>
+                  </p>
+                  <p class="text-sm text-muted-foreground mt-2">
+                      If you believe you are not banned then please contact an admin in #nest-help on Slack.
+                  </p>
                 </div>
               {% else %}
                 <div class="p-6 border border-border rounded-xl bg-muted/20 shadow-sm text-center">
