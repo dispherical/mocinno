@@ -73,7 +73,7 @@ app.post("/api/application/submit", async (c) => {
       },
     );
 
-    if (!result.ok || result.status != 404) {
+    if (!result.ok && result.status != 404) {
       console.error(
         `Failed to check hackatime ban status: ${result.status} - ${await result.text()}`,
       );
