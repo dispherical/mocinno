@@ -5,9 +5,10 @@ import { pveFetch } from "./pve-utils.js";
 import type { NodeLXCIndex } from "./types/pve.js";
 
 const CPU_THRESHOLD = 0.9;
-const CHECK_INTERVAL_MS = 60 * 60 * 1000;
+const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const NOTIFY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-const MIN_DATA_POINTS = 40;
+const WINDOW_SECONDS = 6 * 60 * 60;
+const MIN_DATA_POINTS = 12;
 const lastNotified = new Map();
 
 async function notifySlack(
@@ -23,7 +24,7 @@ async function notifySlack(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        text: `Container ${vmid} (${username}) averaging ${(avgCpu * 100).toFixed(1)}% CPU over 24h`,
+        text: `Container ${vmid} (${username}) averaging ${(avgCpu * 100).toFixed(1)}% CPU over 6h`,
         blocks: [
           {
             type: "section",
@@ -36,7 +37,7 @@ async function notifySlack(
               { type: "mrkdwn", text: `*VMID*\n${vmid}` },
               {
                 type: "mrkdwn",
-                text: `*24h avg*\n${(avgCpu * 100).toFixed(1)}% of ${cores} core(s)`,
+                text: `*6h avg*\n${(avgCpu * 100).toFixed(1)}% of ${cores} core(s)`,
               },
             ],
           },
@@ -77,10 +78,13 @@ async function checkNode(
     if (ct.status !== "running") continue;
 
     try {
-      const rrd = await pveFetch<{ data: { cpu: number }[] }>(
+      const rrd = await pveFetch<{ data: { time: number; cpu: number }[] }>(
         `/nodes/${node}/lxc/${ct.vmid}/rrddata?timeframe=day&cf=AVERAGE`,
       );
-      const points = rrd.data.filter((p) => typeof p.cpu === "number");
+      const cutoff = Date.now() / 1000 - WINDOW_SECONDS;
+      const points = rrd.data.filter(
+        (p) => typeof p.cpu === "number" && p.time >= cutoff,
+      );
       if (points.length < MIN_DATA_POINTS) continue;
 
       const avg = points.reduce((s, p) => s + p.cpu, 0) / points.length;
