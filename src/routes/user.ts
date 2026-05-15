@@ -189,7 +189,7 @@ app.post("/api/domains/add", async (c) => {
 
   const body = await c.req.json();
   const domain = body.domain?.toLowerCase()?.trim();
-  const proxy = body.proxy?.trim() || null;
+  const proxy = body.proxy || null;
 
   if (!domain || !isFQDN(domain)) {
     c.status(400);
@@ -202,6 +202,7 @@ app.post("/api/domains/add", async (c) => {
   }
 
   const ip = await getContainerIP(user, user.ip);
+
   if (!ip) {
     c.status(500);
     return c.json({ error: "Could not determine container IP" });

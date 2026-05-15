@@ -21,7 +21,7 @@ app.get("/dashboard", async (c) => {
     id: number;
     user_id: number | null;
     domain: string;
-    proxy: string;
+    proxy: number;
     created_at: Date | null;
   }[] = [];
 

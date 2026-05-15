@@ -84,35 +84,43 @@ Bun.serve<WSData, {}>({
   port: process.env.PORT || 80,
   hostname: "0.0.0.0",
   websocket: wsHandlers,
+
   async fetch(req, server) {
     const url = new URL(req.url);
+
     if (url.pathname.startsWith("/.well-known/acme-challenge/")) {
       const token = url.pathname.split("/").pop();
       const keyAuth = getChallengeResponse(token);
+
       if (keyAuth)
         return new Response(keyAuth, {
           headers: { "Content-Type": "application/octet-stream" },
         });
       return new Response("Not found", { status: 404 });
     }
+
     const host = req.headers.get("host")?.split(":")[0] || "";
+
     if (env.DISABLE_SSL || !isPublicDomain(host)) {
       try {
         let target: string;
         const appDomain = env.APP_DOMAIN;
+
         if (appDomain && host === appDomain) {
           target = `127.0.0.1:${env.MOCINNO_PORT}`;
         } else {
           const domainRow = await db.getDomainByName(host);
           if (!domainRow) return new Response("Not found", { status: 404 });
-          target = domainRow.proxy;
+          target = `${domainRow.ip}:${domainRow.proxy}`;
         }
+
         if (isWebSocketUpgrade(req)) {
           return (
             proxyWebSocket(req, target, server) ??
             new Response("WebSocket upgrade failed", { status: 500 })
           );
         }
+
         return proxyRequest(req, target);
       } catch (err) {
         if (err instanceof Error) {
