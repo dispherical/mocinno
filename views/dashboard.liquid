@@ -122,7 +122,7 @@
                 <thead>
                   <tr class="bg-muted/20">
                     <th class="pl-4">Domain</th>
-                    <th>Proxy To</th>
+                    <th>Target Port</th>
                     <th class="w-24 text-right pr-4">Actions</th>
                   </tr>
                 </thead>
@@ -155,13 +155,13 @@
                   <input type="text" id="domain-input" class="uk-input h-10" placeholder="example.com">
                 </div>
                 <div class="space-y-1 flex-1">
-                  <label class="text-sm font-medium">Target Port/Address</label>
-                  <input type="text" id="proxy-input" class="uk-input h-10" placeholder="example: 10.60.0.0:80">
+                  <label class="text-sm font-medium">Target Port</label>
+                  <input type="number" id="proxy-input" class="uk-input h-10" placeholder="example: 8080" inputmode="numeric">
                 </div>
               </div>
               <div class="flex items-center justify-between mt-4">
                 <div class="uk-form-help text-muted-foreground mt-0" id="domain-message">
-                  You'll need to point your domain to hackclub.app to use this!
+                  You'll need to point your domain to {{ user.username }}.hackclub.app to use this!
                 </div>
                 <button id="domain-add-btn" class="uk-btn uk-btn-primary">Add Domain</button>
               </div>
@@ -384,19 +384,23 @@
     usernameValid = false;
     updateApplyBtn();
     const val = usernameInput.value;
+
     if (!val) {
       usernameStatus.innerText = 'Must be 3-32 characters: letters, numbers, hyphens.';
       usernameStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
       return;
     }
+
     if (!/^[A-Za-z0-9-]{3,32}$/.test(val)) {
       usernameStatus.innerText =
         'Must be 3-32 chars. Only letters (a-z, A-Z), numbers, and hyphens allowed.';
       usernameStatus.className = 'uk-form-help text-destructive mt-1.5';
       return;
     }
+
     usernameStatus.innerText = 'Checking...';
     usernameStatus.className = 'uk-form-help text-muted-foreground mt-1.5';
+
     checkTimeout = setTimeout(async () => {
       try {
         const res = await fetch(`/api/username/check?username=${encodeURIComponent(val)}`);
@@ -417,6 +421,7 @@
       }
     }, 400);
   });
+
   const sshKeyInput = document.getElementById('sshkey-input');
   const sshKeyStatus = document.getElementById('sshkey-status');
   sshKeyInput?.addEventListener('input', () => {
@@ -428,6 +433,7 @@
       sshKeyStatus.innerText = 'Looks good!';
     }
   });
+
   const reasonInput = document.getElementById('reason-input');
   const reasonStatus = document.getElementById('reason-status');
   reasonInput?.addEventListener('input', () => {
@@ -449,6 +455,7 @@
       reasonStatus.className = 'uk-form-help text-destructive mt-1.5';
     }
   });
+
   applyBtn?.addEventListener('click', async () => {
     if (!usernameValid || !reasonValid) return;
     const username = usernameInput.value;
@@ -500,6 +507,7 @@
       if (templateInput) templateInput.disabled = false;
     }
   });
+
   async function containerAction(action, btnId) {
     const btn = document.getElementById(btnId);
     if (!btn) return;
@@ -538,9 +546,11 @@
       }
     });
   }
+
   containerAction('Start', 'start-btn');
   containerAction('Stop', 'stop-btn');
   containerAction('Reboot', 'reboot-btn');
+
   document.getElementById('delete-btn')?.addEventListener('click', async () => {
     if (!confirm('Are you sure? This will permanently delete all data on your container.')) return;
     if (msgPanel) {
@@ -566,18 +576,15 @@
       }
     }
   });
+
   document.getElementById('domain-add-btn')?.addEventListener('click', async () => {
     const domain = document.getElementById('domain-input').value.trim();
     if (!domain) return;
     const proxyInput = document.getElementById('proxy-input');
-    const proxy = proxyInput ? proxyInput.value.trim() : '';
-    if (proxy.startsWith("container")) {
-      domainMsg.innerText = "Proxy target should be <container ipv4>:<port>, not container:<port>";
-      domainMsg.className = 'uk-form-help text-destructive mt-0';
-      return;
-    }
-    if (proxy.startsWith("http://") || proxy.startsWith("https://")) {
-      domainMsg.innerText = 'Proxy target should not include http(s)://';
+    const proxyRaw = proxyInput ? proxyInput.value.trim() : '';
+    const proxy = parseInt(proxyRaw, 10);
+    if (!proxyRaw || !Number.isInteger(proxy) || proxy < 1 || proxy > 65535) {
+      domainMsg.innerText = 'Target port must be a number between 1 and 65535.';
       domainMsg.className = 'uk-form-help text-destructive mt-0';
       return;
     }
@@ -586,12 +593,10 @@
       domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
     }
     try {
-      const payload = { domain };
-      if (proxy) payload.proxy = proxy;
       const res = await fetch('/api/domains/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ domain, proxy }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -609,6 +614,7 @@
       }
     }
   });
+
   document.querySelectorAll('.domain-rm-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const domain = btn.dataset.domain;

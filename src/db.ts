@@ -192,7 +192,7 @@ export async function addDomain({
 }: {
   userId: number;
   domain: string;
-  proxy: string;
+  proxy: number;
 }) {
   const [row] = await db
     .insert(domainsTable)
@@ -234,6 +234,7 @@ export async function getAllDomains() {
     .select({
       domain: domainsTable.domain,
       proxy: domainsTable.proxy,
+      ip: usersTable.ip,
       username: usersTable.username,
     })
     .from(domainsTable)
@@ -372,9 +373,18 @@ export async function updateUsername(vmid: number, newUsername: string) {
 
 export async function getDomainByName(domain: string) {
   const [row] = await db
-    .select()
+    .select({
+      id: domainsTable.id,
+      user_id: domainsTable.user_id,
+      domain: domainsTable.domain,
+      proxy: domainsTable.proxy,
+      ip: usersTable.ip,
+      created_at: domainsTable.created_at,
+    })
     .from(domainsTable)
+    .innerJoin(usersTable, eq(domainsTable.user_id, usersTable.id))
     .where(eq(domainsTable.domain, domain));
+
   return row ?? null;
 }
 

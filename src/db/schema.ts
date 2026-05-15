@@ -14,11 +14,13 @@ export const usersTable = pgTable("users", {
 
 export const domainsTable = pgTable("domains", {
   id: serial("id").primaryKey(),
-  user_id: integer("user_id").references(() => usersTable.id, {
-    onDelete: "cascade",
-  }),
+  user_id: integer("user_id")
+    .notNull()
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+    }),
   domain: text("domain").unique().notNull(),
-  proxy: text("proxy").notNull(),
+  proxy: integer("proxy").notNull(),
   created_at: timestamp("created_at").defaultNow(),
 });
 
