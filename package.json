@@ -23,14 +23,16 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@shopify/prettier-plugin-liquid": "^1.10.2",
     "acme-client": "^5.4.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.12.7",
     "hono-sessions": "^0.8.1",
     "liquidjs": "^10.24.0",
     "nodemailer": "^8.0.5",
     "pg": "^8.20.0",
-    "ssh2": "^1.17.0",
-    "dotenv": "^17.4.2"
+    "prettier": "^3.8.3",
+    "ssh2": "^1.17.0"
   }
 }
