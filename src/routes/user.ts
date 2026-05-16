@@ -147,6 +147,23 @@ app.post("/api/container/delete", async (c) => {
     await waitForTask(user.node, stopResult.data);
   }
 
+  // TODO: replcae any
+  const backups = await pveFetch<any>(
+    `/nodes/${user.node}/storage/pbs/content?vmid=${user.vmid}`,
+    "GET",
+  );
+
+  await Promise.all(
+    backups.data
+      .filter((b) => b.content === "backup")
+      .map((b) =>
+        pveFetch(
+          `/nodes/${user.node}/storage/pbs/content/${encodeURIComponent(b.volid)}`,
+          "DELETE",
+        ),
+      ),
+  );
+
   const deleteResult = await pveFetch<{ data: NodeLXCDelete }>(
     `/nodes/${user.node}/lxc/${user.vmid}`,
     "DELETE",
