@@ -1,4 +1,8 @@
 export default [
+  // stuff we are running that would conflict
+  "umami",
+  "erugo",
+  
   "abuse",
   "account",
   "accounts",
