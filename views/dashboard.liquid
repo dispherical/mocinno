@@ -248,18 +248,22 @@
                     </tr>
                   </thead>
                   <tbody>
-                      {% for b in backups %}
-                        <tr>
-                          <td class="pl-4 font-mono">{{ b.volid }}</td>
-                          <td>{{ b.ctime | date: "%Y-%m-%d %H:%M:%S" }}</td>
-                          <td>
-                              <button id="restore-btn" data-volid="{{ b.volid }}" class="restore-btn uk-btn uk-btn-default uk-btn-sm">
-                                  Restore
-                              </button>
-                          </td>
-                        </tr>
-                        {% endfor %}
-                   </tbody>
+                    {% for b in backups %}
+                      <tr>
+                        <td class="pl-4 font-mono">{{ b.volid }}</td>
+                        <td>{{ b.ctime | date: '%Y-%m-%d %H:%M:%S' }}</td>
+                        <td>
+                          <button
+                            id="restore-btn"
+                            data-volid="{{ b.volid }}"
+                            class="restore-btn uk-btn uk-btn-default uk-btn-sm"
+                          >
+                            Restore
+                          </button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
                 </table>
               </div>
             </div>
@@ -763,35 +767,37 @@
 
   document.querySelectorAll('.restore-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-        const volid = btn.dataset.volid;
-        const confirmRestore = confirm('Restoring a backup will overwrite all current data on your container. Are you sure you want to proceed?');
+      const volid = btn.dataset.volid;
+      const confirmRestore = confirm(
+        'Restoring a backup will overwrite all current data on your container. Are you sure you want to proceed?',
+      );
 
-        if (!confirmRestore) return;
+      if (!confirmRestore) return;
 
-        btn.disabled = true;
-        btn.innerText = 'Restoring...';
+      btn.disabled = true;
+      btn.innerText = 'Restoring...';
 
-        try {
-            const res = await fetch('/api/backups/restore', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ volid }),
-            });
-            const data = await res.json();
+      try {
+        const res = await fetch('/api/backups/restore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ volid }),
+        });
+        const data = await res.json();
 
-            if (res.ok) {
-                alert('Backup restored successfully!');
-                location.reload();
-            } else {
-                alert('Error: ' + data.error);
-                btn.disabled = false;
-                btn.innerText = 'Restore';
-            }
-        } catch (e) {
-            alert('Failed to connect to API.');
-            btn.disabled = false;
-            btn.innerText = 'Restore';
+        if (res.ok) {
+          alert('Backup restored successfully!');
+          location.reload();
+        } else {
+          alert('Error: ' + data.error);
+          btn.disabled = false;
+          btn.innerText = 'Restore';
         }
+      } catch (e) {
+        alert('Failed to connect to API.');
+        btn.disabled = false;
+        btn.innerText = 'Restore';
+      }
     });
   });
 </script>
