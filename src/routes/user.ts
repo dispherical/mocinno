@@ -8,6 +8,7 @@ import {
 } from "@/pve-utils";
 import type {
   NodeLXCDelete,
+  NodeLXCPost,
   NodeLXCStatusReboot,
   NodeLXCStatusStart,
   NodeLXCStatusStop,
@@ -433,6 +434,74 @@ app.post("/api/ssh-keys/remove", async (c) => {
   }
 
   return c.json({ message: "SSH key removed" });
+});
+
+app.post("/api/backups/restore", async (c) => {
+  const profile = c.get("session").get("profile");
+
+  if (!profile) {
+    c.status(401);
+    return c.json({ error: "Unauthorized" });
+  }
+
+  const user = await db.findUserBySub(profile.sub);
+
+  if (!user?.vmid) {
+    c.status(404);
+    return c.json({ error: "No container found" });
+  }
+
+  const body = await c.req.json();
+  const volid = body.volid;
+
+  if (!volid) {
+    c.status(400);
+    return c.json({ error: "Backup volid is required" });
+  }
+
+  const isRunning = (await getContainerStatus(user))?.status === "running";
+
+  if (isRunning) {
+    const stopResult = await pveFetch<{ data: NodeLXCStatusStop }>(
+      `/nodes/${user.node}/lxc/${user.vmid}/status/stop`,
+      "POST",
+    );
+    await waitForTask(user.node, stopResult.data);
+  }
+
+  try {
+    const restoreResult = await pveFetch<{ data: NodeLXCPost }>(
+      `/nodes/${user.node}/lxc`,
+      "POST",
+      {
+        ostemplate: volid,
+        vmid: user.vmid,
+        force: 1,
+        restore: 1,
+        storage: "local-zfs",
+      },
+    );
+
+    await waitForTask(user.node, restoreResult.data, 900000);
+  } catch (e) {
+    if (e instanceof Error) {
+      console.error(
+        `Failed to restore backup ${volid} for ${user.username}:`,
+        e.message,
+      );
+    } else {
+      console.error(
+        `Failed to restore backup ${volid} for ${user.username}, error unknown:`,
+        e,
+      );
+    }
+    c.status(500);
+    return c.json({ error: "Failed to restore backup" });
+  }
+
+  return c.json({
+    message: "Backup restored.",
+  });
 });
 
 export default app;

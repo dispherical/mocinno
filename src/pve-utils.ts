@@ -1,4 +1,5 @@
 import {
+  type Backup,
   type NodeLXC,
   type NodeLXCConfig,
   type NodeLXCInterfaces,
@@ -40,6 +41,7 @@ export async function pveFetch<T>(
     const err = await res.text();
     throw new Error(`PVE API Error: ${res.status} - ${err}`);
   }
+
   return res.json() as Promise<T>;
 }
 
@@ -214,4 +216,27 @@ export async function getNextNode() {
   }
 
   return best.node;
+}
+
+export async function getContainerBackups(ct: {
+  node: string | null;
+  vmid: number | null;
+  username: string | null;
+}) {
+  if (!ct.node || !ct.vmid) return [];
+
+  try {
+    let backups: { data: Backup[] } = await pveFetch(
+      `/nodes/${ct.node}/storage/pbs/content?vmid=${ct.vmid}&content=backup`,
+    );
+
+    // incase old backups meant for another oser
+    return backups.data.filter((b) => b.notes === ct.username);
+  } catch (err) {
+    console.error(
+      `Failed to fetch backups for container ${ct.vmid} on node ${ct.node}:`,
+      err,
+    );
+    return [];
+  }
 }

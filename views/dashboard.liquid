@@ -10,6 +10,7 @@
           <li class="uk-active"><a href="#" data-target="tab-dashboard">Dashboard</a></li>
           <li><a href="#" data-target="tab-domains">Domains</a></li>
           <li><a href="#" data-target="tab-ssh-keys">SSH Keys</a></li>
+          <li><a href="#" data-target="tab-backups">Backups</a></li>
         {% else %}
           <li class="uk-active"><a href="#" data-target="tab-apply">Apply for Nest</a></li>
         {% endif %}
@@ -227,6 +228,39 @@
               </div>
               <div class="flex items-center justify-end mt-4">
                 <button id="ssh-key-add-btn" class="uk-btn uk-btn-primary" disabled>Add Key</button>
+              </div>
+            </div>
+          </div>
+          <div id="tab-backups" class="space-y-6 pt-2 hidden">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">Backups</h2>
+              <p class="text-muted-foreground mt-1">View and restore your container backups.</p>
+
+              <div class="border-border border-t my-6"></div>
+
+              <div class="border-border border rounded-xl overflow-hidden shadow-sm bg-white">
+                <table class="uk-table uk-table-divider uk-table-middle mb-0">
+                  <thead>
+                    <tr class="bg-muted/20">
+                      <th class="pl-4">Backup ID</th>
+                      <th>Created At</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                      {% for b in backups %}
+                        <tr>
+                          <td class="pl-4 font-mono">{{ b.volid }}</td>
+                          <td>{{ b.ctime | date: "%Y-%m-%d %H:%M:%S" }}</td>
+                          <td>
+                              <button id="restore-btn" data-volid="{{ b.volid }}" class="restore-btn uk-btn uk-btn-default uk-btn-sm">
+                                  Restore
+                              </button>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                   </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -724,6 +758,40 @@
       } catch {
         alert('Failed to connect to API.');
       }
+    });
+  });
+
+  document.querySelectorAll('.restore-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+        const volid = btn.dataset.volid;
+        const confirmRestore = confirm('Restoring a backup will overwrite all current data on your container. Are you sure you want to proceed?');
+
+        if (!confirmRestore) return;
+
+        btn.disabled = true;
+        btn.innerText = 'Restoring...';
+
+        try {
+            const res = await fetch('/api/backups/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volid }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                alert('Backup restored successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+                btn.disabled = false;
+                btn.innerText = 'Restore';
+            }
+        } catch (e) {
+            alert('Failed to connect to API.');
+            btn.disabled = false;
+            btn.innerText = 'Restore';
+        }
     });
   });
 </script>

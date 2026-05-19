@@ -225,3 +225,17 @@ export type NodeLXCIndex = Array<
     cpus: number;
   }
 >;
+
+export type Backup = {
+  format: string;
+  size: number;
+  volid: string;
+  ctime?: number;
+  encrypted?: boolean;
+  notes?: string;
+  parent?: string;
+  protected?: boolean;
+  used?: number;
+  verification?: any; // todo
+  vmid?: number;
+};

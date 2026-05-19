@@ -1,6 +1,11 @@
 import * as db from "../db";
-import { getContainerStatus, isContainerSuspended } from "@/pve-utils";
+import {
+  getContainerStatus,
+  isContainerSuspended,
+  getContainerBackups,
+} from "@/pve-utils";
 import { route } from "@/middleware";
+import type { Backup } from "@/types/pve";
 
 const app = route.createApp();
 
@@ -30,10 +35,13 @@ app.get("/dashboard", async (c) => {
   let eligible = false;
   let hackatime_ban = false;
 
+  let backups: Backup[] = [];
+
   if (user?.vmid) {
     container = await getContainerStatus(user);
     domains = await db.getDomainsForUser(user.id);
     suspended = await isContainerSuspended(user);
+    backups = await getContainerBackups(user);
   } else if (!user) {
     application = await db.getApplicationBySub(profile.sub);
     if (!application || application.status === "rejected") {
@@ -90,6 +98,7 @@ app.get("/dashboard", async (c) => {
     application,
     eligible,
     hackatime_ban,
+    backups,
     config: config.default,
   });
 
