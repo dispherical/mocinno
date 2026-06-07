@@ -323,6 +323,11 @@ app.post("/api/ssh-keys/add", async (c) => {
   const body = await c.req.json();
   const key = body.key?.trim();
 
+  if (key && key.includes("PRIVATE KEY")) {
+    c.status(400);
+    return c.json({ error: "Please use your SSH public key, not your private key." });
+  }
+
   try {
     let parsed = utils.parseKey(key);
 
