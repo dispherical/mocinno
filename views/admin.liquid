@@ -12,7 +12,11 @@
 
   <ul class="uk-subnav uk-subnav-pill mb-0" id="admin-tabs">
     <li class="uk-active"><a href="#" data-target="tab-stats">Stats</a></li>
-    <li><a href="#" data-target="tab-applications">Applications{% if applications.size > 0 %} ({{ applications.size }}){% endif %}</a></li>
+    <li>
+      <a href="#" data-target="tab-applications"
+        >Applications{% if applications.size > 0 %} ({{ applications.size }}){% endif -%}
+      </a>
+    </li>
     <li><a href="#" data-target="tab-invites">Invites</a></li>
     <li><a href="#" data-target="tab-users">Users</a></li>
   </ul>
@@ -40,14 +44,22 @@
             </div>
             <div class="border border-border rounded-md p-4">
               <h4 class="text-sm font-medium text-muted-foreground">Ram Usage</h4>
-              <p class="text-xl font-bold">{{ node.stats.ram_used_gb }} GB / {{ node.stats.ram_total_gb }} GB ({{ node.stats.ram_percent }}%)</p>
+              <p class="text-xl font-bold">
+                {{ node.stats.ram_used_gb }} GB / {{ node.stats.ram_total_gb }} GB ({{ node.stats.ram_percent }}%)
+              </p>
             </div>
             <div class="border border-border rounded-md p-4">
               <h4 class="text-sm font-medium text-muted-foreground">Storage Usage</h4>
-              <p class="text-xl font-bold">{{ node.stats.rootfs_used_gb }} GB / {{ node.stats.rootfs_total_gb }} GB ({{ node.stats.rootfs_percent }}%)</p>
+              <p class="text-xl font-bold">
+                {{ node.stats.rootfs_used_gb }} GB / {{ node.stats.rootfs_total_gb }} GB (
+                {{- node.stats.rootfs_percent -}}
+                %)
+              </p>
             </div>
             <div class="border border-border rounded-md p-4">
-              <h4 class="text-sm font-medium text-muted-foreground">Load Avg. (&gt; {{ node.stats.core_count }} is bad)</h4>
+              <h4 class="text-sm font-medium text-muted-foreground">
+                Load Avg. (&gt; {{ node.stats.core_count }} is bad)
+              </h4>
               <p class="text-xl font-bold">{{ node.stats.load_avg }}</p>
             </div>
             <div class="border border-border rounded-md p-4">
@@ -85,7 +97,9 @@
                   <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
                   <td class="text-right space-x-1">
                     <button class="approve-btn uk-btn uk-btn-primary uk-btn-sm" data-id="{{ app.id }}">Approve</button>
-                    <button class="reject-btn uk-btn uk-btn-destructive uk-btn-sm" data-id="{{ app.id }}">Reject</button>
+                    <button class="reject-btn uk-btn uk-btn-destructive uk-btn-sm" data-id="{{ app.id }}">
+                      Reject
+                    </button>
                   </td>
                 </tr>
               {% endfor %}
@@ -142,7 +156,9 @@
       <div class="flex items-center justify-between">
         <div class="space-y-0.5">
           <h3 class="text-lg font-medium">Admin Invites</h3>
-          <p class="text-muted-foreground text-sm">An invite can bypass ID verification. This is useful for hackathons, large gatherings, etc.</p>
+          <p class="text-muted-foreground text-sm">
+            An invite can bypass ID verification. This is useful for hackathons, large gatherings, etc.
+          </p>
         </div>
       </div>
 
@@ -174,9 +190,13 @@
                   <td>{{ inv.max_uses | default: '∞' }}</td>
                   <td class="text-sm text-muted-foreground">{{ inv.expires_at | default: 'Never' }}</td>
                   <td>{{ inv.admin_email }}</td>
-                  <td><code>https://dashboard.{{ appDomain }}/invite/{{ inv.code }}</code></td>
+                  <td>
+                    <code>https://dashboard.{{ appDomain }}/invite/{{ inv.code }}</code>
+                  </td>
                   <td class="text-right">
-                    <button class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm" data-code="{{ inv.code }}">Revoke</button>
+                    <button class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm" data-code="{{ inv.code }}">
+                      Revoke
+                    </button>
                   </td>
                 </tr>
               {% endfor %}
@@ -207,7 +227,6 @@
       </div>
       <div id="users-paging" class="flex gap-x-2 items-center mt-4"></div>
     </div>
-
   </div>
 
   <p id="admin-message" class="mt-4 font-medium"></p>
@@ -230,7 +249,9 @@
       tgt.classList.add('block');
     }
     if (push) {
-      try { history.replaceState(null, '', '#' + targetId); } catch {}
+      try {
+        history.replaceState(null, '', '#' + targetId);
+      } catch {}
     }
   }
 
@@ -345,8 +366,10 @@
       html += '</tbody></table></div>';
       wrap.innerHTML = html;
       let paging = `<span class="text-sm font-medium">Page ${data.page} of ${data.pages} (${data.total} users)</span>`;
-      if (data.page > 1) paging += ` <button class="uk-btn uk-btn-default uk-btn-sm ml-2" onclick="usersPage--;loadUsers()">Prev</button>`;
-      if (data.page < data.pages) paging += ` <button class="uk-btn uk-btn-default uk-btn-sm ml-2" onclick="usersPage++;loadUsers()">Next</button>`;
+      if (data.page > 1)
+        paging += ` <button class="uk-btn uk-btn-default uk-btn-sm ml-2" onclick="usersPage--;loadUsers()">Prev</button>`;
+      if (data.page < data.pages)
+        paging += ` <button class="uk-btn uk-btn-default uk-btn-sm ml-2" onclick="usersPage++;loadUsers()">Next</button>`;
       document.getElementById('users-paging').innerHTML = paging;
     } catch {
       wrap.innerHTML = '<p class="text-destructive mt-4">Failed to load users.</p>';

@@ -96,7 +96,8 @@ export async function proxyRequest(req: Request, target: string) {
     const proxyRes = await fetch(targetUrl.toString(), {
       method: req.method,
       headers: reqHeaders,
-      body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+      body:
+        req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
       redirect: "manual",
     });
 
@@ -113,7 +114,10 @@ export async function proxyRequest(req: Request, target: string) {
       headers: resHeaders,
     });
   } catch (err) {
-    console.error(`Proxy error while proxying ${url.host} to ${target}:\n`, err);
+    console.error(
+      `Proxy error while proxying ${url.host} to ${target}:\n`,
+      err,
+    );
     return new Response("Bad Gateway", { status: 502 });
   }
 }
@@ -208,7 +212,10 @@ export function proxyWebSocket(
 
   const protoHeader = req.headers.get("sec-websocket-protocol");
   const protocols = protoHeader
-    ? protoHeader.split(",").map((s) => s.trim()).filter(Boolean)
+    ? protoHeader
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
     : undefined;
 
   let backendWs: WebSocket;

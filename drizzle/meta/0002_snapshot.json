@@ -142,9 +142,7 @@
         "certificates_domain_unique": {
           "name": "certificates_domain_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "domain"
-          ]
+          "columns": ["domain"]
         }
       },
       "policies": {},
@@ -193,12 +191,8 @@
           "name": "domains_user_id_users_id_fk",
           "tableFrom": "domains",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -208,9 +202,7 @@
         "domains_domain_unique": {
           "name": "domains_domain_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "domain"
-          ]
+          "columns": ["domain"]
         }
       },
       "policies": {},
@@ -354,16 +346,12 @@
         "users_sub_unique": {
           "name": "users_sub_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "sub"
-          ]
+          "columns": ["sub"]
         },
         "users_username_unique": {
           "name": "users_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
