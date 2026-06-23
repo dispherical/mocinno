@@ -6,6 +6,8 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "types": ["bun"],
     "allowJs": true,
 
     // Bundler mode

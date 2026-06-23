@@ -12,7 +12,7 @@ import {
   setContainerDescription,
   waitForTask,
 } from "@/pve-utils";
-import { reloadProxy } from "@/utils";
+import { reloadProxy } from "@/proxy/utils";
 import * as env from "@/env";
 import * as crypto from "node:crypto";
 import type {

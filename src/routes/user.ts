@@ -7,18 +7,15 @@ import {
   waitForTask,
 } from "@/pve-utils";
 import type {
+  Backup,
   NodeLXCDelete,
   NodeLXCPost,
   NodeLXCStatusReboot,
   NodeLXCStatusStart,
   NodeLXCStatusStop,
 } from "@/types/pve";
-import {
-  checkDNSVerification,
-  isFQDN,
-  isWhitelisted,
-  reloadProxy,
-} from "@/utils";
+import { checkDNSVerification, isFQDN, isWhitelisted } from "@/utils";
+import { reloadProxy } from "@/proxy/utils";
 import * as db from "@/db";
 import * as env from "@/env";
 import { utils } from "ssh2";
@@ -149,7 +146,7 @@ app.post("/api/container/delete", async (c) => {
   }
 
   // TODO: replcae any
-  const backups = await pveFetch<any>(
+  const backups = await pveFetch<{ data: Backup[] }>(
     `/nodes/${user.node}/storage/pbs/content?vmid=${user.vmid}`,
     "GET",
   );
@@ -325,7 +322,9 @@ app.post("/api/ssh-keys/add", async (c) => {
 
   if (key && key.includes("PRIVATE KEY")) {
     c.status(400);
-    return c.json({ error: "Please use your SSH public key, not your private key." });
+    return c.json({
+      error: "Please use your SSH public key, not your private key.",
+    });
   }
 
   try {
