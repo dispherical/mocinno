@@ -3,7 +3,14 @@
   "private": true,
   "scripts": {
     "start": "bun run --env-file .env --filter \"*\" start",
-    "dev": "bun run --env-file .env --filter \"*\" dev"
+    "dev": "bun run --env-file .env --filter \"*\" dev",
+    "bastion": "bun run --env-file .env --filter \"@mocinno/backend\" bastion",
+    "bastion:dev": "bun run --sql-preconnect --watch src/bastion.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "email:dev": "email dev"
   },
   "workspaces": [
     "backend",
