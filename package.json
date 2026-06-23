@@ -1,45 +1,21 @@
 {
-  "name": "nest-prov",
-  "module": "index.js",
-  "type": "module",
+  "name": "mocinno",
   "private": true,
   "scripts": {
-    "start": "NODE_ENV=production bun run --sql-preconnect src/index.ts",
-    "start:dev": "bun run --sql-preconnect --watch src/index.ts",
-    "bastion": "NODE_ENV=production bun run --sql-preconnect src/bastion.ts",
-    "bastion:dev": "bun run --sql-preconnect --watch src/bastion.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio",
-    "email:dev": "email dev"
+    "start": "bun run --env-file .env --filter \"*\" start",
+    "dev": "bun run --env-file .env --filter \"*\" dev"
   },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "devDependencies": {
-    "@react-email/ui": "6.0.5",
-    "@shopify/prettier-plugin-liquid": "^1.10.3",
-    "@types/bun": "^1.3.14",
-    "@types/nodemailer": "^8.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@types/ssh2": "^1.15.5",
-    "drizzle-kit": "^0.31.10",
-    "pg": "^8.22.0",
-    "prettier": "^3.8.4"
-  },
-  "peerDependencies": {
-    "typescript": "^6.0.3"
+    "@types/bun": "latest"
   },
   "dependencies": {
-    "acme-client": "^5.4.0",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.27",
-    "hono-sessions": "^0.8.1",
-    "liquidjs": "^10.27.1",
-    "nodemailer": "^9.0.1",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
-    "react-email": "6.0.5",
-    "ssh2": "^1.17.0",
-    "tailwindcss": "^4.2.4"
+    "@mocinno/backend": "workspace:"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

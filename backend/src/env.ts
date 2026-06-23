@@ -53,12 +53,12 @@ export const ROOTFS = isUndefinedOrEmpty(Bun.env.ROOTFS, "local-zfs:8");
 
 export const ENV_BASTION_PROXY_KEY_PUB = isUndefinedOrEmpty(
   Bun.env.BASTION_PROXY_KEY_PUB,
-  "./bastion_proxy_key.pub",
+  "../bastion_proxy_key.pub",
 );
 
 export const ENV_BASTION_PROXY_KEY = isUndefinedOrEmpty(
   Bun.env.BASTION_PROXY_KEY,
-  "./bastion_proxy_key",
+  "../bastion_proxy_key",
 );
 
 export const BASTION_PROXY_PUB_KEY = readFileSync(
@@ -73,7 +73,7 @@ export const BASTION_PROXY_PRIV_KEY = readFileSync(
 
 export const ENV_BASTION_HOST_KEY = isUndefinedOrEmpty(
   Bun.env.BASTION_HOST_KEY,
-  "./bastion_host_key",
+  "../bastion_host_key",
 );
 
 export const BASTION_HOST_PRIV_KEY = readFileSync(

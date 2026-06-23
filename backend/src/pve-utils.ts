@@ -193,7 +193,7 @@ export async function getNodeStats(node: string) {
 }
 
 export async function getNextNode() {
-  const config = await import("../config.ts");
+  const config = await import("config");
 
   const percentsAllocated = await Promise.all(
     Object.entries(config.default.servers).map(

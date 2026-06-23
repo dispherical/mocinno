@@ -6,8 +6,8 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "jsx": "react-jsx",
-    "allowJs": true,
     "types": ["bun"],
+    "allowJs": true,
 
     // Bundler mode
     "moduleResolution": "bundler",
@@ -25,6 +25,11 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@email/*": ["./emails/*"],
+      "config": ["../config.ts"],
+    },
+  },
 }

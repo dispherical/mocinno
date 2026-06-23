@@ -1,4 +1,4 @@
-import type { Config } from "@/types/config";
+import type { Config } from "@mocinno/backend/src/types/config";
 
 export default {
   servers: [
