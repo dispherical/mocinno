@@ -117,7 +117,7 @@ app.post("/api/container/delete", async (c) => {
     c.status(403);
     return c.json({
       error: "Sudo required",
-      redirect: "/flow/authorization/sudo/start",
+      redirect: "/api/authorization/sudo/start",
     });
   }
 

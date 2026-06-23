@@ -6,7 +6,7 @@ import { route } from "@/middleware";
 
 const app = route.createApp();
 
-app.get("/flow/authorization/:mode/start", async (c) => {
+app.get("/api/authorization/:mode/start", async (c) => {
   const mode = c.req.param("mode");
   const session = c.get("session");
 
@@ -15,7 +15,7 @@ app.get("/flow/authorization/:mode/start", async (c) => {
 
   let origin;
 
-  if (env.NODE_ENV === "production") {
+  if (env.APP_SECURE) {
     origin = new URL(c.req.url).origin.replace("http://", "https://");
   } else {
     origin = new URL(c.req.url).origin;
@@ -23,7 +23,7 @@ app.get("/flow/authorization/:mode/start", async (c) => {
 
   const params = new URLSearchParams({
     client_id: env.OAUTH_CLIENT_ID,
-    redirect_uri: `${origin}/flow/authorization/goalpost`,
+    redirect_uri: `${origin}/api/authorization/goalpost`,
     response_type: "code",
     scope: "openid profile email verification_status slack_id",
     state: state,
@@ -36,18 +36,18 @@ app.get("/flow/authorization/:mode/start", async (c) => {
   );
 });
 
-app.get("/flow/authorization/goalpost", async (c) => {
+app.get("/api/authorization/goalpost", async (c) => {
   const session = c.get("session");
   const code = c.req.query("code");
   const state = c.req.query("state");
   const stored = session.get("oauth_state");
 
   if (!code || !stored || state !== stored.state)
-    return c.redirect("/flow/authorization/login/start");
+    return c.redirect("/api/authorization/login/start");
 
   let origin;
 
-  if (env.NODE_ENV === "production") {
+  if (env.APP_SECURE) {
     origin = new URL(c.req.url).origin.replace("http://", "https://");
   } else {
     origin = new URL(c.req.url).origin;
@@ -55,10 +55,10 @@ app.get("/flow/authorization/goalpost", async (c) => {
 
   const profile = await exchangeCodeForProfile(
     code,
-    `${origin}/flow/authorization/goalpost`,
+    `${origin}/api/authorization/goalpost`,
   );
 
-  if (!profile) return c.redirect("/flow/authorization/login/start");
+  if (!profile) return c.redirect("/api/authorization/login/start");
   if (env.NODE_ENV != "production") profile.verification_status = "verified";
   session.set("profile", profile);
 
@@ -78,7 +78,7 @@ app.get("/invite/:code", async (c) => {
     return c.text("Invite code expired", 403);
 
   c.get("session").set("invite_code", code);
-  return c.redirect("/flow/authorization/login/start");
+  return c.redirect("/api/authorization/login/start");
 });
 
 export default app;

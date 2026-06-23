@@ -1,6 +1,6 @@
 import { integer, pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
 
-export const usersTable = pgTable("users", {
+export const containersTable = pgTable("containers", {
   id: serial("id").primaryKey(),
   sub: text("sub").unique().notNull(),
   username: text("username").unique().notNull(),
@@ -16,7 +16,7 @@ export const domainsTable = pgTable("domains", {
   id: serial("id").primaryKey(),
   user_id: integer("user_id")
     .notNull()
-    .references(() => usersTable.id, {
+    .references(() => containersTable.id, {
       onDelete: "cascade",
     }),
   domain: text("domain").unique().notNull(),

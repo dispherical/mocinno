@@ -74,7 +74,7 @@ app.get("/admin", async (c) => {
   const session = c.get("session");
   const engine = c.get("engine");
   const profile = session.get("profile");
-  if (!profile) return c.redirect("/flow/authorization/login/start");
+  if (!profile) return c.redirect("/api/authorization/login/start");
   if (!db.isAdmin(profile.email)) {
     c.status(403);
     return c.text("Forbidden");

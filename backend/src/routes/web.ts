@@ -17,7 +17,7 @@ app.get("/", async (c) => {
 app.get("/dashboard", async (c) => {
   const session = c.get("session");
   const profile = session.get("profile");
-  if (!profile) return c.redirect("/flow/authorization/login/start");
+  if (!profile) return c.redirect("/api/authorization/login/start");
 
   const user = await db.findUserBySub(profile.sub);
   const admin = db.isAdmin(profile.email);

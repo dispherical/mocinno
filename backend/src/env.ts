@@ -38,6 +38,9 @@ export const ENCRYPTION_KEY = (() => {
 export const DISABLE_SSL =
   isUndefinedOrEmpty(Bun.env.DISABLE_SSL, "false").toLowerCase() === "true";
 
+export const APP_SECURE =
+  isUndefinedOrEmpty(Bun.env.APP_SECURE, "false").toLowerCase() === "true";
+
 export const APP_DOMAIN = isUndefinedOrEmpty(Bun.env.APP_DOMAIN, undefined);
 
 export const SMTP_HOST = isUndefinedOrEmpty(Bun.env.SMTP_HOST, "localhost");

@@ -16,5 +16,14 @@ export default defineConfig({
 			adapter: adapter(),
 			experimental: { remoteFunctions: true, handleRenderingErrors: true }
 		})
-	]
+	],
+	server: {
+		host: true,
+		allowedHosts: ['localhost', '.localhost', process.env.APP_DOMAIN || ''],
+		proxy: {
+			'/api': {
+				target: 'http://localhost:3001'
+			}
+		}
+	}
 });
