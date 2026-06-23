@@ -29,7 +29,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@email/*": ["./emails/*"],
-      "config": ["../config.ts"],
-    },
-  },
+      "config": ["../config.ts"]
+    }
+  }
 }

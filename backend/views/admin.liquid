@@ -45,7 +45,9 @@
             <div class="border border-border rounded-md p-4">
               <h4 class="text-sm font-medium text-muted-foreground">Ram Usage</h4>
               <p class="text-xl font-bold">
-                {{ node.stats.ram_used_gb }} GB / {{ node.stats.ram_total_gb }} GB ({{ node.stats.ram_percent }}%)
+                {{ node.stats.ram_used_gb }} GB / {{ node.stats.ram_total_gb }} GB (
+                {{- node.stats.ram_percent -}}
+                %)
               </p>
             </div>
             <div class="border border-border rounded-md p-4">
@@ -93,11 +95,21 @@
                 <tr id="app-{{ app.id }}">
                   <td class="font-medium">{{ app.email }}</td>
                   <td>{{ app.username }}</td>
-                  <td class="max-w-[300px] break-words whitespace-normal text-sm">{{ app.reason }}</td>
+                  <td class="max-w-[300px] break-words whitespace-normal text-sm">
+                    {{ app.reason }}
+                  </td>
                   <td class="text-sm text-muted-foreground">{{ app.created_at }}</td>
                   <td class="text-right space-x-1">
-                    <button class="approve-btn uk-btn uk-btn-primary uk-btn-sm" data-id="{{ app.id }}">Approve</button>
-                    <button class="reject-btn uk-btn uk-btn-destructive uk-btn-sm" data-id="{{ app.id }}">
+                    <button
+                      class="approve-btn uk-btn uk-btn-primary uk-btn-sm"
+                      data-id="{{ app.id }}"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      class="reject-btn uk-btn uk-btn-destructive uk-btn-sm"
+                      data-id="{{ app.id }}"
+                    >
                       Reject
                     </button>
                   </td>
@@ -163,7 +175,12 @@
       </div>
 
       <div class="flex gap-x-2 mt-4 max-w-2xl">
-        <input type="number" id="invite-max-uses" class="uk-input" placeholder="Max Uses (Empty=Infinite)">
+        <input
+          type="number"
+          id="invite-max-uses"
+          class="uk-input"
+          placeholder="Max Uses (Empty=Infinite)"
+        >
         <input type="datetime-local" id="invite-expires" class="uk-input" placeholder="Expires At">
         <button id="btn-create-invite" class="uk-btn uk-btn-primary flex-none">Create Invite</button>
       </div>
@@ -188,13 +205,18 @@
                   <td class="font-medium">{{ inv.code }}</td>
                   <td>{{ inv.uses }}</td>
                   <td>{{ inv.max_uses | default: '∞' }}</td>
-                  <td class="text-sm text-muted-foreground">{{ inv.expires_at | default: 'Never' }}</td>
+                  <td class="text-sm text-muted-foreground">
+                    {{ inv.expires_at | default: 'Never' }}
+                  </td>
                   <td>{{ inv.admin_email }}</td>
                   <td>
                     <code>https://dashboard.{{ appDomain }}/invite/{{ inv.code }}</code>
                   </td>
                   <td class="text-right">
-                    <button class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm" data-code="{{ inv.code }}">
+                    <button
+                      class="delete-invite-btn uk-btn uk-btn-destructive uk-btn-sm"
+                      data-code="{{ inv.code }}"
+                    >
                       Revoke
                     </button>
                   </td>
@@ -218,7 +240,12 @@
       <div class="max-w-md">
         <div class="uk-inline w-full">
           <span class="uk-form-icon" uk-icon="icon: search"></span>
-          <input type="text" id="user-search" class="uk-input" placeholder="Search by username, VMID, or IP...">
+          <input
+            type="text"
+            id="user-search"
+            class="uk-input"
+            placeholder="Search by username, VMID, or IP..."
+          >
         </div>
       </div>
 
@@ -282,7 +309,10 @@
       const res = await fetch('/api/admin/invites/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maxUses, expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null }),
+        body: JSON.stringify({
+          maxUses,
+          expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        }),
       });
       const data = await res.json();
       if (res.ok) {

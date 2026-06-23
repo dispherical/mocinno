@@ -11,7 +11,9 @@
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "email:dev": "email dev"
+    "email:dev": "email dev",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "@react-email/ui": "6.0.5",

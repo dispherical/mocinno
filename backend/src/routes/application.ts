@@ -110,7 +110,9 @@ app.post("/api/application/submit", async (c) => {
 
   if (sshKey && sshKey.includes("PRIVATE KEY")) {
     c.status(400);
-    return c.json({ error: "Please use your SSH public key, not your private key." });
+    return c.json({
+      error: "Please use your SSH public key, not your private key.",
+    });
   }
 
   if (!username || !/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
