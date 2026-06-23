@@ -2,8 +2,9 @@ import { CookieStore, sessionMiddleware } from "hono-sessions";
 import * as env from "./env";
 import { serveStatic } from "hono/bun";
 import { route } from "./middleware";
-import "@/proxy/index.ts";
 import { Liquid } from "liquidjs";
+
+import "@/proxy/index.ts";
 
 import internalRoutes from "@/routes/internal";
 import webRoutes from "@/routes/web";
@@ -59,15 +60,6 @@ app.route("", applicationRoutes);
 app.route("", adminRoutes);
 app.route("", publicRoutes);
 
-const serve = Bun.serve({
-  fetch: app.fetch,
-  port: env.MOCINNO_PORT,
-  maxRequestBodySize: env.MOCINNO_MAX_BODY_REQUEST_SIZE,
-  hostname: env.MOCINNO_HOSTNAME,
-});
-
-console.log("Mocinno is running on port %s (%s)", serve.port, serve.hostname);
-
 process.on("uncaughtException", (error) => {
   console.error(error);
 });
@@ -75,3 +67,10 @@ process.on("uncaughtException", (error) => {
 process.on("unhandledRejection", (error) => {
   console.error(error);
 });
+
+export default {
+  ...app,
+  port: env.MOCINNO_PORT,
+  maxRequestBodySize: env.MOCINNO_MAX_BODY_REQUEST_SIZE,
+  hostname: env.MOCINNO_HOSTNAME,
+};
