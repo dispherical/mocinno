@@ -38,7 +38,7 @@ export const ApprovedEmail = ({
     <Html>
       <Head></Head>
       <Body className="bg-bg-2 m-0 text-center font-sans">
-        <Preview>Confirm your email address</Preview>
+        <Preview>Nest account approved</Preview>
         <Container className="mobile:mt-0 mx-auto mt-8 w-full max-w-[640px]">
           <Section>
             <Section className="bg-bg mobile:px-2 px-6 py-4">
@@ -48,7 +48,7 @@ export const ApprovedEmail = ({
                     <Row>
                       <Column className="w-[32px] align-middle">
                         <Img
-                          src="https://hackclub.app/favicon.png"
+                          src="https://hackclub.app/nest.png"
                           alt="Nest Logo"
                           width={48}
                           className="block"
@@ -64,12 +64,12 @@ export const ApprovedEmail = ({
                 </Row>
               </Section>
 
-              <Section className="bg-bg-2 mobile:px-6 mobile:py-12 rounded-[8px] px-[40px] py-[128px] text-center">
-                <Section className="mb-3">
-                  <Heading as="h1" className="font-28 text-fg m-0 font-sans">
-                    Nest account approved!
-                  </Heading>
-                </Section>
+              <Section className="bg-bg-2 mobile:px-6 mobile:py-12 rounded-[8px] px-[40px] py-[64px] text-center">
+               <Section className="mb-3">
+                 <Heading as="h1" className="font-28 text-fg m-0 font-sans">
+                   Nest account approved!
+                 </Heading>
+               </Section>
 
                 <Text className="font-16 text-fg-2 mx-auto mt-0 mb-8 max-w-[380px] text-center font-sans">
                   Your Nest account has been approved, you can login using{" "}
@@ -77,9 +77,9 @@ export const ApprovedEmail = ({
                   <br />
                   By default you have 2GB of RAM, 2 CPU cores and 16GB of
                   storage, but you can request more resources{" "}
-                  <a href="https://nest.fillout.com/resources">
+                  <Link href="https://nest.fillout.com/resources">
                     through this form
-                  </a>
+                  </Link>
                   <br />
                   From the button below you can manage your ssh keys and domains
                 </Text>
@@ -92,6 +92,24 @@ export const ApprovedEmail = ({
                     Manage account
                   </Button>
                 </Section>
+              </Section>
+
+              {/* Footer */}
+              <Section className="bg-bg">
+                <Row>
+                  <Column className="px-6 py-10 text-center">
+                    <Text className="font-13 text-fg-3 mx-auto mt-0 mb-8 max-w-[280px] text-center font-sans">
+                      Barebones is the catchy slogan that perfectly encapsulates
+                      the vision of our company.
+                    </Text>
+                    <Text className="font-11 text-fg-3 mt-4 mb-5 text-center font-sans">
+                      {/* What should we put here honestly */}
+                      123 Market Street, Floor 1
+                      <br />
+                      Tech City, CA, 94102
+                    </Text>
+                  </Column>
+                </Row>
               </Section>
             </Section>
           </Section>
