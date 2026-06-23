@@ -144,7 +144,6 @@ export function proxyWebSocket(
     "content-length",
   ]);
   const headers: Record<string, string> = {};
-  //@ts-expect-error the entries method exists for some reason typescript is missing this from dom types
   for (const [k, v] of req.headers.entries()) {
     if (!skip.has(k.toLowerCase())) headers[k] = v;
   }

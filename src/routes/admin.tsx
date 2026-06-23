@@ -21,6 +21,9 @@ import type {
   NodeLXCStatusStop,
 } from "@/types/pve";
 import transporter from "@/mail";
+import { render } from "react-email";
+import ApprovedEmail from "@email/approved.tsx";
+import RejectedEmail from "@email/rejected.tsx";
 
 const app = route.createApp();
 
@@ -285,19 +288,12 @@ app.post("/api/admin/applications/approve", async (c) => {
     from: env.SMTP_FROM,
     to: application.email,
     subject: "Nest account approved!",
-    text: `Your Nest account was approved. Congrats!
-
-Internal IPv4: ${allocated.ip}
-Public IPv6: ${serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : "N/A"}
-Username: ${application.username}
-Operating System: ${templateConfig?.name ?? env.OS_TEMPLATE}
-
-To login to Nest, you may use ssh ${application.username}@hackclub.app
-By default, you have 2 GB of RAM, 2 CPU cores, and 16 GB of storage. To increase this limit, you may fill out this form: https://forms.hackclub.com/nest-resources
-
-From the Dashboard (https://dashboard.hackclub.app/dashboard), you can manage custom domains, reboot your container, stop your container, or even delete your Nest account.
-If you need help with your server you can contact the nest admin on the #nest-help channel on the Hack Club Slack!
-`,
+    html: await render(
+      <ApprovedEmail
+        username={application.username}
+        url={env.APP_DOMAIN || "https://dashboard.hackclub.app"}
+      />,
+    ),
   });
   return c.json({ message: "Approved and container created", vmid, password });
 });
@@ -332,9 +328,7 @@ app.post("/api/admin/applications/reject", async (c) => {
     from: env.SMTP_FROM,
     to: application.email,
     subject: "Nest account rejected",
-    text: `Your Nest account was rejected.
-
-You may contact the Nest team via #nest-help to learn more.`,
+    html: await render(<RejectedEmail username={application.username} />),
   });
   return c.json({ message: "Application rejected" });
 });

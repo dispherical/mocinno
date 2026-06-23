@@ -19,17 +19,16 @@ import {
 } from "react-email";
 import { barebonesBoxedTailwindConfig } from "./theme";
 
-interface ApprovedEmailProps {
+interface RejectedEmailProps {
   username: string;
-  url: string;
 }
 
-export const ApprovedEmail = ({ username, url }: ApprovedEmailProps) => (
+export const RejectedEmail = ({ username }: RejectedEmailProps) => (
   <Tailwind config={barebonesBoxedTailwindConfig}>
     <Html>
       <Head></Head>
       <Body className="bg-bg-2 m-0 text-center font-sans">
-        <Preview>Your nest account {username} was approved</Preview>
+        <Preview>Your nest account {username} was rejected</Preview>
         <Container className="mobile:mt-0 mx-auto mt-8 w-full max-w-[640px]">
           <Section>
             <Section className="bg-bg mobile:px-2 px-6 py-4">
@@ -58,31 +57,14 @@ export const ApprovedEmail = ({ username, url }: ApprovedEmailProps) => (
               <Section className="bg-bg-2 mobile:px-6 mobile:py-12 rounded-[8px] px-[40px] py-[64px] text-center">
                 <Section className="mb-3">
                   <Heading as="h1" className="font-28 text-fg m-0 font-sans">
-                    Nest account approved!
+                    Nest account rejected
                   </Heading>
                 </Section>
 
                 <Text className="font-16 text-fg-2 mx-auto mt-0 mb-8 max-w-[380px] text-center font-sans">
-                  Your Nest account has been approved, you can login using{" "}
-                  <CodeInline>{username.toLowerCase()}@hackclub.app</CodeInline>
-                  <br />
-                  By default you have 2GB of RAM, 2 CPU cores and 16GB of
-                  storage, but you can request more resources{" "}
-                  <Link href="https://forms.hackclub.com/nest-resources">
-                    through this form
-                  </Link>
-                  <br />
-                  From the button below you can manage your ssh keys and domains
+                  Your Nest account was rejected, please contact the Nest team
+                  via #nest-help for more information
                 </Text>
-
-                <Section className="mb-6 text-center">
-                  <Button
-                    href={url}
-                    className="bg-fg font-16 text-fg-inverted inline-block rounded-lg px-7 py-4 text-center font-sans leading-6"
-                  >
-                    Manage container
-                  </Button>
-                </Section>
               </Section>
             </Section>
           </Section>
@@ -92,9 +74,8 @@ export const ApprovedEmail = ({ username, url }: ApprovedEmailProps) => (
   </Tailwind>
 );
 
-ApprovedEmail.PreviewProps = {
+RejectedEmail.PreviewProps = {
   username: "quetzal",
-  url: "https://dashboard.hackclub.app",
-} satisfies ApprovedEmailProps;
+} satisfies RejectedEmailProps;
 
-export default ApprovedEmail;
+export default RejectedEmail;

@@ -6,7 +6,6 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
     "types": ["bun"],
     "allowJs": true,
 
@@ -29,8 +28,8 @@
     "noPropertyAccessFromIndexSignature": false,
     "paths": {
       "@/*": ["./src/*"],
-      "@email": ["./emails/*"],
-      "config": ["./config.ts"]
-    }
-  }
+      "@email/*": ["./emails/*"],
+      "config": ["./config.ts"],
+    },
+  },
 }

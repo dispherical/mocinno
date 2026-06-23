@@ -4,10 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "bun run src/index.ts",
-    "start:dev": "bun run --watch src/index.ts",
-    "bastion": "bun run src/bastion.ts",
-    "bastion:dev": "bun run --watch src/bastion.ts",
+    "start": "NODE_ENV=production bun run --sql-preconnect src/index.ts",
+    "start:dev": "bun run --sql-preconnect --watch src/index.ts",
+    "bastion": "NODE_ENV=production bun run --sql-preconnect src/bastion.ts",
+    "bastion:dev": "bun run --sql-preconnect --watch src/bastion.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
@@ -23,6 +23,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/ssh2": "^1.15.5",
     "drizzle-kit": "^0.31.10",
+    "pg": "^8.22.0",
     "prettier": "^3.8.4"
   },
   "peerDependencies": {
@@ -30,13 +31,11 @@
   },
   "dependencies": {
     "acme-client": "^5.4.0",
-    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.27",
     "hono-sessions": "^0.8.1",
     "liquidjs": "^10.27.1",
     "nodemailer": "^9.0.1",
-    "pg": "^8.22.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "react-email": "6.0.5",
