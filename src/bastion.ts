@@ -8,7 +8,6 @@ import {
   type PseudoTtyInfo,
   type ServerChannel,
   type WindowChangeInfo,
-  type WriteStream,
 } from "ssh2";
 import * as db from "./db";
 import * as env from "./env";

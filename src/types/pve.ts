@@ -235,7 +235,11 @@ export type Backup = {
   notes?: string;
   parent?: string;
   protected?: boolean;
+  content: string;
   used?: number;
-  verification?: any; // todo
+  verification?: {
+    state: string;
+    upid: string;
+  };
   vmid?: number;
 };
