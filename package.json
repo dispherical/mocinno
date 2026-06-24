@@ -1,6 +1,7 @@
 {
   "name": "mocinno",
   "private": true,
+  "trustedDependencies": [],
   "scripts": {
     "start": "bun run --env-file .env --filter \"*\" start",
     "dev": "bun run --env-file .env --filter \"*\" dev",
