@@ -1,5 +1,7 @@
 {
   "name": "mocinno",
+  "module": "index.js",
+  "type": "module",
   "private": true,
   "trustedDependencies": [],
   "scripts": {

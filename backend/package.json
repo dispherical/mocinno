@@ -43,5 +43,8 @@
     "react-email": "6.0.5",
     "ssh2": "^1.17.0",
     "tailwindcss": "^4.2.4"
+  },
+  "overrides": {
+    "cpu-features": "npm:@empty"
   }
 }
