@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "start": "bun run --env-file .env --filter \"*\" start",
+    "build": "bun run --env-file .env --filter \"*\" build",
+    "start:prod": "bun run --env-file .env --filter \"*\" build && bun run --env-file .env --filter \"*\" start",
     "dev": "bun run --env-file .env --filter \"*\" dev"
   },
   "workspaces": [
