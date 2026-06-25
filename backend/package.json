@@ -2,6 +2,7 @@
   "name": "@mocinno/backend",
   "type": "module",
   "private": true,
+  "trustedDependencies": [],
   "scripts": {
     "start": "NODE_ENV=production bun run --sql-preconnect src/index.ts",
     "dev": "bun run --sql-preconnect --watch src/index.ts",
