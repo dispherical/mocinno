@@ -27,7 +27,7 @@ Bun.cron('*/3 * * * *', async () => {
 			})
 		);
 
-		const rowCount = await db.select({ count: count() }).from(schema.usersTable);
+		const rowCount = await db.select({ count: count() }).from(schema.containersTable);
 
 		nodeStats = {
 			users: rowCount[0]?.count ?? 271, // user count captured on 27/04/2026 at 23:33 EEST

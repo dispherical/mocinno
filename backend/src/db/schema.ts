@@ -3,7 +3,12 @@ import * as auth from './auth-schema';
 
 export const containersTable = pgTable('containers', {
 	id: serial('id').primaryKey(),
-	sub: text('sub').unique().notNull(),
+	user_id: text('user_id')
+		.unique()
+		.references(() => auth.user.id, {
+			onDelete: 'cascade'
+		}),
+	sub: text('sub').unique(),
 	username: text('username').unique().notNull(),
 	ssh_keys: text('ssh_keys').array().notNull(),
 	vmid: integer('vmid'),
@@ -15,7 +20,7 @@ export const containersTable = pgTable('containers', {
 
 export const domainsTable = pgTable('domains', {
 	id: serial('id').primaryKey(),
-	container_id: integer('container_id')
+	user_id: integer('user_id')
 		.notNull()
 		.references(() => containersTable.id, {
 			onDelete: 'cascade'
@@ -27,8 +32,13 @@ export const domainsTable = pgTable('domains', {
 
 export const applicationsTable = pgTable('applications', {
 	id: serial('id').primaryKey(),
-	sub: text('sub').notNull(),
-	email: text('email').notNull(),
+	user_id: text('user_id')
+		.unique()
+		.references(() => auth.user.id, {
+			onDelete: 'cascade'
+		}),
+	sub: text('sub'),
+	email: text('email'),
 	username: text('username').notNull(),
 	ssh_key: text('ssh_key').notNull(),
 	reason: text('reason').notNull(),
