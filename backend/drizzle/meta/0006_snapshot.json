@@ -1,6 +1,6 @@
 {
-	"id": "12e9c538-79af-4fc5-88e1-ab8e1d8dee3f",
-	"prevId": "15b3789a-515d-4ff0-bb0c-66f222530ccd",
+	"id": "ed94f844-8a97-4f3e-b963-0a7698e2a65e",
+	"prevId": "12e9c538-79af-4fc5-88e1-ab8e1d8dee3f",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -232,8 +232,8 @@
 					"primaryKey": true,
 					"notNull": true
 				},
-				"user_id": {
-					"name": "user_id",
+				"container_id": {
+					"name": "container_id",
 					"type": "integer",
 					"primaryKey": false,
 					"notNull": true
@@ -260,11 +260,11 @@
 			},
 			"indexes": {},
 			"foreignKeys": {
-				"domains_user_id_containers_id_fk": {
-					"name": "domains_user_id_containers_id_fk",
+				"domains_container_id_containers_id_fk": {
+					"name": "domains_container_id_containers_id_fk",
 					"tableFrom": "domains",
 					"tableTo": "containers",
-					"columnsFrom": ["user_id"],
+					"columnsFrom": ["container_id"],
 					"columnsTo": ["id"],
 					"onDelete": "cascade",
 					"onUpdate": "no action"

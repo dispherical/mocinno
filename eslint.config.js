@@ -7,9 +7,11 @@ import globals from 'globals';
 import ts from 'typescript-eslint';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
+const frontendGitignorePath = path.resolve(import.meta.dirname, 'frontend/.gitignore');
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	includeIgnoreFile(frontendGitignorePath),
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,

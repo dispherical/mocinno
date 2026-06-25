@@ -39,3 +39,6 @@ bastion_proxy_key.pub
 
 *.sqlite
 /config.ts
+
+.svelte-kit
+build

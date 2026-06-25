@@ -1,482 +1,465 @@
-import { route } from "@/middleware";
-import * as db from "@/db";
+import { route } from '@/middleware';
+import * as db from '@/db-helpers';
 import {
-  disableStartOnBoot,
-  enableStartOnBoot,
-  getContainerStatus,
-  getNextNode,
-  getNextVmid,
-  getNodeStats,
-  isContainerSuspended,
-  pveFetch,
-  setContainerDescription,
-  waitForTask,
-} from "@/pve-utils";
-import { reloadProxy } from "@/proxy/utils";
-import * as env from "@/env";
-import * as crypto from "node:crypto";
-import type {
-  NodeLXCConfig,
-  NodeLXCPost,
-  NodeLXCStatusStop,
-} from "@/types/pve";
-import transporter from "@/mail";
-import { render } from "react-email";
-import ApprovedEmail from "@email/approved.tsx";
-import RejectedEmail from "@email/rejected.tsx";
+	disableStartOnBoot,
+	enableStartOnBoot,
+	getContainerStatus,
+	getNextNode,
+	getNextVmid,
+	getNodeStats,
+	isContainerSuspended,
+	pveFetch,
+	setContainerDescription,
+	waitForTask
+} from '@/pve-utils';
+import { reloadProxy } from '@/proxy/utils';
+import * as env from '@/env';
+import * as crypto from 'node:crypto';
+import type { NodeLXCConfig, NodeLXCPost, NodeLXCStatusStop } from '@/types/pve';
+import transporter from '@/mail';
+import { render } from 'react-email';
+import ApprovedEmail from '@email/approved.tsx';
+import RejectedEmail from '@email/rejected.tsx';
 
 const app = route.createApp();
 
 let nodeStats:
-  | {
-      name: string;
-      stats: Awaited<ReturnType<typeof getNodeStats>>;
-    }[]
-  | null = null;
+	| {
+			name: string;
+			stats: Awaited<ReturnType<typeof getNodeStats>>;
+	  }[]
+	| null = null;
 
 async function requestNodeStats() {
-  try {
-    const config = await import("config");
+	try {
+		const config = await import('config');
 
-    const nodes = config.default.servers.map((s) => s.node);
+		const nodes = config.default.servers.map((s) => s.node);
 
-    const stats = await Promise.all(
-      nodes.map(async (node) => {
-        const stats = await getNodeStats(node);
-        return { name: node, stats };
-      }),
-    );
+		const stats = await Promise.all(
+			nodes.map(async (node) => {
+				const stats = await getNodeStats(node);
+				return { name: node, stats };
+			})
+		);
 
-    nodeStats = stats;
-  } catch (err) {
-    if (err instanceof Error) {
-      console.error("Failed to update admin node stats:", err.message);
-      return;
-    }
-    console.error("Failed to update admin node stats:", err);
-  }
+		nodeStats = stats;
+	} catch (err) {
+		if (err instanceof Error) {
+			console.error('Failed to update admin node stats:', err.message);
+			return;
+		}
+		console.error('Failed to update admin node stats:', err);
+	}
 }
 
 // Every min
-Bun.cron("* * * * *", requestNodeStats);
+Bun.cron('* * * * *', requestNodeStats);
 
-app.post("/api/proxy/reload", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
-  await reloadProxy();
-  return c.json({ message: "Proxy reloaded" });
+app.post('/api/proxy/reload', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
+	await reloadProxy();
+	return c.json({ message: 'Proxy reloaded' });
 });
 
-app.get("/admin", async (c) => {
-  const session = c.get("session");
-  const engine = c.get("engine");
-  const profile = session.get("profile");
-  if (!profile) return c.redirect("/api/authorization/login/start");
-  if (!db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.text("Forbidden");
-  }
+app.get('/admin', async (c) => {
+	const session = c.get('session');
+	const engine = c.get('engine');
+	const profile = session.get('profile');
+	if (!profile) return c.redirect('/api/authorization/login/start');
+	if (!db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.text('Forbidden');
+	}
 
-  const users: unknown[] = [];
-  const applications = await db.getPendingApplications();
-  const allApplications = await db.getAllApplications();
-  const invites = await db.getAllInvites();
+	const users: unknown[] = [];
+	const applications = await db.getPendingApplications();
+	const allApplications = await db.getAllApplications();
+	const invites = await db.getAllInvites();
 
-  if (nodeStats === null) {
-    await requestNodeStats();
-  }
+	if (nodeStats === null) {
+		await requestNodeStats();
+	}
 
-  const html = await engine.renderFile("admin", {
-    profile,
-    users,
-    applications,
-    allApplications,
-    invites,
-    stats: nodeStats,
-    appDomain: process.env.APP_DOMAIN || c.req.header("host"),
-  });
+	const html = await engine.renderFile('admin', {
+		profile,
+		users,
+		applications,
+		allApplications,
+		invites,
+		stats: nodeStats,
+		appDomain: process.env.APP_DOMAIN || c.req.header('host')
+	});
 
-  return c.html(html);
+	return c.html(html);
 });
 
-app.post("/api/admin/invites/create", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.post('/api/admin/invites/create', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const body = await c.req.json();
-  const code = crypto.randomBytes(8).toString("hex");
-  const maxUses = parseInt(body.maxUses) || 0;
-  const expiresAt = body.expiresAt || null;
+	const body = await c.req.json();
+	const code = crypto.randomBytes(8).toString('hex');
+	const maxUses = parseInt(body.maxUses) || 0;
+	const expiresAt = body.expiresAt || null;
 
-  const invite = await db.createInvite({
-    code,
-    adminEmail: profile.email,
-    maxUses,
-    expiresAt,
-  });
-  return c.json({ message: "Invite created", invite });
+	const invite = await db.createInvite({
+		code,
+		adminEmail: profile.email,
+		maxUses,
+		expiresAt
+	});
+	return c.json({ message: 'Invite created', invite });
 });
 
-app.post("/api/admin/invites/delete", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.post('/api/admin/invites/delete', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const { code } = await c.req.json();
-  await db.deleteInvite(code);
-  return c.json({ message: "Invite deleted" });
+	const { code } = await c.req.json();
+	await db.deleteInvite(code);
+	return c.json({ message: 'Invite deleted' });
 });
 
-app.get("/api/admin/users", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.get('/api/admin/users', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const query = c.req.query("q") || "";
-  const page = Math.max(1, parseInt(c.req.query("page") ?? "1"));
-  const limit = Math.min(
-    100,
-    Math.max(1, parseInt(c.req.query("limit") ?? "50")),
-  );
-  const offset = (page - 1) * limit;
+	const query = c.req.query('q') || '';
+	const page = Math.max(1, parseInt(c.req.query('page') ?? '1'));
+	const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') ?? '50')));
+	const offset = (page - 1) * limit;
 
-  const { users, total } = await db.searchUsers({ query, limit, offset });
+	const { users, total } = await db.searchUsers({ query, limit, offset });
 
-  const usersWithStatus = [];
-  for (const user of users) {
-    let container = null;
-    let suspended = false;
-    if (user.vmid) {
-      container = await getContainerStatus(user);
-      suspended = await isContainerSuspended(user);
-    }
-    usersWithStatus.push({ ...user, container, suspended });
-  }
+	const usersWithStatus = [];
+	for (const user of users) {
+		let container = null;
+		let suspended = false;
+		if (user.vmid) {
+			container = await getContainerStatus(user);
+			suspended = await isContainerSuspended(user);
+		}
+		usersWithStatus.push({ ...user, container, suspended });
+	}
 
-  return c.json({
-    users: usersWithStatus,
-    total,
-    page,
-    limit,
-    pages: Math.ceil(total / limit),
-  });
+	return c.json({
+		users: usersWithStatus,
+		total,
+		page,
+		limit,
+		pages: Math.ceil(total / limit)
+	});
 });
 
-app.get("/api/admin/applications", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.get('/api/admin/applications', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const applications = await db.getPendingApplications();
-  return c.json(applications);
+	const applications = await db.getPendingApplications();
+	return c.json(applications);
 });
 
-app.post("/api/admin/applications/approve", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.post('/api/admin/applications/approve', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const body = await c.req.json();
-  const appId = body.id;
-  if (!appId) {
-    c.status(400);
-    return c.json({ error: "Application ID required" });
-  }
+	const body = await c.req.json();
+	const appId = body.id;
+	if (!appId) {
+		c.status(400);
+		return c.json({ error: 'Application ID required' });
+	}
 
-  const application = await db.getApplicationById(appId);
+	const application = await db.getApplicationById(appId);
 
-  if (!application) {
-    c.status(404);
-    return c.json({ error: "Application not found" });
-  }
+	if (!application) {
+		c.status(404);
+		return c.json({ error: 'Application not found' });
+	}
 
-  if (application.status !== "pending") {
-    c.status(400);
-    return c.json({ error: "Application already processed" });
-  }
+	if (application.status !== 'pending') {
+		c.status(400);
+		return c.json({ error: 'Application already processed' });
+	}
 
-  const config = await import("config");
+	const config = await import('config');
 
-  const vmid = await getNextVmid();
-  const node = await getNextNode();
+	const vmid = await getNextVmid();
+	const node = await getNextNode();
 
-  const serverConfig = config.default.servers.find((s) => s.node === node);
+	const serverConfig = config.default.servers.find((s) => s.node === node);
 
-  if (!serverConfig) {
-    c.status(500);
-    return c.json({
-      error:
-        "Something has gone terribly wrong, the server configuration can't be found",
-    });
-  }
+	if (!serverConfig) {
+		c.status(500);
+		return c.json({
+			error: "Something has gone terribly wrong, the server configuration can't be found"
+		});
+	}
 
-  setTimeout(requestNodeStats, 0);
+	setTimeout(requestNodeStats, 0);
 
-  const templateConfig = Array.isArray(serverConfig.templates)
-    ? serverConfig.templates.find((t) => t.name === application.template) ||
-      serverConfig.templates[0]
-    : serverConfig.templates;
+	const templateConfig = Array.isArray(serverConfig.templates)
+		? serverConfig.templates.find((t) => t.name === application.template) ||
+			serverConfig.templates[0]
+		: serverConfig.templates;
 
-  const password = crypto.randomBytes(12).toString("hex");
-  const allocated = await db.allocateIP(
-    serverConfig.ipv4.cidr,
-    serverConfig.ipv4.gateway,
-  );
+	const password = crypto.randomBytes(12).toString('hex');
+	const allocated = await db.allocateIP(serverConfig.ipv4.cidr, serverConfig.ipv4.gateway);
 
-  let net0 = `name=eth0,bridge=vmbr4030,firewall=0,ip=${allocated.ip}/${allocated.prefix},gw=${serverConfig.ipv4?.gateway || allocated.gateway}`;
+	let net0 = `name=eth0,bridge=vmbr4030,firewall=0,ip=${allocated.ip}/${allocated.prefix},gw=${serverConfig.ipv4?.gateway || allocated.gateway}`;
 
-  if (serverConfig.ipv6) {
-    net0 += `,ip6=${serverConfig.ipv6.prefix}${vmid}/${serverConfig.ipv6.cidr},gw6=${serverConfig.ipv6.gateway}`;
-  }
+	if (serverConfig.ipv6) {
+		net0 += `,ip6=${serverConfig.ipv6.prefix}${vmid}/${serverConfig.ipv6.cidr},gw6=${serverConfig.ipv6.gateway}`;
+	}
 
-  console.log("net0: ", net0);
-  console.log("ipv6 config: ", serverConfig.ipv6);
+	console.log('net0: ', net0);
+	console.log('ipv6 config: ', serverConfig.ipv6);
 
-  const result = await pveFetch<{ data: NodeLXCPost }>(
-    `/nodes/${node}/lxc`,
-    "POST",
-    {
-      vmid,
-      ostemplate: templateConfig?.template || env.OS_TEMPLATE,
-      rootfs: serverConfig.rootfs || env.ROOTFS,
-      unprivileged: 1,
-      features: "nesting=1",
-      cores: 2,
-      memory: 2048,
-      swap: 512,
-      net0,
-      hostname: application.username,
-      "ssh-public-keys": `${env.BASTION_PROXY_PUB_KEY}\n${application.ssh_key}`,
-      password,
-      start: 1,
-      onboot: 1,
-    },
-  );
+	const result = await pveFetch<{ data: NodeLXCPost }>(`/nodes/${node}/lxc`, 'POST', {
+		vmid,
+		ostemplate: templateConfig?.template || env.OS_TEMPLATE,
+		rootfs: serverConfig.rootfs || env.ROOTFS,
+		unprivileged: 1,
+		features: 'nesting=1',
+		cores: 2,
+		memory: 2048,
+		swap: 512,
+		net0,
+		hostname: application.username,
+		'ssh-public-keys': `${env.BASTION_PROXY_PUB_KEY}\n${application.ssh_key}`,
+		password,
+		start: 1,
+		onboot: 1
+	});
 
-  await waitForTask(node, result.data);
+	await waitForTask(node, result.data);
 
-  await fetch(`http://${serverConfig.hostIP}:9191/add/${vmid}`, {
-    headers: { Authorization: `Bearer ${process.env.NDP_API_KEY}` },
-  });
+	await fetch(`http://${serverConfig.hostIP}:9191/add/${vmid}`, {
+		headers: { Authorization: `Bearer ${process.env.NDP_API_KEY}` }
+	});
 
-  await db.createUser({
-    sub: application.sub,
-    username: application.username,
-    sshKeys: [application.ssh_key],
-    vmid: vmid,
-    ip: allocated.ip,
-    ipv6: serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : null,
-    node,
-  });
+	await db.createUser({
+		sub: application.sub,
+		username: application.username,
+		sshKeys: [application.ssh_key],
+		vmid: vmid,
+		ip: allocated.ip,
+		ipv6: serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : null,
+		node
+	});
 
-  await db.updateApplicationStatus(appId, "approved", profile.email);
-  await transporter.sendMail({
-    from: env.SMTP_FROM,
-    to: application.email,
-    subject: "Nest account approved!",
-    html: await render(
-      <ApprovedEmail
-        username={application.username}
-        url={env.APP_DOMAIN || "https://dashboard.hackclub.app"}
-      />,
-    ),
-  });
-  return c.json({ message: "Approved and container created", vmid, password });
+	await db.updateApplicationStatus(appId, 'approved', profile.email);
+	await transporter.sendMail({
+		from: env.SMTP_FROM,
+		to: application.email,
+		subject: 'Nest account approved!',
+		html: await render(
+			<ApprovedEmail
+				username={application.username}
+				url={env.APP_DOMAIN || 'https://dashboard.hackclub.app'}
+			/>
+		)
+	});
+	return c.json({ message: 'Approved and container created', vmid, password });
 });
 
-app.post("/api/admin/applications/reject", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.post('/api/admin/applications/reject', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const body = await c.req.json();
-  const appId = body.id;
-  if (!appId) {
-    c.status(400);
-    return c.json({ error: "Application ID required" });
-  }
+	const body = await c.req.json();
+	const appId = body.id;
+	if (!appId) {
+		c.status(400);
+		return c.json({ error: 'Application ID required' });
+	}
 
-  const application = await db.getApplicationById(appId);
-  if (!application) {
-    c.status(404);
-    return c.json({ error: "Application not found" });
-  }
-  if (application.status !== "pending") {
-    c.status(400);
-    return c.json({ error: "Application already processed" });
-  }
+	const application = await db.getApplicationById(appId);
+	if (!application) {
+		c.status(404);
+		return c.json({ error: 'Application not found' });
+	}
+	if (application.status !== 'pending') {
+		c.status(400);
+		return c.json({ error: 'Application already processed' });
+	}
 
-  await db.updateApplicationStatus(appId, "rejected", profile.email);
+	await db.updateApplicationStatus(appId, 'rejected', profile.email);
 
-  await transporter.sendMail({
-    from: env.SMTP_FROM,
-    to: application.email,
-    subject: "Nest account rejected",
-    html: await render(<RejectedEmail username={application.username} />),
-  });
-  return c.json({ message: "Application rejected" });
+	await transporter.sendMail({
+		from: env.SMTP_FROM,
+		to: application.email,
+		subject: 'Nest account rejected',
+		html: await render(<RejectedEmail username={application.username} />)
+	});
+	return c.json({ message: 'Application rejected' });
 });
 
-app.post("/api/admin/users/suspend", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.post('/api/admin/users/suspend', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const body = await c.req.json();
-  const vmid = body.vmid;
-  const reason = body.reason || "Suspended by admin";
-  if (!vmid) {
-    c.status(400);
-    return c.json({ error: "VMID required" });
-  }
+	const body = await c.req.json();
+	const vmid = body.vmid;
+	const reason = body.reason || 'Suspended by admin';
+	if (!vmid) {
+		c.status(400);
+		return c.json({ error: 'VMID required' });
+	}
 
-  const user = await db.findUserByVmid(vmid);
+	const user = await db.findContainerByVmid(vmid);
 
-  if (!user) {
-    c.status(404);
-    return c.json({ error: "No account found" });
-  }
+	if (!user) {
+		c.status(404);
+		return c.json({ error: 'No account found' });
+	}
 
-  setTimeout(requestNodeStats, 0);
+	setTimeout(requestNodeStats, 0);
 
-  await setContainerDescription(user, `suspend: ${reason}`);
-  await disableStartOnBoot(user);
+	await setContainerDescription(user, `suspend: ${reason}`);
+	await disableStartOnBoot(user);
 
-  try {
-    const status = await getContainerStatus(user);
-    if (status?.status === "running") {
-      const stopResult = await pveFetch<{ data: NodeLXCStatusStop }>(
-        `/nodes/${user.node}/lxc/${user.vmid}/status/stop`,
-        "POST",
-      );
-      await waitForTask(user.node, stopResult.data);
-    }
-  } catch {}
+	try {
+		const status = await getContainerStatus(user);
+		if (status?.status === 'running') {
+			const stopResult = await pveFetch<{ data: NodeLXCStatusStop }>(
+				`/nodes/${user.node}/lxc/${user.vmid}/status/stop`,
+				'POST'
+			);
+			await waitForTask(user.node, stopResult.data);
+		}
+	} catch {
+		// Ignore
+	}
 
-  return c.json({ message: `Container ${vmid} suspended` });
+	return c.json({ message: `Container ${vmid} suspended` });
 });
 
-app.post("/api/admin/users/unsuspend", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.post('/api/admin/users/unsuspend', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const body = await c.req.json();
-  const vmid = body.vmid;
-  if (!vmid) {
-    c.status(400);
-    return c.json({ error: "VMID required" });
-  }
+	const body = await c.req.json();
+	const vmid = body.vmid;
+	if (!vmid) {
+		c.status(400);
+		return c.json({ error: 'VMID required' });
+	}
 
-  const user = await db.findUserByVmid(vmid);
+	const user = await db.findContainerByVmid(vmid);
 
-  if (!user) {
-    c.status(404);
-    return c.json({ error: "No account found" });
-  }
+	if (!user) {
+		c.status(404);
+		return c.json({ error: 'No account found' });
+	}
 
-  setTimeout(requestNodeStats, 0);
+	setTimeout(requestNodeStats, 0);
 
-  await setContainerDescription(user, "");
-  await enableStartOnBoot(user);
+	await setContainerDescription(user, '');
+	await enableStartOnBoot(user);
 
-  return c.json({ message: `Container ${vmid} unsuspended` });
+	return c.json({ message: `Container ${vmid} unsuspended` });
 });
 
-app.post("/api/admin/users/update", async (c) => {
-  const profile = c.get("session").get("profile");
-  if (!profile || !db.isAdmin(profile.email)) {
-    c.status(403);
-    return c.json({ error: "Forbidden" });
-  }
+app.post('/api/admin/users/update', async (c) => {
+	const profile = c.get('session').get('profile');
+	if (!profile || !db.isAdmin(profile.email)) {
+		c.status(403);
+		return c.json({ error: 'Forbidden' });
+	}
 
-  const body = await c.req.json();
-  const vmid = body.vmid;
-  if (!vmid) {
-    c.status(400);
-    return c.json({ error: "VMID required" });
-  }
+	const body = await c.req.json();
+	const vmid = body.vmid;
+	if (!vmid) {
+		c.status(400);
+		return c.json({ error: 'VMID required' });
+	}
 
-  const user = await db.findUserByVmid(vmid);
+	const user = await db.findContainerByVmid(vmid);
 
-  if (!user) {
-    c.status(404);
-    return c.json({ error: "No account found" });
-  }
+	if (!user) {
+		c.status(404);
+		return c.json({ error: 'No account found' });
+	}
 
-  setTimeout(requestNodeStats, 0);
+	setTimeout(requestNodeStats, 0);
 
-  const updates: NodeLXCConfig = {};
+	const updates: NodeLXCConfig = {};
 
-  if (body.cores !== undefined) {
-    const cores = parseInt(body.cores);
+	if (body.cores !== undefined) {
+		const cores = parseInt(body.cores);
 
-    if (isNaN(cores) || cores < 1 || cores > 16) {
-      c.status(400);
-      return c.json({ error: "Cores must be 1-16" });
-    }
+		if (isNaN(cores) || cores < 1 || cores > 16) {
+			c.status(400);
+			return c.json({ error: 'Cores must be 1-16' });
+		}
 
-    updates.cores = cores;
-  }
+		updates.cores = cores;
+	}
 
-  if (body.memory !== undefined) {
-    const memory = parseInt(body.memory);
+	if (body.memory !== undefined) {
+		const memory = parseInt(body.memory);
 
-    if (isNaN(memory) || memory < 128 || memory > 32768) {
-      c.status(400);
-      return c.json({ error: "Memory must be 128-32768 MB" });
-    }
+		if (isNaN(memory) || memory < 128 || memory > 32768) {
+			c.status(400);
+			return c.json({ error: 'Memory must be 128-32768 MB' });
+		}
 
-    updates.memory = memory;
-  }
+		updates.memory = memory;
+	}
 
-  if (body.username !== undefined) {
-    const username = body.username.toLowerCase();
+	if (body.username !== undefined) {
+		const username = body.username.toLowerCase();
 
-    if (!/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
-      c.status(400);
-      return c.json({ error: "Invalid username" });
-    }
+		if (!/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
+			c.status(400);
+			return c.json({ error: 'Invalid username' });
+		}
 
-    const taken = await db.isUsernameTaken(username);
-    if (taken) {
-      c.status(409);
-      return c.json({ error: "Username already taken" });
-    }
+		const taken = await db.isUsernameTaken(username);
+		if (taken) {
+			c.status(409);
+			return c.json({ error: 'Username already taken' });
+		}
 
-    await db.updateUsername(vmid, username);
-    updates.hostname = username;
-  }
+		await db.updateUsername(vmid, username);
+		updates.hostname = username;
+	}
 
-  if (Object.keys(updates).length > 0) {
-    await pveFetch<{ data: null }>(
-      `/nodes/${user.node}/lxc/${user.vmid}/config`,
-      "PUT",
-      updates,
-    );
-  }
+	if (Object.keys(updates).length > 0) {
+		await pveFetch<{ data: null }>(`/nodes/${user.node}/lxc/${user.vmid}/config`, 'PUT', updates);
+	}
 
-  return c.json({ message: "Updated" });
+	return c.json({ message: 'Updated' });
 });
 
 export default app;
