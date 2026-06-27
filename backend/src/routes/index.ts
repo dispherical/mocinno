@@ -1,5 +1,6 @@
 import { route } from '@/middleware';
 import { auth } from '@/modules/auth';
+import { trpcServer } from '@hono/trpc-server';
 
 import adminRoutes from './admin';
 import authRoutes from './auth';
@@ -8,24 +9,43 @@ import publicRoutes from './public';
 import applicationRoutes from './application';
 import internalRoutes from './internal';
 
+import { appRouter } from './trpc';
+
 const app = route.createApp().basePath('/api');
 
 app.use('*', async (c, next) => {
-	const session = await auth.api.getSession({ headers: c.req.raw.headers });
-	if (!session) {
-		c.set('user', null);
-		c.set('sessionNew', null);
+	try {
+		const session = await auth.api.getSession({ headers: c.req.raw.headers });
+		if (!session) {
+			c.set('user', null);
+			c.set('sessionNew', null);
+			await next();
+			return;
+		}
+		c.set('user', session.user);
+		c.set('sessionNew', session.session);
 		await next();
-		return;
+	} catch (error) {
+		console.error(error);
+		await next();
 	}
-	c.set('user', session.user);
-	c.set('sessionNew', session.session);
-	await next();
 });
 
 app.on(['POST', 'GET'], '/auth/*', (c) => {
 	return auth.handler(c.req.raw);
 });
+
+app.use(
+	'/trpc/*',
+	trpcServer({
+		endpoint: '/api/trpc',
+		router: appRouter,
+		createContext: (opts, c) => ({
+			session: c.get('sessionNew'),
+			user: c.get('user')
+		})
+	})
+);
 
 app.route('/admin', adminRoutes);
 app.route('/authorization', authRoutes);

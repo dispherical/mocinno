@@ -14,7 +14,14 @@ export default defineConfig({
 				experimental: { async: true }
 			},
 			adapter: adapter(),
-			experimental: { remoteFunctions: true, handleRenderingErrors: true }
+			experimental: {
+				remoteFunctions: true,
+				handleRenderingErrors: true,
+				explicitEnvironmentVariables: true
+			},
+			alias: {
+				'@': '../backend/src'
+			}
 		})
 	],
 	server: {

@@ -1,10 +1,12 @@
 import { createAuthClient } from 'better-auth/client';
 import { genericOAuthClient } from 'better-auth/client/plugins';
 
+import { APP_DOMAIN, APP_SECURE } from '$app/env/public';
+
 import { getRequestEvent } from '$app/server';
 
 const authServer = createAuthClient({
-	baseURL: getRequestEvent().url.origin,
+	baseURL: `${APP_SECURE ? 'https' : 'http'}://${APP_DOMAIN}`,
 	plugins: [genericOAuthClient()],
 	fetchOptions: {
 		onSuccess: (ctx) => {

@@ -33,6 +33,9 @@
 	},
 	"dependencies": {
 		"@better-auth/drizzle-adapter": "^1.6.20",
+		"@hono/trpc-server": "^0.4.2",
+		"@trpc/client": "catalog:",
+		"@trpc/server": "catalog:",
 		"acme-client": "^5.4.0",
 		"better-auth": "catalog:",
 		"dotenv": "^17.4.2",
@@ -45,7 +48,9 @@
 		"react-dom": "19.2.5",
 		"react-email": "6.0.5",
 		"ssh2": "^1.17.0",
-		"tailwindcss": "^4.2.4"
+		"tailwindcss": "^4.2.4",
+		"superjson": "catalog:",
+		"zod": "catalog:"
 	},
 	"overrides": {
 		"cpu-features": "npm:@empty",
@@ -54,6 +59,17 @@
 			"@babel/traverse": {
 				"globals": "npm:globals@17.7.0"
 			}
+		}
+	},
+	"exports": {
+		".": {
+			"import": "./src/index.ts"
+		},
+		"./trpc": {
+			"import": "./src/routes/trpc/index.ts"
+		},
+		"./db": {
+			"types": "./src/db/schema.ts"
 		}
 	}
 }
