@@ -1,7 +1,10 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Head from '$lib/components/Head.svelte';
 
 	let { data }: PageProps = $props();
 </script>
+
+<Head title="Dashboard" />
 
 {data.authTest}
