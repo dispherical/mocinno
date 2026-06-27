@@ -1,4 +1,5 @@
 import { integer, pgTable, text, serial, timestamp } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 import * as auth from './auth-schema';
 
 export const containersTable = pgTable('containers', {
@@ -20,7 +21,7 @@ export const containersTable = pgTable('containers', {
 
 export const domainsTable = pgTable('domains', {
 	id: serial('id').primaryKey(),
-	user_id: integer('user_id')
+	container_id: integer('container_id')
 		.notNull()
 		.references(() => containersTable.id, {
 			onDelete: 'cascade'
@@ -32,11 +33,9 @@ export const domainsTable = pgTable('domains', {
 
 export const applicationsTable = pgTable('applications', {
 	id: serial('id').primaryKey(),
-	user_id: text('user_id')
-		.unique()
-		.references(() => auth.user.id, {
-			onDelete: 'cascade'
-		}),
+	user_id: text('user_id').references(() => auth.user.id, {
+		onDelete: 'cascade'
+	}),
 	sub: text('sub'),
 	email: text('email'),
 	username: text('username').notNull(),
@@ -72,5 +71,27 @@ export const settingsTable = pgTable('settings', {
 	key: text('key').primaryKey(),
 	value: text('value').notNull()
 });
+
+export const containersRelations = relations(containersTable, ({ one, many }) => ({
+	user: one(auth.user, {
+		fields: [containersTable.user_id],
+		references: [auth.user.id]
+	}),
+	domains: many(domainsTable)
+}));
+
+export const domainsRelations = relations(domainsTable, ({ one }) => ({
+	container: one(containersTable, {
+		fields: [domainsTable.container_id],
+		references: [containersTable.id]
+	})
+}));
+
+export const applicationsRelations = relations(applicationsTable, ({ one }) => ({
+	user: one(auth.user, {
+		fields: [applicationsTable.user_id],
+		references: [auth.user.id]
+	})
+}));
 
 export * from './auth-schema';

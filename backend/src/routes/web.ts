@@ -1,4 +1,4 @@
-import * as db from '../db';
+import * as db from '../db-helpers';
 import { getContainerStatus, isContainerSuspended, getContainerBackups } from '@/pve-utils';
 import { route } from '@/middleware';
 import type { Backup } from '@/types/pve';
@@ -15,12 +15,12 @@ app.get('/dashboard', async (c) => {
 	const profile = session.get('profile');
 	if (!profile) return c.redirect('/api/authorization/login/start');
 
-	const user = await db.findUserBySub(profile.sub);
+	const user = await db.findContainerBySub(profile.sub);
 	const admin = db.isAdmin(profile.email);
 	let container = null;
 	let domains: {
 		id: number;
-		user_id: number | null;
+		container_id: number | null;
 		domain: string;
 		proxy: number;
 		created_at: Date | null;

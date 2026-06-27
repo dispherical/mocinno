@@ -1,0 +1,29 @@
+import { createAuthClient } from 'better-auth/client';
+import { genericOAuthClient } from 'better-auth/client/plugins';
+
+import { getRequestEvent } from '$app/server';
+
+const authServer = createAuthClient({
+	baseURL: getRequestEvent().url.origin,
+	plugins: [genericOAuthClient()],
+	fetchOptions: {
+		onSuccess: (ctx) => {
+			const authToken = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
+			if (authToken) {
+				getRequestEvent().cookies.set('__Secure-mocinno.session_token', authToken, {
+					httpOnly: true,
+					secure: true,
+					sameSite: 'lax',
+					path: '/',
+					maxAge: 60 * 60 * 24 * 7 // 7 days
+				});
+			}
+		},
+		auth: {
+			type: 'Bearer',
+			token: () => getRequestEvent().cookies.get('__Secure-mocinno.session_token')
+		}
+	}
+});
+
+export default authServer;

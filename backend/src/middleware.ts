@@ -3,6 +3,7 @@ import { ipRestriction } from 'hono/ip-restriction';
 import { createMiddleware, createFactory } from 'hono/factory';
 import type { Liquid } from 'liquidjs';
 import type { Session } from 'hono-sessions';
+import { auth } from '@/modules/auth';
 
 export const localOnly = ipRestriction(
 	getConnInfo,
@@ -38,5 +39,7 @@ export const route = createFactory<{
 		session: Session;
 		session_key_rotation: boolean;
 		engine: Liquid;
+		user: typeof auth.$Infer.Session.user | null;
+		sessionNew: typeof auth.$Infer.Session.session | null;
 	};
 }>();

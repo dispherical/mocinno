@@ -19,7 +19,7 @@
 		<div class='flex items-center space-x-4'>
 			<div class='text-sm font-medium'>{{ profile.name }}</div>
 			{% if admin %}
-				<a href='/admin' class='uk-btn uk-btn-default uk-btn-sm'>Admin Panel</a>
+				<a href='/api/admin' class='uk-btn uk-btn-default uk-btn-sm'>Admin Panel</a>
 			{% endif %}
 		</div>
 	</div>
@@ -489,7 +489,7 @@
 
 		checkTimeout = setTimeout(async () => {
 			try {
-				const res = await fetch(`/api/username/check?username=${encodeURIComponent(val)}`);
+				const res = await fetch(`/api/application/username/check?username=${encodeURIComponent(val)}`);
 				const data = await res.json();
 				if (usernameInput.value !== val) return;
 				if (data.available) {
@@ -608,7 +608,7 @@
 				msgPanel.className = 'mt-4 text-sm font-medium text-muted-foreground';
 			}
 			try {
-				const res = await fetch(`/api/container/${action.toLowerCase()}`, { method: 'POST' });
+				const res = await fetch(`/api/user/container/${action.toLowerCase()}`, { method: 'POST' });
 				const data = await res.json();
 				if (res.ok) {
 					if (msgPanel) {
@@ -644,7 +644,7 @@
 			msgPanel.className = 'mt-4 text-sm font-medium text-muted-foreground';
 		}
 		try {
-			const res = await fetch('/api/container/delete', { method: 'POST' });
+			const res = await fetch('/api/user/container/delete', { method: 'POST' });
 			const data = await res.json();
 			if (res.ok) {
 				window.location.href = data.redirect || '/';
@@ -679,7 +679,7 @@
 			domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
 		}
 		try {
-			const res = await fetch('/api/domains/add', {
+			const res = await fetch('/api/user/domains/add', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ domain, proxy })
@@ -710,7 +710,7 @@
 				domainMsg.className = 'uk-form-help text-muted-foreground mt-0';
 			}
 			try {
-				const res = await fetch('/api/domains/remove', {
+				const res = await fetch('/api/user/domains/remove', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ domain })
@@ -759,7 +759,7 @@
 		sshKeyAddStatus.innerText = 'Adding key...';
 		sshKeyAddStatus.className = 'uk-form-help text-muted-foreground mt-1';
 		try {
-			const res = await fetch('/api/ssh-keys/add', {
+			const res = await fetch('/api/user/ssh-keys/add', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ key })
@@ -783,7 +783,7 @@
 			const key = btn.dataset.key;
 			if (!confirm('Remove this SSH key?')) return;
 			try {
-				const res = await fetch('/api/ssh-keys/remove', {
+				const res = await fetch('/api/user/ssh-keys/remove', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ key })
@@ -813,7 +813,7 @@
 			btn.innerText = 'Restoring...';
 
 			try {
-				const res = await fetch('/api/backups/restore', {
+				const res = await fetch('/api/user/backups/restore', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ volid })

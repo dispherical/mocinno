@@ -5,7 +5,7 @@ import reservedUsernames from '@/reservedUsernames';
 
 const app = route.createApp();
 
-app.get('/api/username/check', async (c) => {
+app.get('/username/check', async (c) => {
 	const username = c.req.query('username')?.toLowerCase();
 	if (!username || !/^[a-z][a-z0-9_-]{1,30}[a-z0-9]$/.test(username)) {
 		return c.json({
@@ -22,7 +22,7 @@ app.get('/api/username/check', async (c) => {
 	return c.json({ available: !taken });
 });
 
-app.post('/api/application/submit', async (c) => {
+app.post('/submit', async (c) => {
 	const profile = c.get('session').get('profile');
 
 	if (!profile) {

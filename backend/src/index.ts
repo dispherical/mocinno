@@ -6,13 +6,8 @@ import { Liquid } from 'liquidjs';
 
 import '@/proxy/index.ts';
 
-import internalRoutes from '@/routes/internal';
 import webRoutes from '@/routes/web';
-import userRoutes from '@/routes/user';
-import authRoutes from '@/routes/auth';
-import applicationRoutes from '@/routes/application';
-import adminRoutes from '@/routes/admin';
-import publicRoutes from '@/routes/public';
+import routes from '@/routes';
 
 const app = route.createApp();
 
@@ -51,14 +46,8 @@ app.use('*', async (c, next) => {
 	await next();
 });
 
-app.route('', internalRoutes);
-
 app.route('', webRoutes);
-app.route('', userRoutes);
-app.route('', authRoutes);
-app.route('', applicationRoutes);
-app.route('', adminRoutes);
-app.route('', publicRoutes);
+app.route('', routes);
 
 process.on('uncaughtException', (error) => {
 	console.error(error);

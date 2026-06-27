@@ -6,7 +6,7 @@ import { route } from '@/middleware';
 
 const app = route.createApp();
 
-app.get('/api/authorization/:mode/start', async (c) => {
+app.get('/:mode/start', async (c) => {
 	const mode = c.req.param('mode');
 	const session = c.get('session');
 
@@ -34,7 +34,7 @@ app.get('/api/authorization/:mode/start', async (c) => {
 	return c.redirect(`https://auth.hackclub.com/oauth/authorize?${params.toString()}`);
 });
 
-app.get('/api/authorization/goalpost', async (c) => {
+app.get('/goalpost', async (c) => {
 	const session = c.get('session');
 	const code = c.req.query('code');
 	const state = c.req.query('state');

@@ -19,7 +19,7 @@ app.post('/pubkey', localOnly, denyForward, async (c) => {
 
 	if (!username || !publicKey) return c.json({ success: false });
 
-	const user = await db.findUserByUsername(username);
+	const user = await db.findContainerByUsername(username);
 	if (!user || !user.ssh_keys || user.ssh_keys.length === 0) {
 		return c.json({ success: false });
 	}
@@ -46,7 +46,7 @@ app.post('/config', localOnly, denyForward, async (c) => {
 
 	if (!username) return c.json({ config: {} });
 
-	const user = await db.findUserByUsername(username);
+	const user = await db.findContainerByUsername(username);
 	if (!user || !user.vmid) return c.json({ config: {} });
 
 	const suspended = await isContainerSuspended(user);
@@ -90,7 +90,7 @@ app.post('/config', localOnly, denyForward, async (c) => {
 	});
 });
 
-app.get('/api/tls-ask', async (c) => {
+app.get('/tls-ask', async (c) => {
 	const domain = c.req.query('domain');
 	if (!domain) {
 		c.status(400);
@@ -108,7 +108,7 @@ app.get('/api/tls-ask', async (c) => {
 			return c.text('Invalid domain');
 		}
 
-		const user = await db.findUserByUsername(username);
+		const user = await db.findContainerByUsername(username);
 
 		if (!user) {
 			c.status(404);
@@ -136,6 +136,7 @@ app.get('/api/tls-ask', async (c) => {
 });
 
 // wtf is this route used for
+// containerssh - lara
 app.post('/password', localOnly, denyForward, async (c) => {
 	return c.json({ success: false });
 });

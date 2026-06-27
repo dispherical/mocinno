@@ -112,7 +112,7 @@ export async function createUser({
 	ipv6,
 	node
 }: {
-	sub: string;
+	sub: string | null;
 	username: string;
 	sshKeys: string[];
 	vmid: number;
@@ -206,7 +206,7 @@ export async function getAllDomains() {
 			username: containersTable.username
 		})
 		.from(domainsTable)
-		.innerJoin(containersTable, eq(domainsTable.user_id, containersTable.id))
+		.innerJoin(containersTable, eq(domainsTable.container_id, containersTable.id))
 		.orderBy(asc(domainsTable.domain));
 }
 
@@ -337,7 +337,7 @@ export async function getDomainByName(domain: string) {
 			created_at: domainsTable.created_at
 		})
 		.from(domainsTable)
-		.innerJoin(containersTable, eq(domainsTable.user_id, containersTable.id))
+		.innerJoin(containersTable, eq(domainsTable.container_id, containersTable.id))
 		.where(eq(domainsTable.domain, domain));
 
 	return row ?? null;

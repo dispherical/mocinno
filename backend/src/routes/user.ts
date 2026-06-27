@@ -23,7 +23,7 @@ import { route } from '@/middleware';
 
 const app = route.createApp();
 
-app.post('/api/container/start', async (c) => {
+app.post('/container/start', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -50,7 +50,7 @@ app.post('/api/container/start', async (c) => {
 	return c.json({ message: 'Container started' });
 });
 
-app.post('/api/container/stop', async (c) => {
+app.post('/container/stop', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -77,7 +77,7 @@ app.post('/api/container/stop', async (c) => {
 	return c.json({ message: 'Container stopped' });
 });
 
-app.post('/api/container/reboot', async (c) => {
+app.post('/container/reboot', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -104,7 +104,7 @@ app.post('/api/container/reboot', async (c) => {
 	return c.json({ message: 'Container rebooted' });
 });
 
-app.post('/api/container/delete', async (c) => {
+app.post('/container/delete', async (c) => {
 	const session = c.get('session');
 	const profile = session.get('profile');
 	if (!profile) {
@@ -144,7 +144,6 @@ app.post('/api/container/delete', async (c) => {
 		await waitForTask(user.node, stopResult.data);
 	}
 
-	// TODO: replcae any
 	const backups = await pveFetch<{ data: Backup[] }>(
 		`/nodes/${user.node}/storage/pbs/content?vmid=${user.vmid}`,
 		'GET'
@@ -168,7 +167,7 @@ app.post('/api/container/delete', async (c) => {
 	return c.json({ message: 'Deleted', vmid: user.vmid });
 });
 
-app.get('/api/domains', async (c) => {
+app.get('/domains', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -185,7 +184,7 @@ app.get('/api/domains', async (c) => {
 	return c.json(domains);
 });
 
-app.post('/api/domains/add', async (c) => {
+app.post('/domains/add', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -259,7 +258,7 @@ app.post('/api/domains/add', async (c) => {
 	return c.json({ message: `${domain} added`, domain: row });
 });
 
-app.post('/api/domains/remove', async (c) => {
+app.post('/domains/remove', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -292,7 +291,7 @@ app.post('/api/domains/remove', async (c) => {
 	return c.json({ message: `${domain} removed` });
 });
 
-app.post('/api/ssh-keys/add', async (c) => {
+app.post('/ssh-keys/add', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -368,7 +367,7 @@ app.post('/api/ssh-keys/add', async (c) => {
 	return c.json({ message: 'SSH key added' });
 });
 
-app.post('/api/ssh-keys/remove', async (c) => {
+app.post('/ssh-keys/remove', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile) {
 		c.status(401);
@@ -422,7 +421,7 @@ app.post('/api/ssh-keys/remove', async (c) => {
 	return c.json({ message: 'SSH key removed' });
 });
 
-app.post('/api/backups/restore', async (c) => {
+app.post('/backups/restore', async (c) => {
 	const profile = c.get('session').get('profile');
 
 	if (!profile) {

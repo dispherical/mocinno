@@ -44,7 +44,7 @@ Bun.cron('*/3 * * * *', async () => {
 
 const app = route.createApp();
 
-app.get('/api/stats', async (c) => {
+app.get('/stats', async (c) => {
 	if (!nodeStats) {
 		c.status(503);
 		return c.json({

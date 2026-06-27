@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Head from '$lib/components/Head.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+
+	import authClient from '$lib/auth';
 </script>
 
 <Head title="Home" />
@@ -16,7 +18,15 @@
 			From here you may register for an account on Hack Club Nest.
 		</p>
 		<div class="pt-2">
-			<Button size="lg" href="/api/authorization/login/start" rel="external">Go to login</Button>
+			<Button
+				size="lg"
+				onclick={() => {
+					authClient.signIn.oauth2({
+						providerId: 'hackclub',
+						callbackURL: '/dashboard'
+					});
+				}}>Go to login</Button
+			>
 		</div>
 	</div>
 </div>

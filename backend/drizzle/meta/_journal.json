@@ -50,6 +50,20 @@
       "when": 1782416290731,
       "tag": "0006_flimsy_pete_wisdom",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782560695767,
+      "tag": "0007_first_madripoor",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782563823614,
+      "tag": "0008_futuristic_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

@@ -56,7 +56,7 @@ async function requestNodeStats() {
 // Every min
 Bun.cron('* * * * *', requestNodeStats);
 
-app.post('/api/proxy/reload', async (c) => {
+app.post('/proxy/reload', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -66,7 +66,7 @@ app.post('/api/proxy/reload', async (c) => {
 	return c.json({ message: 'Proxy reloaded' });
 });
 
-app.get('/admin', async (c) => {
+app.get('/', async (c) => {
 	const session = c.get('session');
 	const engine = c.get('engine');
 	const profile = session.get('profile');
@@ -98,7 +98,7 @@ app.get('/admin', async (c) => {
 	return c.html(html);
 });
 
-app.post('/api/admin/invites/create', async (c) => {
+app.post('/invites/create', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -119,7 +119,7 @@ app.post('/api/admin/invites/create', async (c) => {
 	return c.json({ message: 'Invite created', invite });
 });
 
-app.post('/api/admin/invites/delete', async (c) => {
+app.post('/invites/delete', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -131,7 +131,7 @@ app.post('/api/admin/invites/delete', async (c) => {
 	return c.json({ message: 'Invite deleted' });
 });
 
-app.get('/api/admin/users', async (c) => {
+app.get('/users', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -165,7 +165,7 @@ app.get('/api/admin/users', async (c) => {
 	});
 });
 
-app.get('/api/admin/applications', async (c) => {
+app.get('/applications', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -176,7 +176,7 @@ app.get('/api/admin/applications', async (c) => {
 	return c.json(applications);
 });
 
-app.post('/api/admin/applications/approve', async (c) => {
+app.post('/applications/approve', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -283,7 +283,7 @@ app.post('/api/admin/applications/approve', async (c) => {
 	return c.json({ message: 'Approved and container created', vmid, password });
 });
 
-app.post('/api/admin/applications/reject', async (c) => {
+app.post('/applications/reject', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -318,7 +318,7 @@ app.post('/api/admin/applications/reject', async (c) => {
 	return c.json({ message: 'Application rejected' });
 });
 
-app.post('/api/admin/users/suspend', async (c) => {
+app.post('/users/suspend', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -361,7 +361,7 @@ app.post('/api/admin/users/suspend', async (c) => {
 	return c.json({ message: `Container ${vmid} suspended` });
 });
 
-app.post('/api/admin/users/unsuspend', async (c) => {
+app.post('/users/unsuspend', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
@@ -390,7 +390,7 @@ app.post('/api/admin/users/unsuspend', async (c) => {
 	return c.json({ message: `Container ${vmid} unsuspended` });
 });
 
-app.post('/api/admin/users/update', async (c) => {
+app.post('/users/update', async (c) => {
 	const profile = c.get('session').get('profile');
 	if (!profile || !db.isAdmin(profile.email)) {
 		c.status(403);
