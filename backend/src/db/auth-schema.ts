@@ -7,6 +7,8 @@ export const user = pgTable('user', {
 	email: text('email').notNull().unique(),
 	emailVerified: boolean('email_verified').default(false).notNull(),
 	image: text('image'),
+	slack_id: text('slack_id'),
+	verification_status: text('verification_status'),
 	createdAt: timestamp('created_at').notNull(),
 	updatedAt: timestamp('updated_at')
 		.$onUpdate(() => new Date())
@@ -25,6 +27,7 @@ export const session = pgTable(
 			.notNull(),
 		ipAddress: text('ip_address'),
 		userAgent: text('user_agent'),
+		invite_code: text('invite_code'),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' })

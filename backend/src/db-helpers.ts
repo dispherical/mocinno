@@ -211,6 +211,7 @@ export async function getAllDomains() {
 }
 
 export async function createApplication({
+	user_id,
 	sub,
 	email,
 	username,
@@ -218,8 +219,9 @@ export async function createApplication({
 	reason,
 	template
 }: {
-	sub: string;
-	email: string;
+	user_id?: string;
+	sub?: string;
+	email?: string;
 	username: string;
 	sshKey: string;
 	reason: string;
@@ -227,7 +229,7 @@ export async function createApplication({
 }) {
 	const [app] = await db
 		.insert(applicationsTable)
-		.values({ sub, email, username, ssh_key: sshKey, reason, template })
+		.values({ user_id, sub, email, username, ssh_key: sshKey, reason, template })
 		.returning();
 	return app;
 }
@@ -254,6 +256,16 @@ export async function getApplicationBySub(sub: string) {
 		.select()
 		.from(applicationsTable)
 		.where(eq(applicationsTable.sub, sub))
+		.orderBy(desc(applicationsTable.created_at))
+		.limit(1);
+	return app ?? null;
+}
+
+export async function getApplicationByUserId(user_id: string) {
+	const [app] = await db
+		.select()
+		.from(applicationsTable)
+		.where(eq(applicationsTable.user_id, user_id))
 		.orderBy(desc(applicationsTable.created_at))
 		.limit(1);
 	return app ?? null;

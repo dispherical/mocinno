@@ -42,7 +42,8 @@ app.use(
 		router: appRouter,
 		createContext: (opts, c) => ({
 			session: c.get('sessionNew'),
-			user: c.get('user')
+			user: c.get('user'),
+			headers: c.req.raw.headers
 		})
 	})
 );

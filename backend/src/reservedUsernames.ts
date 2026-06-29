@@ -6,6 +6,8 @@ export default [
 	'abuse',
 	'account',
 	'accounts',
+	'sso',
+	'authenticate',
 	'admin',
 	'administrator',
 	'administrators',

@@ -29,7 +29,7 @@ export default defineConfig({
 		allowedHosts: ['localhost', '.localhost', process.env.APP_DOMAIN || ''],
 		proxy: {
 			'/api': {
-				target: 'http://localhost:3001'
+				target: `http://localhost:${process.env.MOCINNO_PORT}`
 			}
 		}
 	}

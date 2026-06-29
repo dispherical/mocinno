@@ -1,11 +1,14 @@
 import { initTRPC, TRPCError } from '@trpc/server';
+import superjson from 'superjson';
 
 import { auth } from '@/modules/auth';
-import superjson from 'superjson';
+
+import * as dbHelpers from '@/db-helpers';
 
 interface TRPCContext {
 	session: typeof auth.$Infer.Session.session | null;
 	user: typeof auth.$Infer.Session.user | null;
+	headers: Headers;
 }
 
 /**
@@ -39,5 +42,20 @@ export const authedProcedure = publicProcedure.use(async (opts) => {
 			user: ctx.user,
 			session: ctx.session
 		}
+	});
+});
+
+export const adminProcedure = authedProcedure.use(async (opts) => {
+	const { ctx } = opts;
+
+	if (!dbHelpers.isAdmin(ctx.user.email)) {
+		throw new TRPCError({
+			code: 'FORBIDDEN',
+			message: 'You must be an admin to access this resource.'
+		});
+	}
+
+	return opts.next({
+		ctx
 	});
 });

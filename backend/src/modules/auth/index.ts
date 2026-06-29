@@ -4,6 +4,7 @@ import { bearer, genericOAuth } from 'better-auth/plugins';
 import { createAuthMiddleware } from 'better-auth/api';
 import { db, schema } from '@/db';
 import { eq } from 'drizzle-orm';
+import { getOAuthState } from 'better-auth/api';
 
 import {
 	ENCRYPTION_KEY,
@@ -23,6 +24,29 @@ export const auth = betterAuth({
 		provider: 'pg',
 		schema
 	}),
+	user: {
+		additionalFields: {
+			slack_id: {
+				type: 'string',
+				required: true,
+				input: true
+			},
+			verification_status: {
+				type: ['verified', 'pending', 'ineligible', 'needs_submission'],
+				required: true,
+				input: true
+			}
+		}
+	},
+	session: {
+		additionalFields: {
+			invite_code: {
+				type: 'string',
+				required: false,
+				input: true
+			}
+		}
+	},
 	plugins: [
 		bearer(),
 		genericOAuth({
@@ -32,7 +56,12 @@ export const auth = betterAuth({
 					clientId: OAUTH_CLIENT_ID,
 					clientSecret: OAUTH_CLIENT_SECRET,
 					discoveryUrl: 'https://auth.hackclub.com/.well-known/openid-configuration',
-					scopes: ['openid', 'profile', 'email', 'verification_status', 'slack_id']
+					scopes: ['openid', 'profile', 'email', 'verification_status', 'slack_id'],
+					// @ts-expect-error types should be getting inferred but i have no idea why they aren't
+					mapProfileToUser: (profile) => ({
+						slack_id: profile.slack_id as string,
+						verification_status: profile.verification_status as string
+					})
 				}
 			]
 		})
@@ -43,6 +72,27 @@ export const auth = betterAuth({
 	advanced: {
 		cookiePrefix: 'mocinno',
 		useSecureCookies: APP_SECURE
+	},
+	databaseHooks: {
+		session: {
+			create: {
+				before: async (session, ctx) => {
+					if (!ctx) {
+						return;
+					}
+
+					const additionalData = await getOAuthState();
+
+					if (ctx.path.startsWith('/oauth2/callback')) {
+						return {
+							data: {
+								invite_code: additionalData?.invite_code
+							}
+						};
+					}
+				}
+			}
+		}
 	},
 	hooks: {
 		after: createAuthMiddleware(async (ctx) => {

@@ -8,7 +8,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		redirect(303, '/');
 	}
 
+	const container = await trpc.user.container.query();
+
+	if (!container) {
+		redirect(303, '/application');
+	}
+
 	return {
-		authTest: await trpc.authTest.query()
+		authTest: trpc.authTest.query(),
+		container
 	};
 };
