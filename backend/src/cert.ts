@@ -1,5 +1,5 @@
 import acme from 'acme-client';
-import * as db from './db';
+import * as db from './db-helpers';
 import * as env from './env';
 
 const ZEROSSL_DIRECTORY = 'https://acme.zerossl.com/v2/DV90';

@@ -1,0 +1,75 @@
+services:
+  caddy:
+    image: docker.io/caddy:alpine
+    ports:
+      - '${CADDY_WEB_PORT:-8778}:80'
+    volumes:
+      - ./conf:/etc/caddy
+    networks:
+      - proxy
+  db:
+    image: docker.io/postgres:18
+    restart: unless-stopped
+    expose:
+      - 5432
+    ports:
+      - '8782:5432'
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASS:?Please set the POSTGRES_PASS environment variable or run setup tool}
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - postgres-socket:/var/run/postgresql
+      - ./initrunner.sh:/docker-entrypoint-initdb.d/initrunner.sh:ro
+    networks:
+      - proxy
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 1s
+      timeout: 5s
+      retries: 10
+  migrate:
+    depends_on:
+      db:
+        condition: service_healthy
+    build:
+      context: .
+      target: migrate
+    environment:
+      - PGHOST=/var/run/postgresql
+      - PGUSER=root
+      - PGDATABASE=mocinno
+    volumes:
+      - postgres-socket:/var/run/postgresql
+  api:
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - PGHOST=/var/run/postgresql
+      - PGUSER=root
+      - PGDATABASE=mocinno
+    volumes:
+      - postgres-socket:/var/run/postgresql
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - HOST_HEADER=x-forwarded-host
+volumes:
+  pgdata:
+  postgres-socket:
+networks:
+  proxy:
