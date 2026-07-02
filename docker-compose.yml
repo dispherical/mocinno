@@ -2,7 +2,7 @@ services:
   caddy:
     image: docker.io/caddy:alpine
     ports:
-      - '${CADDY_WEB_PORT:-8778}:80'
+      - '${MOCINNO_PORT:-8778}:80'
     volumes:
       - ./conf:/etc/caddy
     networks:
@@ -12,10 +12,8 @@ services:
     restart: unless-stopped
     expose:
       - 5432
-    ports:
-      - '8782:5432'
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASS:?Please set the POSTGRES_PASS environment variable or run setup tool}
+      POSTGRES_PASSWORD: "heythisisnotmeanttobeusedbyyoupubliclythebackendconnectsbyunixsocketsoapasswordisnotneeded"
     volumes:
       - pgdata:/var/lib/postgresql
       - postgres-socket:/var/run/postgresql
