@@ -70,6 +70,8 @@ services:
       - ./bastion_proxy_key:/data/bastion_proxy_key:ro
       - ./bastion_host_key:/data/bastion_host_key:ro
       - ./config.ts:/data/config.ts:ro
+    extra_hosts: &extra_hosts
+      - 'host.docker.internal:host-gateway'
   backend:
     depends_on:
       migrate:
@@ -86,6 +88,8 @@ services:
       - proxy
     environment: *env
     volumes: *volumes
+    extra_hosts: *extra_hosts
+
   frontend:
     build:
       context: .

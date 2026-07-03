@@ -311,7 +311,7 @@ app.post('/applications/reject', async (c) => {
 
 	await transporter.sendMail({
 		from: env.SMTP_FROM,
-		to: application.email,
+		to: application.user?.email ?? application.email!,
 		subject: 'Nest account rejected',
 		html: await render(<RejectedEmail username={application.username} />)
 	});
