@@ -171,10 +171,10 @@ export async function getNodeStats(node: string) {
 }
 
 export async function getNextNode() {
-	const config = await import('config');
+	const config = env.CONFIG;
 
 	const percentsAllocated = await Promise.all(
-		Object.entries(config.default.servers).map(async ([, { node, maxServers }]) => {
+		Object.entries(config.servers).map(async ([, { node, maxServers }]) => {
 			const { data } = await pveFetch<{ data: NodeLXC }>(`/nodes/${node}/lxc`);
 			return { node, percent: data.length / maxServers };
 		})

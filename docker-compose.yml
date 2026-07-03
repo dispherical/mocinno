@@ -13,7 +13,7 @@ services:
     expose:
       - 5432
     environment:
-      POSTGRES_PASSWORD: "heythisisnotmeanttobeusedbyyoupubliclythebackendconnectsbyunixsocketsoapasswordisnotneeded"
+      POSTGRES_PASSWORD: 'heythisisnotmeanttobeusedbyyoupubliclythebackendconnectsbyunixsocketsoapasswordisnotneeded'
     volumes:
       - pgdata:/var/lib/postgresql
       - postgres-socket:/var/run/postgresql
@@ -32,13 +32,45 @@ services:
     build:
       context: .
       target: migrate
-    environment:
-      - PGHOST=/var/run/postgresql
-      - PGUSER=root
-      - PGDATABASE=mocinno
-    volumes:
+    environment: &env
+      - DATABASE_URL=postgres://postgres:heythisisnotmeanttobeusedbyyoupubliclythebackendconnectsbyunixsocketsoapasswordisnotneeded@db/mocinno
+      - NODE_ENV=production
+      - MOCINNO_HOSTNAME=0.0.0.0
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?Please set the ENCRYPTION_KEY environment variable}
+      - PVE_URL=${PVE_URL:?Please set the PVE_URL environment variable}
+      - PVE_TOKEN=${PVE_TOKEN:?Please set the PVE_TOKEN environment variable}
+      - NDP_API_KEY=${NDP_API_KEY:?Please set the NDP_API_KEY environment variable}
+      - DISABLE_SSL=${DISABLE_SSL:-false}
+      - APP_SECURE=${APP_SECURE:-false}
+      - APP_DOMAIN=${APP_DOMAIN:-}
+      - SMTP_HOST=${SMTP_HOST:-localhost}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - BASTION_PROXY_KEY_PUB=/data/bastion_proxy_key.pub
+      - BASTION_PROXY_KEY=/data/bastion_proxy_key
+      - BASTION_HOST_KEY=/data/bastion_host_key
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID:?Please set the OAUTH_CLIENT_ID environment variable}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET:?Please set the OAUTH_CLIENT_SECRET environment variable}
+      - ROOTFS=${ROOTFS:-}
+      - OS_TEMPLATE=${OS_TEMPLATE:-}
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+      - ZEROSSL_EAB_KID=${ZEROSSL_EAB_KID:-}
+      - ZEROSSL_EAB_HMAC_KEY=${ZEROSSL_EAB_HMAC_KEY:-}
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - HOST_HEADER=x-forwarded-host
+      - CONFIG_FILE=/data/config.ts
+    networks:
+      - proxy
+    volumes: &volumes
       - postgres-socket:/var/run/postgresql
-  api:
+      - ./bastion_proxy_key.pub:/data/bastion_proxy_key.pub:ro
+      - ./bastion_proxy_key:/data/bastion_proxy_key:ro
+      - ./bastion_host_key:/data/bastion_host_key:ro
+      - ./config.ts:/data/config.ts:ro
+  backend:
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -46,26 +78,22 @@ services:
         condition: service_healthy
     build:
       context: .
-      target: api
+      target: backend
     restart: unless-stopped
+    ports:
+      - '${PORT:-80}:80'
     networks:
       - proxy
-    environment:
-      - PGHOST=/var/run/postgresql
-      - PGUSER=root
-      - PGDATABASE=mocinno
-    volumes:
-      - postgres-socket:/var/run/postgresql
-  web:
+    environment: *env
+    volumes: *volumes
+  frontend:
     build:
       context: .
-      target: web
+      target: frontend
     restart: unless-stopped
     networks:
       - proxy
-    environment:
-      - PROTOCOL_HEADER=x-forwarded-proto
-      - HOST_HEADER=x-forwarded-host
+    environment: *env
 volumes:
   pgdata:
   postgres-socket:

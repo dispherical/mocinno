@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { Config } from './types';
 
 const isUndefinedOrEmpty = <T>(
 	value: string | undefined,
@@ -13,7 +14,7 @@ const isUndefinedOrEmpty = <T>(
 
 export const NODE_ENV = isUndefinedOrEmpty(process.env.NODE_ENV, 'development');
 
-export const MOCINNO_PORT = Number(isUndefinedOrEmpty<number>(process.env.MOCINNO_PORT, 3000));
+export const MOCINNO_PORT = Number(isUndefinedOrEmpty<number>(process.env.MOCINNO_PORT, 3001));
 
 export const MOCINNO_MAX_BODY_REQUEST_SIZE = Number(
 	isUndefinedOrEmpty<number>(process.env.MOCINNO_MAX_BODY_REQUEST_SIZE, 1024 * 1024 * 128)
@@ -81,14 +82,6 @@ export const OAUTH_CLIENT_SECRET = (() => {
 	return process.env.OAUTH_CLIENT_SECRET as string;
 })();
 
-export const OAUTH_CLIENT_REDIRECT_URI = (() => {
-	if (!isUndefinedOrEmpty(process.env.OAUTH_CLIENT_REDIRECT_URI, undefined)) {
-		throw new Error('OAUTH_CLIENT_REDIRECT_URI environment variable is required');
-	}
-
-	return process.env.OAUTH_CLIENT_REDIRECT_URI as string;
-})();
-
 export const OS_TEMPLATE = isUndefinedOrEmpty(
 	process.env.OS_TEMPLATE,
 	'local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst'
@@ -118,4 +111,12 @@ export const ZEROSSL_EAB_HMAC_KEY = (() => {
 		throw new Error('ZEROSSL_EAB_HMAC_KEY environment variable is required');
 	}
 	return process.env.ZEROSSL_EAB_HMAC_KEY as string;
+})();
+
+export const CONFIG = await (async () => {
+	const CONFIG_FILE = isUndefinedOrEmpty(
+		process.env.CONFIG_FILE,
+		resolve(import.meta.dir, '../../config.ts')
+	);
+	return (await import(CONFIG_FILE)).default as Config;
 })();

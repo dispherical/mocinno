@@ -1,10 +1,14 @@
 import { defineEnvVars } from '@sveltejs/kit/hooks';
+import { building } from '$app/env';
+import z from 'zod';
 
 export const variables = defineEnvVars({
 	APP_DOMAIN: {
-		public: true
+		public: true,
+		schema: building ? z.optional(z.string()) : z.string()
 	},
 	APP_SECURE: {
-		public: true
+		public: true,
+		schema: building ? z.optional(z.stringbool()) : z.stringbool()
 	}
 });

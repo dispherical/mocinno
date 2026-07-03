@@ -7,6 +7,7 @@ import { sql } from 'bun';
 import * as schema from './schema';
 
 //export const db = drizzle({ schema });
+
 export const db = drizzle({ client: sql, schema });
 
 //await migrate(db, { migrationsFolder: join(import.meta.dir, '../../drizzle') });

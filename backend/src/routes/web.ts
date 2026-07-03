@@ -1,6 +1,7 @@
 import * as db from '../db-helpers';
 import { getContainerStatus, isContainerSuspended, getContainerBackups } from '@/pve-utils';
 import { route } from '@/middleware';
+import * as env from '@/env';
 import type { Backup } from '@/types/pve';
 
 const app = route.createApp();
@@ -83,7 +84,7 @@ app.get('/dashboard', async (c) => {
 		}
 	}
 
-	const config = await import('config');
+	const config = env.CONFIG;
 	const html = await c.get('engine').renderFile('dashboard', {
 		profile,
 		user,
@@ -95,7 +96,7 @@ app.get('/dashboard', async (c) => {
 		eligible,
 		hackatime_ban,
 		backups,
-		config: config.default
+		config: config
 	});
 
 	return c.html(html);

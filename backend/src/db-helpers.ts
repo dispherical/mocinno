@@ -247,7 +247,12 @@ export async function getAllApplications() {
 }
 
 export async function getApplicationById(id: number) {
-	const [app] = await db.select().from(applicationsTable).where(eq(applicationsTable.id, id));
+	const app = await db.query.applicationsTable.findFirst({
+		where: eq(applicationsTable.id, id),
+		with: {
+			user: true
+		}
+	});
 	return app ?? null;
 }
 

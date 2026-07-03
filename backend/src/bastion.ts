@@ -11,11 +11,10 @@ import {
 } from 'ssh2';
 import * as db from './db-helpers';
 import * as env from './env';
-import config from 'config';
 import { isContainerSuspended, pveFetch, waitForTask } from './pve-utils';
 import type { NodeLXCInterfaces, NodeLXCStatusCurrent, NodeLXCStatusStart } from './types/pve';
 
-const specialHosts = config.specialHosts;
+const specialHosts = env.CONFIG.specialHosts;
 
 function parseTarget(target: string) {
 	const idx = target.lastIndexOf(':');

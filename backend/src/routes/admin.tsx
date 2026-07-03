@@ -32,9 +32,9 @@ let nodeStats:
 
 async function requestNodeStats() {
 	try {
-		const config = await import('config');
+		const config = env.CONFIG;
 
-		const nodes = config.default.servers.map((s) => s.node);
+		const nodes = config.servers.map((s) => s.node);
 
 		const stats = await Promise.all(
 			nodes.map(async (node) => {
@@ -202,12 +202,12 @@ app.post('/applications/approve', async (c) => {
 		return c.json({ error: 'Application already processed' });
 	}
 
-	const config = await import('config');
+	const config = env.CONFIG;
 
 	const vmid = await getNextVmid();
 	const node = await getNextNode();
 
-	const serverConfig = config.default.servers.find((s) => s.node === node);
+	const serverConfig = config.servers.find((s) => s.node === node);
 
 	if (!serverConfig) {
 		c.status(500);
@@ -271,7 +271,7 @@ app.post('/applications/approve', async (c) => {
 	await db.updateApplicationStatus(appId, 'approved', profile.email);
 	await transporter.sendMail({
 		from: env.SMTP_FROM,
-		to: application.email,
+		to: application.user?.email ?? application.email!, // This situation might happen in-between migrations but not in the near future
 		subject: 'Nest account approved!',
 		html: await render(
 			<ApprovedEmail
