@@ -7,4 +7,8 @@
 
 <Head title="Dashboard" />
 
-{data.authTest}
+{#await data.authTest}
+	Loading auth test...
+{:then auth}
+	{auth}
+{/await}

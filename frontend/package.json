@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "vite dev --port $WEB_PORT",
 		"build": "vite build",
 		"preview": "vite preview",
 		"start": "PORT=$WEB_PORT bun --bun ./build",
@@ -13,15 +13,22 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@types/bun": "catalog:",
 		"@fontsource-variable/inter": "^5.2.8",
-		"@lucide/svelte": "^1.21.0",
+		"@internationalized/date": "^3.12.0",
+		"@lucide/svelte": "^1.23.0",
+		"@mocinno/backend": "workspace:",
 		"@sveltejs/adapter-node": "^5.5.7",
 		"@sveltejs/kit": "^2.68.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.0",
+		"@trpc/client": "catalog:",
+		"@trpc/server": "catalog:",
+		"@types/bun": "catalog:",
+		"better-auth": "catalog:",
+		"bits-ui": "^2.16.3",
 		"clsx": "^2.1.1",
 		"shadcn-svelte": "^1.3.0",
+		"superjson": "catalog:",
 		"svelte": "^5.56.4",
 		"svelte-check": "^4.7.1",
 		"tailwind-merge": "^3.5.0",
@@ -30,12 +37,7 @@
 		"tw-animate-css": "^1.4.0",
 		"typescript": "catalog:",
 		"vite": "^8.0.16",
-		"better-auth": "catalog:",
-		"@trpc/client": "catalog:",
-		"@trpc/server": "catalog:",
-		"superjson": "catalog:",
-		"zod": "catalog:",
-		"@mocinno/backend": "workspace:"
+		"zod": "catalog:"
 	},
 	"dependencies": {
 		"mode-watcher": "^1.1.0"

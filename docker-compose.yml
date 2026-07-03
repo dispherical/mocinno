@@ -33,7 +33,7 @@ services:
       context: .
       target: migrate
     environment: &env
-      - DATABASE_URL=postgres://postgres:heythisisnotmeanttobeusedbyyoupubliclythebackendconnectsbyunixsocketsoapasswordisnotneeded@db/mocinno
+      - DATABASE_URL=postgres://root:heythisisnotmeanttobeusedbyyoupubliclythebackendconnectsbyunixsocketsoapasswordisnotneeded@db/mocinno
       - NODE_ENV=production
       - MOCINNO_HOSTNAME=0.0.0.0
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:?Please set the ENCRYPTION_KEY environment variable}
