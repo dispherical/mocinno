@@ -3,6 +3,9 @@
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
 	import { navigationMenuTriggerStyle } from '$lib/components/ui/navigation-menu/navigation-menu-trigger.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import authClient from '$lib/auth';
+
+	let { user }: { user: typeof authClient.$Infer.Session.user } = $props();
 </script>
 
 <header class="bg-background sticky top-0 z-50 flex w-full items-center border-b">
@@ -49,6 +52,7 @@
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
 		<div class="w-full sm:ms-auto sm:w-auto">
+			<span>{user.name}</span>
 			<Button href={resolve('/(authed)/admin')}>Admin Panel</Button>
 		</div>
 	</div>

@@ -73,6 +73,9 @@
 		"./db": {
 			"types": "./src/db/schema.ts"
 		},
+		"./auth": {
+			"types": "./src/modules/auth/index.ts"
+		},
 		"./types": {
 			"types": "./src/types/index.ts"
 		}
