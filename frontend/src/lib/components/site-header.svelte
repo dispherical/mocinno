@@ -19,6 +19,33 @@
 						{/snippet}
 					</NavigationMenu.Link>
 				</NavigationMenu.Item>
+				<NavigationMenu.Item>
+					<NavigationMenu.Link>
+						{#snippet child()}
+							<a href={resolve('/(authed)/dashboard/domains')} class={navigationMenuTriggerStyle()}
+								>Domains</a
+							>
+						{/snippet}
+					</NavigationMenu.Link>
+				</NavigationMenu.Item>
+				<NavigationMenu.Item>
+					<NavigationMenu.Link>
+						{#snippet child()}
+							<a href={resolve('/(authed)/dashboard/keys')} class={navigationMenuTriggerStyle()}
+								>Keys</a
+							>
+						{/snippet}
+					</NavigationMenu.Link>
+				</NavigationMenu.Item>
+				<NavigationMenu.Item>
+					<NavigationMenu.Link>
+						{#snippet child()}
+							<a href={resolve('/(authed)/dashboard/backups')} class={navigationMenuTriggerStyle()}
+								>Backups</a
+							>
+						{/snippet}
+					</NavigationMenu.Link>
+				</NavigationMenu.Item>
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
 		<div class="w-full sm:ms-auto sm:w-auto">
