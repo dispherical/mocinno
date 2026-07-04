@@ -1,14 +1,13 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import Head from '$lib/components/Head.svelte';
+	import Head from '$lib/components/head.svelte';
+	import ContainerView from '$lib/components/container-view.svelte';
 
 	let { data }: PageProps = $props();
 </script>
 
 <Head title="Dashboard" />
 
-{#await data.authTest}
-	Loading auth test...
-{:then auth}
-	{auth}
-{/await}
+<div class="flex flex-1 items-center justify-center">
+	<ContainerView />
+</div>

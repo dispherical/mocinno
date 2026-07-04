@@ -2,7 +2,7 @@
 	import { browser } from '$app/env';
 	import authClient from '$lib/auth';
 
-	import Head from '$lib/components/Head.svelte';
+	import Head from '$lib/components/head.svelte';
 
 	if (browser) {
 		authClient.signIn.oauth2({
