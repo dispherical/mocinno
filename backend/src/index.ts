@@ -8,6 +8,7 @@ import '@/proxy/index.ts';
 
 import webRoutes from '@/routes/web';
 import routes from '@/routes';
+import type { Serve } from 'bun';
 
 const app = route.createApp();
 
@@ -61,5 +62,6 @@ export default {
 	...app,
 	port: env.MOCINNO_PORT,
 	maxRequestBodySize: env.MOCINNO_MAX_BODY_REQUEST_SIZE,
-	hostname: env.MOCINNO_HOSTNAME
+	hostname: env.MOCINNO_HOSTNAME,
+	idleTimeout: 30
 };

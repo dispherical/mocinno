@@ -9,5 +9,5 @@
 <Head title="Dashboard" />
 
 <div class="flex flex-1 items-center justify-center">
-	<ContainerView />
+	<ContainerView container={data.container} />
 </div>
