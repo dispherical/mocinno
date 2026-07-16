@@ -27,7 +27,8 @@ export const session = pgTable(
 			.notNull(),
 		ipAddress: text('ip_address'),
 		userAgent: text('user_agent'),
-		invite_code: text('invite_code'),
+    invite_code: text('invite_code'),
+		sudo: boolean('sudo').default(false).notNull(),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' })

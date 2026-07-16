@@ -44,6 +44,12 @@ export const auth = betterAuth({
 				type: 'string',
 				required: false,
 				input: true
+			},
+			sudo: {
+				type: 'boolean',
+				defaultValue: false,
+				required: true,
+				input: false
 			}
 		}
 	},
@@ -86,7 +92,8 @@ export const auth = betterAuth({
 					if (ctx.path.startsWith('/oauth2/callback')) {
 						return {
 							data: {
-								invite_code: additionalData?.invite_code
+								invite_code: additionalData?.invite_code,
+								sudo: additionalData?.sudo || false
 							}
 						};
 					}

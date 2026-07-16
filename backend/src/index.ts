@@ -8,7 +8,6 @@ import '@/proxy/index.ts';
 
 import webRoutes from '@/routes/web';
 import routes from '@/routes';
-import type { Serve } from 'bun';
 
 const app = route.createApp();
 

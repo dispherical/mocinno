@@ -1,0 +1,36 @@
+@import '@catppuccin/palette/css/catppuccin';
+
+.catppuccin-macchiato,
+[data-theme='catppuccin-macchiato'] {
+	--background: oklch(var(--ctp-macchiato-base-oklch));
+	--foreground: oklch(var(--ctp-macchiato-text-oklch));
+	--card: oklch(var(--ctp-macchiato-base-oklch));
+	--card-foreground: oklch(var(--ctp-macchiato-text-oklch));
+	--popover: oklch(var(--ctp-macchiato-base-oklch));
+	--popover-foreground: oklch(var(--ctp-macchiato-text-oklch));
+	--primary: oklch(var(--ctp-macchiato-lavender-oklch));
+	--primary-foreground: oklch(var(--ctp-macchiato-base-oklch));
+	--secondary: oklch(var(--ctp-macchiato-surface0-oklch));
+	--secondary-foreground: oklch(var(--ctp-macchiato-text-oklch));
+	--muted: oklch(var(--ctp-macchiato-surface0-oklch));
+	--muted-foreground: oklch(var(--ctp-macchiato-subtext1-oklch));
+	--accent: oklch(var(--ctp-macchiato-surface0-oklch));
+	--accent-foreground: oklch(var(--ctp-macchiato-text-oklch));
+	--destructive: oklch(var(--ctp-macchiato-red-oklch));
+	--border: oklch(var(--ctp-macchiato-surface1-oklch));
+	--input: oklch(var(--ctp-macchiato-surface1-oklch));
+	--ring: oklch(var(--ctp-macchiato-text-oklch));
+	--chart-1: oklch(var(--ctp-macchiato-red-oklch));
+	--chart-2: oklch(var(--ctp-macchiato-teal-oklch));
+	--chart-3: oklch(var(--ctp-macchiato-blue-oklch));
+	--chart-4: oklch(var(--ctp-macchiato-yellow-oklch));
+	--chart-5: oklch(var(--ctp-macchiato-green-oklch));
+	--sidebar: oklch(var(--ctp-macchiato-base-oklch));
+	--sidebar-foreground: oklch(var(--ctp-macchiato-text-oklch));
+	--sidebar-primary: oklch(var(--ctp-macchiato-lavender-oklch));
+	--sidebar-primary-foreground: oklch(var(--ctp-macchiato-base-oklch));
+	--sidebar-accent: oklch(var(--ctp-macchiato-surface0-oklch));
+	--sidebar-accent-foreground: oklch(var(--ctp-macchiato-text-oklch));
+	--sidebar-border: oklch(var(--ctp-macchiato-surface1-oklch));
+	--sidebar-ring: oklch(var(--ctp-macchiato-text-oklch));
+}

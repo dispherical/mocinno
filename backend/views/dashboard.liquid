@@ -489,7 +489,9 @@
 
 		checkTimeout = setTimeout(async () => {
 			try {
-				const res = await fetch(`/api/application/username/check?username=${encodeURIComponent(val)}`);
+				const res = await fetch(
+					`/api/application/username/check?username=${encodeURIComponent(val)}`
+				);
 				const data = await res.json();
 				if (usernameInput.value !== val) return;
 				if (data.available) {
