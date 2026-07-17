@@ -237,7 +237,7 @@ app.post('/domains/add', async (c) => {
 
 	const proxyTarget = proxy || `${ip}:80`;
 	const row = await db.addDomain({
-		userId: user.id,
+		containerId: user.id,
 		domain,
 		proxy: proxyTarget
 	});

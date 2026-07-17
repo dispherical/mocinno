@@ -103,8 +103,9 @@ export async function isUsernameTaken(username: string) {
 	return !!app;
 }
 
-export async function createUser({
+export async function createContainer({
 	sub,
+	user_id,
 	username,
 	sshKeys,
 	vmid,
@@ -113,6 +114,7 @@ export async function createUser({
 	node
 }: {
 	sub: string | null;
+	user_id: string | null;
 	username: string;
 	sshKeys: string[];
 	vmid: number;
@@ -124,6 +126,7 @@ export async function createUser({
 		.insert(containersTable)
 		.values({
 			sub,
+			user_id,
 			username,
 			ssh_keys: sshKeys,
 			vmid,
@@ -158,25 +161,25 @@ export async function getDomainsForUser(userId: number) {
 }
 
 export async function addDomain({
-	userId,
+	containerId,
 	domain,
 	proxy
 }: {
-	userId: number;
+	containerId: number;
 	domain: string;
 	proxy: number;
 }) {
 	const [row] = await db
 		.insert(domainsTable)
-		.values({ container_id: userId, domain, proxy })
+		.values({ container_id: containerId, domain, proxy })
 		.returning();
 	return row;
 }
 
-export async function removeDomain(userId: number, domain: string) {
+export async function removeDomain(containerId: number, domain: string) {
 	const [row] = await db
 		.delete(domainsTable)
-		.where(and(eq(domainsTable.container_id, userId), eq(domainsTable.domain, domain)))
+		.where(and(eq(domainsTable.container_id, containerId), eq(domainsTable.domain, domain)))
 		.returning();
 	return row ?? null;
 }
@@ -189,11 +192,11 @@ export async function domainExists(domain: string) {
 	return !!row;
 }
 
-export async function domainOwnedBy(domain: string, userId: number) {
+export async function domainOwnedBy(domain: string, containerId: number) {
 	const [row] = await db
 		.select({ id: domainsTable.id })
 		.from(domainsTable)
-		.where(and(eq(domainsTable.domain, domain), eq(domainsTable.container_id, userId)));
+		.where(and(eq(domainsTable.domain, domain), eq(domainsTable.container_id, containerId)));
 	return !!row;
 }
 

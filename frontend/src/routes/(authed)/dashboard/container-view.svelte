@@ -2,15 +2,29 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import type { RouterOutput } from '$lib/trpc';
 	import { APP_DOMAIN } from '$app/env/public';
 	import trpc from '$lib/trpc';
 	import { getUserContext } from '$lib/user';
 	import authClient from '$lib/auth';
+	import { invalidateAll } from '$app/navigation';
 
 	type Container = RouterOutput['user']['container'];
 
 	let { container }: { container: Container } = $props();
+
+	let buttonState = $state<{
+		stop: boolean;
+		start: boolean;
+		reboot: boolean;
+		delete: boolean;
+	}>({
+		stop: false,
+		start: false,
+		reboot: false,
+		delete: false
+	});
 
 	const session = getUserContext()();
 
@@ -18,14 +32,40 @@
 		if (!session.session.sudo) {
 			authClient.signIn.oauth2({
 				providerId: 'hackclub',
+				errorCallbackURL: '/dashboard',
 				callbackURL: '/dashboard',
 				additionalData: {
 					sudo: true
 				}
 			});
+			return;
 		}
 
+		buttonState.delete = true;
 		await trpc.user.delete.mutate();
+		await invalidateAll();
+		buttonState.delete = false;
+	};
+
+	const stopContainer = async () => {
+		buttonState.stop = true;
+		await trpc.user.stop.mutate();
+		await invalidateAll();
+		buttonState.stop = false;
+	};
+
+	const startContainer = async () => {
+		buttonState.start = true;
+		await trpc.user.start.mutate();
+		await invalidateAll();
+		buttonState.start = false;
+	};
+
+	const rebootContainer = async () => {
+		buttonState.reboot = true;
+		await trpc.user.reboot.mutate();
+		await invalidateAll();
+		buttonState.reboot = false;
 	};
 </script>
 
@@ -87,19 +127,34 @@
 				size="lg"
 				variant="secondary"
 				class="cursor-pointer"
-				onclick={() => trpc.user.stop.mutate()}>Stop Container</Button
+				disabled={buttonState.stop}
+				onclick={() => stopContainer()}
+				>{#if buttonState.stop}<Spinner />{/if}Stop Container</Button
 			>
-			<Button size="lg" class="cursor-pointer" onclick={() => trpc.user.reboot.mutate()}
-				>Restart Container</Button
+			<Button
+				size="lg"
+				class="cursor-pointer"
+				disabled={buttonState.reboot}
+				onclick={() => rebootContainer()}
+				>{#if buttonState.reboot}<Spinner />{/if}Restart Container</Button
 			>
 		{:else}
-			<Button size="lg" class="cursor-pointer" onclick={() => trpc.user.start.mutate()}
-				>Start Container</Button
+			<Button
+				size="lg"
+				class="cursor-pointer"
+				disabled={buttonState.start}
+				onclick={() => startContainer()}
+				>{#if buttonState.start}<Spinner />{/if}Start Container</Button
 			>
 		{/if}
 		<div class="flex-1"></div>
-		<Button size="lg" variant="destructive" class="cursor-pointer" onclick={() => deleteContainer()}
-			>Delete Container</Button
+		<Button
+			size="lg"
+			variant="destructive"
+			class="cursor-pointer"
+			disabled={buttonState.delete}
+			onclick={() => deleteContainer()}
+			>{#if buttonState.delete}<Spinner />{/if}Delete Container</Button
 		>
 	</div>
 </div>

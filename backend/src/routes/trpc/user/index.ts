@@ -2,10 +2,18 @@ import { router } from '@/modules/trpc';
 import { authedProcedure } from '@/modules/trpc';
 
 import { db, schema } from '@/db';
+import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import * as dbHelpers from '@/db-helpers';
-import { getContainerStatus, isContainerSuspended, pveFetch, waitForTask } from '@/pve-utils';
-import { auth } from '@/modules/auth';
+import {
+	getContainerIP,
+	getContainerStatus,
+	isContainerSuspended,
+	pveFetch,
+	waitForTask
+} from '@/pve-utils';
+import { utils as sshutils } from 'ssh2';
+import { BASTION_PROXY_PUB_KEY } from '@/env';
 
 import type {
 	Backup,
@@ -15,6 +23,9 @@ import type {
 	NodeLXCStatusStart,
 	NodeLXCStatusStop
 } from '@/types/pve';
+import { checkDNSVerification, isWhitelisted } from '@/utils';
+
+const domainString = z.stringFormat('domain', z.regexes.domain);
 
 const userRouter = router({
 	container: authedProcedure.query(async ({ ctx }) => {
@@ -31,6 +42,20 @@ const userRouter = router({
 		const suspended = await isContainerSuspended(container);
 
 		return { ...container, status, suspended };
+	}),
+	domains: authedProcedure.query(async ({ ctx }) => {
+		const container = await db.query.containersTable.findFirst({
+			where: (container, { eq }) => eq(container.user_id, ctx.user.id),
+			with: {
+				domains: true
+			}
+		});
+
+		if (!container) {
+			return null;
+		}
+
+		return container.domains;
 	}),
 	start: authedProcedure.mutation(async ({ ctx }) => {
 		const container = await db.query.containersTable.findFirst({
@@ -81,7 +106,7 @@ const userRouter = router({
 			};
 		}
 
-		const result = await pveFetch<{ data: NodeLXCStatusStart }>(
+		const result = await pveFetch<{ data: NodeLXCStatusStop }>(
 			`/nodes/${container.node}/lxc/${container.vmid}/status/stop`,
 			'POST'
 		);
@@ -111,7 +136,7 @@ const userRouter = router({
 			};
 		}
 
-		const result = await pveFetch<{ data: NodeLXCStatusStart }>(
+		const result = await pveFetch<{ data: NodeLXCStatusReboot }>(
 			`/nodes/${container.node}/lxc/${container.vmid}/status/reboot`,
 			'POST'
 		);
@@ -192,18 +217,347 @@ const userRouter = router({
 				.where(eq(schema.applicationsTable.user_id, ctx.user.id));
 		}
 
-		auth.api.updateSession({
-			body: {
+		await db
+			.update(schema.session)
+			.set({
 				sudo: false
-			},
-			headers: ctx.headers
-		});
+			})
+			.where(eq(schema.session.id, ctx.session.id));
 
 		return {
 			success: true,
 			message: 'Container deleted'
 		};
-	})
+	}),
+	addDomain: authedProcedure
+		.input(
+			z.object({
+				domain: domainString.trim().toLowerCase(),
+				proxy: z.uint32().max(65535).optional().default(80)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const container = await db.query.containersTable.findFirst({
+				where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+			});
+
+			if (!container) {
+				return {
+					success: false,
+					message: 'No container found'
+				};
+			}
+
+			if (await isContainerSuspended(container)) {
+				return {
+					success: false,
+					message: 'Your container is suspended. Contact an admin.'
+				};
+			}
+
+			if (await dbHelpers.domainExists(input.domain)) {
+				return {
+					success: false,
+					message: 'Domain already exists'
+				};
+			}
+
+			const ip = await getContainerIP(container, container.ip);
+
+			if (!ip) {
+				return {
+					success: false,
+					message: 'Could not get container IP'
+				};
+			}
+
+			const whitelisted = isWhitelisted(input.domain, container.username);
+
+			if (!whitelisted) {
+				const userDomains = await dbHelpers.getDomainsForUser(container.id);
+				const isSubOfOwned = userDomains.some((d) => input.domain.endsWith('.' + d.domain));
+
+				if (!isSubOfOwned) {
+					const verified = await checkDNSVerification(input.domain, container.username);
+					if (!verified) {
+						return {
+							success: false,
+							message: `Domain not verified. Either add a TXT record "${input.domain}" → "domain-verification=${container.username}" or set a CNAME to "${container.username}.hackclub.app". Then try again.`
+						};
+					}
+				}
+			}
+
+			const row = await dbHelpers.addDomain({
+				containerId: container.id,
+				domain: input.domain,
+				proxy: input.proxy
+			});
+
+			return { success: true, message: `${input.domain} added`, domain: row };
+		}),
+	removeDomain: authedProcedure
+		.input(z.object({ domain: domainString.trim().toLowerCase() }))
+		.mutation(async ({ ctx, input }) => {
+			const container = await db.query.containersTable.findFirst({
+				where: (container, { eq }) => eq(container.user_id, ctx.user.id),
+				with: {
+					domains: true
+				}
+			});
+
+			if (!container) {
+				return {
+					success: false,
+					message: 'No container found'
+				};
+			}
+
+			if (await isContainerSuspended(container)) {
+				return {
+					success: false,
+					message: 'Your container is suspended. Contact an admin.'
+				};
+			}
+
+			if (!container.domains.some((d) => d.domain === input.domain)) {
+				return {
+					success: false,
+					message: 'Domain not found'
+				};
+			}
+
+			await dbHelpers.removeDomain(container.id, input.domain);
+
+			return { success: true, message: `${input.domain} removed` };
+		}),
+	addKey: authedProcedure
+		.input(z.object({ key: z.string().min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			const container = await db.query.containersTable.findFirst({
+				where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+			});
+
+			if (!container) {
+				return {
+					success: false,
+					message: 'No container found'
+				};
+			}
+
+			if (await isContainerSuspended(container)) {
+				return {
+					success: false,
+					message: 'Your container is suspended. Contact an admin.'
+				};
+			}
+
+			if (input.key && input.key.includes('PRIVATE KEY')) {
+				return {
+					success: false,
+					message: 'Please use your public key, not your private key'
+				};
+			}
+
+			try {
+				const parsed = sshutils.parseKey(input.key);
+
+				if (parsed instanceof Error) {
+					return {
+						success: false,
+						message: 'Invalid SSH public key format.'
+					};
+				}
+			} catch (e) {
+				if (e instanceof Error) {
+					console.error('SSH key parsing error:', e.message);
+				} else {
+					console.error('Unexpected error during SSH key parsing:', e);
+				}
+
+				return {
+					success: false,
+					message: 'Invalid SSH public key format.'
+				};
+			}
+
+			const currentKeys = container.ssh_keys || [];
+			if (currentKeys.includes(input.key)) {
+				return {
+					success: false,
+					message: 'This key is already added'
+				};
+			}
+			if (currentKeys.length >= 10) {
+				return {
+					success: false,
+					message: 'Maximum of 10 SSH keys allowed'
+				};
+			}
+
+			const keys = [...container.ssh_keys, input.key];
+
+			await db
+				.update(schema.containersTable)
+				.set({ ssh_keys: keys })
+				.where(eq(schema.containersTable.id, container.id));
+
+			if (container.vmid) {
+				try {
+					await pveFetch(`/nodes/${container.node}/lxc/${container.vmid}/config`, 'PUT', {
+						'ssh-public-keys': `${BASTION_PROXY_PUB_KEY}\n${keys.join('\n')}`
+					});
+				} catch (e) {
+					if (e instanceof Error) {
+						console.error(
+							`Failed to update container SSH keys for ${container.username}:`,
+							e.message
+						);
+					} else {
+						console.error(
+							`Failed to update container SSH keys for ${container.username}, error unknown:`,
+							e
+						);
+					}
+				}
+			}
+
+			return { success: true, message: 'Key added', keys };
+		}),
+	removeKey: authedProcedure
+		.input(z.object({ key: z.string().min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			const container = await db.query.containersTable.findFirst({
+				where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+			});
+
+			if (!container) {
+				return {
+					success: false,
+					message: 'No container found'
+				};
+			}
+
+			if (await isContainerSuspended(container)) {
+				return {
+					success: false,
+					message: 'Your container is suspended. Contact an admin.'
+				};
+			}
+
+			const currentKeys = container.ssh_keys || [];
+
+			if (currentKeys.length <= 1) {
+				return {
+					success: false,
+					message: 'You must have at least one SSH key'
+				};
+			}
+
+			if (!currentKeys.includes(input.key)) {
+				return {
+					success: false,
+					message: 'Key not found'
+				};
+			}
+
+			const keys = currentKeys.filter((k) => k !== input.key);
+
+			await db
+				.update(schema.containersTable)
+				.set({ ssh_keys: keys })
+				.where(eq(schema.containersTable.id, container.id));
+
+			if (container.vmid) {
+				try {
+					await pveFetch(`/nodes/${container.node}/lxc/${container.vmid}/config`, 'PUT', {
+						'ssh-public-keys': `${BASTION_PROXY_PUB_KEY}\n${keys.join('\n')}`
+					});
+				} catch (e) {
+					if (e instanceof Error) {
+						console.error(
+							`Failed to update container SSH keys for ${container.username}:`,
+							e.message
+						);
+					} else {
+						console.error(
+							`Failed to update container SSH keys for ${container.username}, error unknown:`,
+							e
+						);
+					}
+				}
+			}
+
+			return { success: true, message: 'Key removed', keys };
+		}),
+	restoreBackup: authedProcedure
+		.input(z.object({ volId: z.string().min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			const container = await db.query.containersTable.findFirst({
+				where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+			});
+
+			if (!container || !container.vmid) {
+				return {
+					success: false,
+					message: 'No container found'
+				};
+			}
+
+			if (await isContainerSuspended(container)) {
+				return {
+					success: false,
+					message: 'Your container is suspended. Contact an admin.'
+				};
+			}
+
+			const isRunning = (await getContainerStatus(container))?.status === 'running';
+
+			if (isRunning) {
+				const stopResult = await pveFetch<{ data: NodeLXCStatusStop }>(
+					`/nodes/${container.node}/lxc/${container.vmid}/status/stop`,
+					'POST'
+				);
+				await waitForTask(container.node, stopResult.data);
+			}
+
+			try {
+				const restoreResult = await pveFetch<{ data: NodeLXCPost }>(
+					`/nodes/${container.node}/lxc`,
+					'POST',
+					{
+						ostemplate: input.volId,
+						vmid: container.vmid,
+						force: 1,
+						restore: 1,
+						storage: 'local-zfs'
+					}
+				);
+
+				await waitForTask(container.node, restoreResult.data, 900000);
+			} catch (e) {
+				if (e instanceof Error) {
+					console.error(
+						`Failed to restore backup ${input.volId} for ${container.username}:`,
+						e.message
+					);
+				} else {
+					console.error(
+						`Failed to restore backup ${input.volId} for ${container.username}, error unknown:`,
+						e
+					);
+				}
+				return {
+					success: false,
+					message: 'Failed to restore backup'
+				};
+			}
+
+			return {
+				success: true,
+				message: 'Backup restored.'
+			};
+		})
 });
 
 export default userRouter;

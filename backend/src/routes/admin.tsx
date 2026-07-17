@@ -258,7 +258,8 @@ app.post('/applications/approve', async (c) => {
 		headers: { Authorization: `Bearer ${process.env.NDP_API_KEY}` }
 	});
 
-	await db.createUser({
+	await db.createContainer({
+		user_id: application.user_id,
 		sub: application.sub,
 		username: application.username,
 		sshKeys: [application.ssh_key],
@@ -276,6 +277,7 @@ app.post('/applications/approve', async (c) => {
 		html: await render(
 			<ApprovedEmail
 				username={application.username}
+				domain={env.APP_DOMAIN || 'hackclub.app'}
 				url={env.APP_DOMAIN || 'https://dashboard.hackclub.app'}
 			/>
 		)

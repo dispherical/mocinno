@@ -1,9 +1,10 @@
 import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
+import { loadFlash } from 'sveltekit-flash-message/server';
 
 import trpc from '$lib/server/trpc';
 
-export const load: LayoutServerLoad = async ({ locals }) => {
+export const load: LayoutServerLoad = loadFlash(async ({ locals }) => {
 	if (!locals.session || !locals.user) {
 		redirect(303, '/');
 	}
@@ -18,4 +19,4 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		container,
 		admin: await trpc.isAdmin.query()
 	};
-};
+});

@@ -21,10 +21,11 @@ import { barebonesBoxedTailwindConfig } from './theme';
 
 interface ApprovedEmailProps {
 	username: string;
+	domain: string;
 	url: string;
 }
 
-export const ApprovedEmail = ({ username, url }: ApprovedEmailProps) => (
+export const ApprovedEmail = ({ username, url, domain }: ApprovedEmailProps) => (
 	<Tailwind config={barebonesBoxedTailwindConfig}>
 		<Html>
 			<Head></Head>
@@ -64,7 +65,9 @@ export const ApprovedEmail = ({ username, url }: ApprovedEmailProps) => (
 
 								<Text className="font-16 text-fg-2 mx-auto mt-0 mb-8 max-w-95 text-center font-sans">
 									Your Nest account has been approved, you can login using{' '}
-									<CodeInline>{username.toLowerCase()}@hackclub.app</CodeInline>
+									<CodeInline>
+										{username.toLowerCase()}@{domain}
+									</CodeInline>
 									<br />
 									By default you have 2GB of RAM, 2 CPU cores and 16GB of storage, but you can
 									request more resources{' '}
@@ -92,6 +95,7 @@ export const ApprovedEmail = ({ username, url }: ApprovedEmailProps) => (
 
 ApprovedEmail.PreviewProps = {
 	username: 'quetzal',
+	domain: 'hackclub.app',
 	url: 'https://dashboard.hackclub.app'
 } satisfies ApprovedEmailProps;
 

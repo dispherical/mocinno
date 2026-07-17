@@ -41,16 +41,24 @@
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Apply for Nest</h2>
 	<p class="text-muted-foreground mt-1">
-		Apply for a container on Nest by filling out the details below.
+		Apply for a container on Nest by filling out the details below.<br />
+		Confused? Consider
+		<a
+			href="https://guides.hackclub.app/index.php/Quickstart"
+			class="hover:underline text-primary"
+			rel="external">checking out the quickstart guide</a
+		>
 	</p>
 	<Separator class="my-4" />
-	<Card.Root
-		class="border border-destructive/40 rounded-xl bg-destructive/10 mb-6 shadow-sm text-destructive font-medium"
-	>
-		<Card.Content
-			>Your previous application was rejected. You may submit a new one below.</Card.Content
+	{#if application && application.status === 'rejected'}
+		<Card.Root
+			class="border border-destructive/40 rounded-xl bg-destructive/10 mb-6 shadow-sm text-destructive font-medium"
 		>
-	</Card.Root>
+			<Card.Content
+				>Your previous application was rejected. You may submit a new one below.</Card.Content
+			>
+		</Card.Root>
+	{/if}
 	<Card.Root
 		class={[
 			(!eligible.eligible || eligible.hackatime_ban) && 'bg-destructive/10 shadow-sm',
