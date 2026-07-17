@@ -1,6 +1,7 @@
 import { resolve } from 'node:dns/promises';
 import * as crypto from 'node:crypto';
 import reservedUsernames from '@/reservedUsernames';
+import { CONFIG } from '@/env';
 
 import * as dbHelpers from '@/db-helpers';
 
@@ -84,4 +85,8 @@ export function generateState(length = 16) {
 		.toString('base64')
 		.replace(/[^a-zA-Z0-9]/g, '')
 		.slice(0, length);
+}
+
+export function getTemplates() {
+	return CONFIG.servers[0]?.templates.map((t) => t.name) || [];
 }

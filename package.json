@@ -10,7 +10,7 @@
 		"db:migrate": "bun run --env-file .env --filter \"*\" db:migrate",
 		"db:generate": "bun run --env-file .env --filter \"*\" db:generate",
 		"db:studio": "bun run --env-file .env --filter \"*\" db:studio",
-		"dev": "bun run --env-file .env --filter \"*\" dev",
+		"dev": "bun run --parallel --env-file .env --filter \"*\" dev",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write ."
 	},

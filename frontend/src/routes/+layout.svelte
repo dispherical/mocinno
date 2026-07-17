@@ -32,6 +32,6 @@
 	</script></svelte:head
 >
 
-<ModeWatcher />
+<ModeWatcher defaultTheme="catppuccin-macchiato" />
 
 {@render children?.()}

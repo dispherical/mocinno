@@ -15,6 +15,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			user: locals.user,
 			session: locals.session
 		},
-		container
+		container,
+		admin: await trpc.isAdmin.query()
 	};
 };

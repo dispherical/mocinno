@@ -6,11 +6,66 @@ import { db } from '@/db';
 import { auth } from '@/modules/auth';
 
 import * as dbHelpers from '@/db-helpers';
-import { checkUsername } from '@/utils';
+import { checkUsername, getTemplates } from '@/utils';
 
 const applicationRouter = router({
 	checkUsername: authedProcedure.input(z.string()).query(async ({ input }) => {
 		return await checkUsername(input);
+	}),
+	getTemplates: authedProcedure.query(async () => {
+		return getTemplates();
+	}),
+	checkEligible: authedProcedure.query(async ({ ctx }) => {
+		let hackatime_ban = false;
+
+		try {
+			const result = await fetch(
+				`https://hackatime.hackclub.com/api/v1/users/${ctx.user.slack_id}/trust_factor`,
+				{
+					headers: {
+						'User-Agent': 'Nest/1.0 (+https://hackclub.app)'
+					}
+				}
+			);
+
+			if (result.ok) {
+				const data = (await result.json()) as {
+					trust_level: string;
+					trust_value: number;
+				};
+
+				hackatime_ban = data.trust_level === 'red';
+			} else {
+				console.error(
+					`Failed to check hackatime ban status: ${result.status} - ${await result.text()}`
+				);
+			}
+		} catch (err) {
+			console.error(`Error checking hackatime ban status: ${err}`);
+		}
+
+		// eslint-disable-next-line no-useless-assignment
+		let failReason = '';
+		// This is dumb but i felt like it would be funny - Lara
+		switch (true) {
+			case ctx.user.verification_status !== 'verified' && !hackatime_ban:
+				failReason = 'Please provide identity documents to Hack Club Auth to confirm eligibility.';
+				break;
+			case hackatime_ban && ctx.user.verification_status === 'verified':
+				failReason =
+					'You currently have an active hackatime/fraud ban. If you believe this ban is a mistake please contact @fraudsquad on Slack.';
+				break;
+			case hackatime_ban && ctx.user.verification_status !== 'verified':
+				// Unlikely to happen but hell, if somebody manages this, i'd be amazed
+				failReason =
+					'You currently have an active hackatime/fraud ban and are not verified on Hack Club Auth.';
+				break;
+			default:
+				failReason = 'How did you even hit the default case';
+				break;
+		}
+
+		return { hackatime_ban, eligible: ctx.user.verification_status === 'verified', failReason };
 	}),
 	submitApplication: authedProcedure
 		.input(
@@ -134,6 +189,15 @@ const applicationRouter = router({
 				};
 			}
 
+			const templates = getTemplates();
+
+			if (!templates.includes(input.template)) {
+				return {
+					success: false,
+					message: 'Selected template is not available.'
+				};
+			}
+
 			const app = await dbHelpers.createApplication({
 				user_id: ctx.user.id,
 				username: input.username,
@@ -157,7 +221,10 @@ const applicationRouter = router({
 				message: 'Application submitted successfully.',
 				application: app
 			};
-		})
+		}),
+	getApplication: authedProcedure.query(async ({ ctx }) => {
+		return await dbHelpers.getApplicationByUserId(ctx.user.id);
+	})
 });
 
 export default applicationRouter;

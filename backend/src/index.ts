@@ -1,6 +1,5 @@
 import { CookieStore, sessionMiddleware } from 'hono-sessions';
 import * as env from './env';
-import { serveStatic } from 'hono/bun';
 import { route } from './middleware';
 import { Liquid } from 'liquidjs';
 
@@ -10,8 +9,6 @@ import webRoutes from '@/routes/web';
 import routes from '@/routes';
 
 const app = route.createApp();
-
-app.get('/privacy.pdf', serveStatic({ path: './src/public/privacy.pdf' }));
 
 const store = new CookieStore();
 
