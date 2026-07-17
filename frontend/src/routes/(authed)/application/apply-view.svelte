@@ -15,10 +15,12 @@
 
 	let {
 		form: initialForm,
-		templates
+		templates,
+		eligible
 	}: {
 		form: SuperValidated<Infer<FormSchema>>;
 		templates: RouterOutput['application']['getTemplates'];
+		eligible: RouterOutput['application']['checkEligible'];
 	} = $props();
 
 	const triggerContent = $derived(
@@ -40,110 +42,133 @@
 		Apply for a container on Nest by filling out the details below.
 	</p>
 	<Separator class="my-4" />
-	<Card.Root class="container w-full flex-1 flex-col">
-		<form use:enhance method="POST">
-			<Card.Content>
-				{#if $errors._errors || $message}
-					<Alert.Root variant={$errors._errors ? 'destructive' : 'default'} class="mb-4">
-						{#if $errors._errors}<AlertCircleIcon />
-						{:else}
-							<CheckCircle2Icon />
-						{/if}
-						<Alert.Description>
-							<ul class="list-inside list-disc text-sm">
-								{#each $errors._errors as error (error)}
-									<li>{error}</li>
-								{/each}
-								{#if $message}
-									<li>{$message}</li>
-								{/if}
-							</ul>
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-				<div class="grid gap-3">
-					<Form.Field {form} name="template">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Select operating system</Form.Label>
-								<Select.Root {...props} type="single" bind:value={$formData.template}>
-									<Select.Trigger class="w-60">
-										{triggerContent}
-									</Select.Trigger>
-									<Select.Content>
-										<Select.Group>
-											<Select.Label>Templates</Select.Label>
-											{#each templates as template (template)}
-												<Select.Item value={template} label={template}>
-													{template}
-												</Select.Item>
-											{/each}
-										</Select.Group>
-									</Select.Content>
-								</Select.Root>
-							{/snippet}
-						</Form.Control>
-						<Form.Description
-							>Choose the OS template to initialize on your container.</Form.Description
+	<Card.Root
+		class={[
+			(!eligible.eligible || eligible.hackatime_ban) && 'bg-destructive/10 shadow-sm',
+			'container w-full flex-1 flex-col'
+		]}
+	>
+		{#if eligible.eligible && !eligible.hackatime_ban}
+			<form use:enhance method="POST">
+				<Card.Content>
+					{#if $errors._errors || $message}
+						<Alert.Root variant={$errors._errors ? 'destructive' : 'default'} class="mb-4">
+							{#if $errors._errors}<AlertCircleIcon />
+							{:else}
+								<CheckCircle2Icon />
+							{/if}
+							<Alert.Description>
+								<ul class="list-inside list-disc text-sm">
+									{#each $errors._errors as error (error)}
+										<li>{error}</li>
+									{/each}
+									{#if $message}
+										<li>{$message}</li>
+									{/if}
+								</ul>
+							</Alert.Description>
+						</Alert.Root>
+					{/if}
+					<div class="grid gap-3">
+						<Form.Field {form} name="template">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Select operating system</Form.Label>
+									<Select.Root {...props} type="single" bind:value={$formData.template}>
+										<Select.Trigger class="w-60">
+											{triggerContent}
+										</Select.Trigger>
+										<Select.Content>
+											<Select.Group>
+												<Select.Label>Templates</Select.Label>
+												{#each templates as template (template)}
+													<Select.Item value={template} label={template}>
+														{template}
+													</Select.Item>
+												{/each}
+											</Select.Group>
+										</Select.Content>
+									</Select.Root>
+								{/snippet}
+							</Form.Control>
+							<Form.Description
+								>Choose the OS template to initialize on your container.</Form.Description
+							>
+							<Form.FieldErrors />
+						</Form.Field>
+					</div>
+					<Separator class="my-4" />
+					<div class="grid gap-3">
+						<Form.Field {form} name="username">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>System Username</Form.Label>
+									<Input {...props} bind:value={$formData.username} />
+								{/snippet}
+							</Form.Control>
+							<Form.Description
+								>Must be 3-32 characters: letters, numbers, hyphens.</Form.Description
+							>
+							<Form.FieldErrors />
+						</Form.Field>
+					</div>
+					<div class="grid gap-3">
+						<Form.Field {form} name="sshKey">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>SSH Public Key</Form.Label>
+									<Textarea {...props} bind:value={$formData.sshKey} />
+								{/snippet}
+							</Form.Control>
+							<Form.Description>You'll login with this instead of a password.</Form.Description>
+							<Form.FieldErrors />
+						</Form.Field>
+					</div>
+					<div class="grid gap-3">
+						<Form.Field {form} name="reason">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Intended Use</Form.Label>
+									<Textarea {...props} bind:value={$formData.reason} />
+								{/snippet}
+							</Form.Control>
+							<Form.Description>
+								Please provide at least 10 characters. It helps us understand what people use Nest
+								for!
+							</Form.Description>
+							<Form.FieldErrors />
+						</Form.Field>
+					</div>
+				</Card.Content>
+				<Card.Footer class="flex w-full items-center gap-2">
+					<span
+						>By clicking "Submit Application", I agree to the <a
+							href="https://guides.hackclub.app/index.php/Acceptable_Use_Policy"
+							class="hover:underline text-primary"
+							rel="external">Acceptable Use Policy</a
 						>
-						<Form.FieldErrors />
-					</Form.Field>
-				</div>
-				<Separator class="my-4" />
-				<div class="grid gap-3">
-					<Form.Field {form} name="username">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>System Username</Form.Label>
-								<Input {...props} bind:value={$formData.username} />
-							{/snippet}
-						</Form.Control>
-						<Form.Description>Must be 3-32 characters: letters, numbers, hyphens.</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-				</div>
-				<div class="grid gap-3">
-					<Form.Field {form} name="sshKey">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>SSH Public Key</Form.Label>
-								<Textarea {...props} bind:value={$formData.sshKey} />
-							{/snippet}
-						</Form.Control>
-						<Form.Description>You'll login with this instead of a password.</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-				</div>
-				<div class="grid gap-3">
-					<Form.Field {form} name="reason">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Intended Use</Form.Label>
-								<Textarea {...props} bind:value={$formData.reason} />
-							{/snippet}
-						</Form.Control>
-						<Form.Description>
-							Please provide at least 10 characters. It helps us understand what people use Nest
-							for!
-						</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-				</div>
-			</Card.Content>
-			<Card.Footer class="flex w-full items-center gap-2">
-				<span
-					>By clicking "Submit Application", I agree to the <a
-						href="https://guides.hackclub.app/index.php/Acceptable_Use_Policy"
-						class="hover:underline text-primary"
-						rel="external">Acceptable Use Policy</a
+						and
+						<a href="/privacy.pdf" class="hover:underline text-primary" rel="external"
+							>Privacy Policy</a
+						></span
 					>
-					and
-					<a href="/privacy.pdf" class="hover:underline text-primary" rel="external"
-						>Privacy Policy</a
-					></span
-				>
-				<Form.Button class="w-full sm:ms-auto sm:w-auto">Submit Application</Form.Button>
-			</Card.Footer>
-		</form>
+					<Form.Button class="w-full sm:ms-auto sm:w-auto">Submit Application</Form.Button>
+				</Card.Footer>
+			</form>
+		{:else}
+			<Card.Content class="text-center">
+				<p class="mb-4 text-destructive font-medium">You are not currently eligible for Nest.</p>
+
+				<p class="text-sm text-muted-foreground">
+					{eligible.failReason}
+				</p>
+
+				{#if eligible.hackatime_ban}
+					<p class="text-sm text-muted-foreground mt-2">
+						If you believe you are not banned then please contact an admin in #nest-help on Slack.
+					</p>
+				{/if}
+			</Card.Content>
+		{/if}
 	</Card.Root>
 </div>
