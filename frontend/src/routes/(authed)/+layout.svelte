@@ -12,7 +12,7 @@
 
 <div class="[--header-height:calc(--spacing(14))]">
 	<SiteHeader admin={data.admin} />
-	<div class="flex flex-1 max-w-4xl w-full mx-auto py-4 md:px-0">
+	<div class="flex flex-1 flex-col max-w-4xl w-full mx-auto py-4 md:px-0">
 		{@render children?.()}
 	</div>
 </div>

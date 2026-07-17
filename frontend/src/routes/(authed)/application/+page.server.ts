@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types.js';
 import { fail } from '@sveltejs/kit';
-import { superValidate, message } from 'sveltekit-superforms';
+import { superValidate, message, setError } from 'sveltekit-superforms';
 import { formSchema } from './schema';
 import trpc from '$lib/server/trpc';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -11,7 +11,8 @@ export const load: PageServerLoad = async () => {
 	return {
 		form: await superValidate({ template: templates[0] }, zod4(formSchema), { errors: false }),
 		eligible: await trpc.application.checkEligible.query(),
-		templates
+		templates,
+		application: await trpc.application.getApplication.query()
 	};
 };
 
@@ -33,10 +34,7 @@ export const actions: Actions = {
 			});
 
 			if (!updateResult.success) {
-				return fail(400, {
-					form,
-					message: updateResult.message || 'Failed to submit application.'
-				});
+				return setError(form, updateResult.message || 'Failed to submit application.');
 			}
 			return message(form, updateResult.message);
 		} catch (err) {

@@ -32,6 +32,7 @@
 		"superjson": "catalog:",
 		"svelte": "^5.56.4",
 		"svelte-check": "^4.7.1",
+		"sveltekit-flash-message": "^2.4.6",
 		"sveltekit-superforms": "^2.30.0",
 		"tailwind-merge": "^3.6.0",
 		"tailwind-variants": "^3.2.2",

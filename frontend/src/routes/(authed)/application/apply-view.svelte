@@ -16,11 +16,13 @@
 	let {
 		form: initialForm,
 		templates,
-		eligible
+		eligible,
+		application
 	}: {
 		form: SuperValidated<Infer<FormSchema>>;
 		templates: RouterOutput['application']['getTemplates'];
 		eligible: RouterOutput['application']['checkEligible'];
+		application: RouterOutput['application']['getApplication'] | null;
 	} = $props();
 
 	const triggerContent = $derived(
@@ -43,12 +45,19 @@
 	</p>
 	<Separator class="my-4" />
 	<Card.Root
+		class="border border-destructive/40 rounded-xl bg-destructive/10 mb-6 shadow-sm text-destructive font-medium"
+	>
+		<Card.Content
+			>Your previous application was rejected. You may submit a new one below.</Card.Content
+		>
+	</Card.Root>
+	<Card.Root
 		class={[
 			(!eligible.eligible || eligible.hackatime_ban) && 'bg-destructive/10 shadow-sm',
 			'container w-full flex-1 flex-col'
 		]}
 	>
-		{#if eligible.eligible && !eligible.hackatime_ban}
+		{#if eligible.eligible && !eligible.hackatime_ban && ((application && application.status === 'rejected') || !application)}
 			<form use:enhance method="POST">
 				<Card.Content>
 					{#if $errors._errors || $message}
@@ -117,7 +126,7 @@
 							<Form.Control>
 								{#snippet children({ props })}
 									<Form.Label>SSH Public Key</Form.Label>
-									<Textarea {...props} bind:value={$formData.sshKey} />
+									<Textarea {...props} class="break-all" bind:value={$formData.sshKey} />
 								{/snippet}
 							</Form.Control>
 							<Form.Description>You'll login with this instead of a password.</Form.Description>
@@ -129,7 +138,7 @@
 							<Form.Control>
 								{#snippet children({ props })}
 									<Form.Label>Intended Use</Form.Label>
-									<Textarea {...props} bind:value={$formData.reason} />
+									<Textarea {...props} class="wrap-break-word" bind:value={$formData.reason} />
 								{/snippet}
 							</Form.Control>
 							<Form.Description>
@@ -155,6 +164,17 @@
 					<Form.Button class="w-full sm:ms-auto sm:w-auto">Submit Application</Form.Button>
 				</Card.Footer>
 			</form>
+		{:else if application?.status === 'pending'}
+			<Card.Content class="text-center">
+				<h3 class="font-semibold text-lg mb-2">Application Pending Review</h3>
+				<p class="text-sm text-muted-foreground mb-4">
+					You have already submitted a request. An admin will review it soon.
+				</p>
+				<ul class="list-inside list-disc pl-5 text-sm text-muted-foreground">
+					<li><strong>Username:</strong> {application.username}</li>
+					<li><strong>Submitted:</strong> {application.created_at}</li>
+				</ul>
+			</Card.Content>
 		{:else}
 			<Card.Content class="text-center">
 				<p class="mb-4 text-destructive font-medium">You are not currently eligible for Nest.</p>
