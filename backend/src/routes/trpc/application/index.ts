@@ -7,6 +7,7 @@ import { auth } from '@/modules/auth';
 
 import * as dbHelpers from '@/db-helpers';
 import { checkUsername, getTemplates } from '@/utils';
+import { utils as sshutils } from 'ssh2';
 
 const applicationRouter = router({
 	checkUsername: authedProcedure.input(z.string()).query(async ({ input }) => {
@@ -195,6 +196,27 @@ const applicationRouter = router({
 				return {
 					success: false,
 					message: 'Selected template is not available.'
+				};
+			}
+
+			try {
+				const parsed = sshutils.parseKey(input.sshKey);
+
+				if (parsed instanceof Error) {
+					return {
+						success: false,
+						message: 'Invalid SSH public key format.'
+					};
+				}
+			} catch (e) {
+				if (e instanceof Error) {
+					console.error('SSH key parsing error:', e.message);
+				} else {
+					console.error('Unexpected error during SSH key parsing:', e);
+				}
+				return {
+					success: false,
+					message: 'Invalid SSH public key format.'
 				};
 			}
 
