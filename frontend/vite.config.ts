@@ -8,9 +8,9 @@ export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
 			org: 'hack-club',
-			project: 'api-development',
-			// store your auth token in an environment variable
-			authToken: process.env.SENTRY_AUTH_TOKEN
+			project: 'mocinno',
+			authToken: process.env.SENTRY_AUTH_TOKEN,
+			adapter: 'node'
 		}),
 		tailwindcss(),
 		sveltekit({

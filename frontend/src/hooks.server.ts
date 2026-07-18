@@ -3,6 +3,13 @@ import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import type { Handle } from '@sveltejs/kit';
 
+// Required for browser profiling: the JS Self-Profiling API needs this header
+const documentPolicyHandle: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	response.headers.set('Document-Policy', 'js-profiling');
+	return response;
+};
+
 export const handleAuth: Handle = async ({ event, resolve }) => {
 	try {
 		const session = await authServer.getSession();
@@ -32,4 +39,4 @@ export const handleError = Sentry.handleErrorWithSentry();
 
 export const sentryHandle = Sentry.sentryHandle();
 
-export const handle = sequence(sentryHandle, handleAuth);
+export const handle = sequence(sentryHandle, documentPolicyHandle, handleAuth);
