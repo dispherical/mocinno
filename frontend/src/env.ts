@@ -10,5 +10,9 @@ export const variables = defineEnvVars({
 	APP_SECURE: {
 		public: true,
 		schema: building ? z.optional(z.stringbool()) : z.stringbool()
+	},
+	SENTRY_DSN: {
+		public: true,
+		schema: building ? z.optional(z.string()) : z.string()
 	}
 });

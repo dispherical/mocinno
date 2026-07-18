@@ -1,7 +1,9 @@
 import authServer from '$lib/server/auth';
+import { sequence } from '@sveltejs/kit/hooks';
+import * as Sentry from '@sentry/sveltekit';
 import type { Handle } from '@sveltejs/kit';
 
-export const handle: Handle = async ({ event, resolve }) => {
+export const handleAuth: Handle = async ({ event, resolve }) => {
 	try {
 		const session = await authServer.getSession();
 
@@ -25,3 +27,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return response;
 	}
 };
+
+export const handleError = Sentry.handleErrorWithSentry();
+
+export const sentryHandle = Sentry.sentryHandle();
+
+export const handle = sequence(sentryHandle, handleAuth);

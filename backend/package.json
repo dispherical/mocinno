@@ -50,8 +50,8 @@
 		"react-dom": "19.2.5",
 		"react-email": "6.0.5",
 		"ssh2": "^1.17.0",
-		"tailwindcss": "^4.2.4",
 		"superjson": "catalog:",
+		"tailwindcss": "^4.2.4",
 		"zod": "catalog:"
 	},
 	"overrides": {

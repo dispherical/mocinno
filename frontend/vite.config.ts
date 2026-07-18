@@ -2,9 +2,16 @@ import tailwindcss from '@tailwindcss/vite';
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { sentrySvelteKit } from '@sentry/sveltekit';
 
 export default defineConfig({
 	plugins: [
+		sentrySvelteKit({
+			org: 'hack-club',
+			project: 'api-development',
+			// store your auth token in an environment variable
+			authToken: process.env.SENTRY_AUTH_TOKEN
+		}),
 		tailwindcss(),
 		sveltekit({
 			compilerOptions: {
@@ -17,7 +24,13 @@ export default defineConfig({
 			experimental: {
 				remoteFunctions: true,
 				handleRenderingErrors: true,
-				explicitEnvironmentVariables: true
+				explicitEnvironmentVariables: true,
+				instrumentation: {
+					server: true
+				},
+				tracing: {
+					server: true
+				}
 			},
 			alias: {
 				'@': '../backend/src'
