@@ -93,7 +93,7 @@
 	<h2 class="text-2xl font-bold tracking-tight">Your Nest container</h2>
 	<p class="text-muted-foreground mt-1">From here you may check on the status of your container.</p>
 	<Separator class="my-4" />
-	<Table.Root class="border-border border rounded-lg overflow-hidden shadow-sm bg-muted/25">
+	<Table.Root class="rounded-lg bg-muted/25">
 		<Table.Body>
 			<Table.Row>
 				<Table.Cell class="font-medium">Username</Table.Cell>

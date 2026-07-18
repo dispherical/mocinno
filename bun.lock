@@ -79,6 +79,7 @@
         "@sveltejs/kit": "^2.68.0",
         "@sveltejs/vite-plugin-svelte": "^7.1.2",
         "@tailwindcss/vite": "^4.3.0",
+        "@tanstack/table-core": "^8.21.3",
         "@trpc/client": "catalog:",
         "@trpc/server": "catalog:",
         "@types/bun": "catalog:",
@@ -541,6 +542,8 @@
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.3.1", "", { "os": "win32", "cpu": "x64" }, "sha512-xDEyu1rg290472FEGaKHnzyDyh5QH+AlWvsU5hMoMtPpzmKlRI0jaYKCgSHDYtaQWZOYbMaduSyCwFwY4n1HmA=="],
 
     "@tailwindcss/vite": ["@tailwindcss/vite@4.3.1", "", { "dependencies": { "@tailwindcss/node": "4.3.1", "@tailwindcss/oxide": "4.3.1", "tailwindcss": "4.3.1" }, "peerDependencies": { "vite": "^5.2.0 || ^6 || ^7 || ^8" } }, "sha512-hItDHuIIlEV61R+faXu66s1K36aTurO/Qw0e45Vskz57gXl9pWOT6eg3zmcEui6CZXddbN7zd41bwmvag4JGwQ=="],
+
+    "@tanstack/table-core": ["@tanstack/table-core@8.21.3", "", {}, "sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg=="],
 
     "@trpc/client": ["@trpc/client@11.18.0", "", { "peerDependencies": { "@trpc/server": "11.18.0", "typescript": ">=5.7.2" }, "bin": { "intent": "bin/intent.js" } }, "sha512-wOqeg3Fvl25V1ZisQhUD3K8G60ZJDlSGJNSyeXrLH24xAo5w6GSR2Kzb1cSNY9Y+IQ2YZvYGZstBU+V/ulo/ow=="],
 
