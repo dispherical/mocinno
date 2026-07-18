@@ -16,7 +16,17 @@ interface TRPCContext {
  * Should be done only once per backend!
  */
 const t = initTRPC.context<TRPCContext>().create({
-	transformer: superjson
+	transformer: superjson,
+	errorFormatter(opts) {
+		const { shape, error } = opts;
+		return {
+			...shape,
+			data: {
+				...shape.data,
+				stack: error.cause
+			}
+		};
+	}
 });
 
 /**
