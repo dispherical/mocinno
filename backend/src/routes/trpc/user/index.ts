@@ -8,6 +8,7 @@ import * as dbHelpers from '@/db-helpers';
 import {
 	getContainerIP,
 	getContainerStatus,
+	getContainerBackups,
 	isContainerSuspended,
 	pveFetch,
 	waitForTask
@@ -43,6 +44,17 @@ const userRouter = router({
 
 		return { ...container, status, suspended };
 	}),
+	exitSudo: authedProcedure.mutation(async ({ ctx }) => {
+		const result = await db
+			.update(schema.session)
+			.set({
+				sudo: false
+			})
+			.where(eq(schema.session.id, ctx.session.id))
+			.returning();
+
+		return !!result[0];
+	}),
 	domains: authedProcedure.query(async ({ ctx }) => {
 		const container = await db.query.containersTable.findFirst({
 			where: (container, { eq }) => eq(container.user_id, ctx.user.id),
@@ -56,6 +68,20 @@ const userRouter = router({
 		}
 
 		return container.domains;
+	}),
+	backups: authedProcedure.query(async ({ ctx }) => {
+		const container = await db.query.containersTable.findFirst({
+			where: (container, { eq }) => eq(container.user_id, ctx.user.id),
+			with: {
+				domains: true
+			}
+		});
+
+		if (!container) {
+			return null;
+		}
+
+		return await getContainerBackups(container);
 	}),
 	start: authedProcedure.mutation(async ({ ctx }) => {
 		const container = await db.query.containersTable.findFirst({

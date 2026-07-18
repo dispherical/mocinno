@@ -13,6 +13,7 @@ import {
 	OAUTH_CLIENT_ID,
 	OAUTH_CLIENT_SECRET
 } from '@/env';
+import { isContainerSuspended } from '@/pve-utils';
 
 export const auth = betterAuth({
 	secret: ENCRYPTION_KEY,
@@ -91,10 +92,22 @@ export const auth = betterAuth({
 					const additionalData = await getOAuthState();
 
 					if (ctx.path.startsWith('/oauth2/callback')) {
+						let canSudo = true;
+
+						const container = await db.query.containersTable.findFirst({
+							where: (containersTable, { eq }) => eq(containersTable.user_id, session.userId)
+						});
+
+						if (container) {
+							const suspended = await isContainerSuspended(container);
+
+							canSudo = !suspended;
+						}
+
 						return {
 							data: {
 								invite_code: additionalData?.invite_code,
-								sudo: additionalData?.sudo || false
+								sudo: (canSudo && additionalData?.sudo) || false
 							}
 						};
 					}

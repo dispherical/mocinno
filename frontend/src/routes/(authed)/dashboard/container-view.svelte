@@ -3,12 +3,17 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
 	import type { RouterOutput } from '$lib/trpc';
 	import { APP_DOMAIN } from '$app/env/public';
 	import trpc from '$lib/trpc';
 	import { getUserContext } from '$lib/user';
 	import authClient from '$lib/auth';
 	import { invalidateAll } from '$app/navigation';
+	import { getFlash } from 'sveltekit-flash-message';
+	import { page } from '$app/state';
+
+	const flash = getFlash(page);
 
 	type Container = RouterOutput['user']['container'];
 
@@ -26,25 +31,32 @@
 		delete: false
 	});
 
-	const session = getUserContext()();
+	let deleteConfirmOpen = $state(false);
+
+	const session = getUserContext();
+
+	const requestSudo = async () => {
+		authClient.signIn.oauth2({
+			providerId: 'hackclub',
+			errorCallbackURL: '/dashboard',
+			callbackURL: '/dashboard',
+			additionalData: {
+				sudo: true
+			}
+		});
+	};
 
 	const deleteContainer = async () => {
-		if (!session.session.sudo) {
-			authClient.signIn.oauth2({
-				providerId: 'hackclub',
-				errorCallbackURL: '/dashboard',
-				callbackURL: '/dashboard',
-				additionalData: {
-					sudo: true
-				}
-			});
-			return;
-		}
-
 		buttonState.delete = true;
 		await trpc.user.delete.mutate();
 		await invalidateAll();
 		buttonState.delete = false;
+	};
+
+	const exitSudo = async () => {
+		await trpc.user.exitSudo.mutate();
+		await invalidateAll();
+		$flash = undefined;
 	};
 
 	const stopContainer = async () => {
@@ -68,6 +80,14 @@
 		buttonState.reboot = false;
 	};
 </script>
+
+<ConfirmDialog
+	title="Delete Container"
+	onConfirm={deleteContainer}
+	onCancel={exitSudo}
+	bind:open={deleteConfirmOpen}
+	description="Are you sure you want to delete your container? This action cannot be undone."
+/>
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Your Nest container</h2>
@@ -127,14 +147,14 @@
 				size="lg"
 				variant="secondary"
 				class="cursor-pointer"
-				disabled={buttonState.stop}
+				disabled={buttonState.stop || container?.suspended}
 				onclick={() => stopContainer()}
 				>{#if buttonState.stop}<Spinner />{/if}Stop Container</Button
 			>
 			<Button
 				size="lg"
 				class="cursor-pointer"
-				disabled={buttonState.reboot}
+				disabled={buttonState.reboot || container?.suspended}
 				onclick={() => rebootContainer()}
 				>{#if buttonState.reboot}<Spinner />{/if}Restart Container</Button
 			>
@@ -142,18 +162,27 @@
 			<Button
 				size="lg"
 				class="cursor-pointer"
-				disabled={buttonState.start}
+				disabled={buttonState.start || container?.suspended}
 				onclick={() => startContainer()}
 				>{#if buttonState.start}<Spinner />{/if}Start Container</Button
 			>
 		{/if}
 		<div class="flex-1"></div>
+		{#if session().session.sudo && !container?.suspended}
+			<Button size="lg" class="cursor-pointer" onclick={() => exitSudo()}>Exit sudo</Button>
+		{/if}
 		<Button
 			size="lg"
 			variant="destructive"
 			class="cursor-pointer"
-			disabled={buttonState.delete}
-			onclick={() => deleteContainer()}
+			disabled={buttonState.delete || container?.suspended}
+			onclick={() => {
+				if (session().session.sudo) {
+					deleteConfirmOpen = true;
+				} else {
+					requestSudo();
+				}
+			}}
 			>{#if buttonState.delete}<Spinner />{/if}Delete Container</Button
 		>
 	</div>

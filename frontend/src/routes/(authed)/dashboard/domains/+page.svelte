@@ -7,4 +7,6 @@
 
 <Head title="Domains" />
 
-<DomainsView domains={data.domains} container={data.container} form={data.form} />
+<div class="flex flex-1 items-center justify-center">
+	<DomainsView {...data} />
+</div>
