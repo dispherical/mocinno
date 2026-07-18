@@ -201,7 +201,7 @@ export async function getContainerBackups(ct: {
 
 	try {
 		const backups: { data: Backup[] } = await pveFetch(
-			`/nodes/${ct.node}/storage/local/content?vmid=${ct.vmid}&content=backup`
+			`/nodes/${ct.node}/storage/pbs/content?vmid=${ct.vmid}&content=backup`
 		);
 
 		// incase old backups meant for another oser
