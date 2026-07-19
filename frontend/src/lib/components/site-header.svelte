@@ -5,11 +5,11 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { getContainerContext } from '$lib/user';
 	import { page } from '$app/state';
-	import { setTheme } from 'mode-watcher';
+	//import { setTheme } from 'mode-watcher';
 
 	let { admin }: { admin: boolean } = $props();
 
-	const container = getContainerContext()();
+	const container = getContainerContext();
 </script>
 
 <header class="bg-background sticky top-0 z-50 flex w-full items-center border-b">
@@ -17,7 +17,7 @@
 		<span class="font-bold">{page.url.pathname.startsWith('/admin') ? 'Nest Admin' : 'Nest'}</span>
 		<NavigationMenu.Root>
 			<NavigationMenu.List>
-				{#if container && !page.url.pathname.startsWith('/admin')}
+				{#if container() && !page.url.pathname.startsWith('/admin')}
 					<NavigationMenu.Item>
 						<NavigationMenu.Link>
 							{#snippet child()}
@@ -107,9 +107,9 @@
 		</NavigationMenu.Root>
 		<div class="w-full sm:ms-auto sm:w-auto">
 			{#if !page.url.pathname.startsWith('/admin')}
-				<Button onclick={() => setTheme('catppuccin-macchiato')} class="cursor-pointer"
+				<!--<Button onclick={() => setTheme('catppuccin-macchiato')} class="cursor-pointer"
 					>Set theme to Catppuccin Macchiato</Button
-				>
+				>-->
 				{#if admin}
 					<Button href={resolve('/(authed)/admin')}
 						><span class="rainbow-text">Admin Panel</span></Button
