@@ -439,7 +439,7 @@ export async function createInvite({
 	code: string;
 	adminEmail: string;
 	maxUses: number;
-	expiresAt: string;
+	expiresAt: Date | null;
 }) {
 	const [invite] = await db
 		.insert(invitesTable)
@@ -447,7 +447,7 @@ export async function createInvite({
 			code,
 			admin_email: adminEmail,
 			max_uses: maxUses || null,
-			expires_at: expiresAt ? new Date(expiresAt) : null
+			expires_at: expiresAt || null
 		})
 		.returning();
 	return invite;

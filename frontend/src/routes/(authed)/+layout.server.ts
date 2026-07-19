@@ -2,6 +2,7 @@ import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { loadFlash } from 'sveltekit-flash-message/server';
 import { setFlash } from 'sveltekit-flash-message/server';
+import * as Sentry from '@sentry/sveltekit';
 
 import trpc from '$lib/server/trpc';
 
@@ -9,6 +10,11 @@ export const load: LayoutServerLoad = loadFlash(async ({ locals, cookies }) => {
 	if (!locals.session || !locals.user) {
 		redirect(303, '/');
 	}
+
+	Sentry.setUser({
+		id: locals.user.id,
+		email: locals.user.email
+	});
 
 	const container = await trpc.user.container.query();
 

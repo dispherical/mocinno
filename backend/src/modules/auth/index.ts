@@ -166,6 +166,20 @@ export const auth = betterAuth({
 							.where(eq(schema.applicationsTable.id, application.id));
 					}
 
+					const reviewerApplications = await db.query.applicationsTable.findMany({
+						where: (applicationsTable, { eq }) =>
+							eq(applicationsTable.reviewed_by, ctx.context.newSession!.user.email)
+					});
+
+					for (const application of reviewerApplications) {
+						await db
+							.update(schema.applicationsTable)
+							.set({
+								reviewed_by: ctx.context.newSession.user.id
+							})
+							.where(eq(schema.applicationsTable.id, application.id));
+					}
+
 					break;
 				}
 			}

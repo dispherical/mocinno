@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SiteHeader from '$lib/components/site-header.svelte';
+	import * as Sentry from '@sentry/sveltekit';
 	import { setUserContext, setContainerContext } from '$lib/user';
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import AlertCircleIcon from '@lucide/svelte/icons/alert-circle';
@@ -16,6 +17,13 @@
 	setUserContext(() => data.session);
 
 	setContainerContext(() => data.container);
+
+	$effect(() => {
+		Sentry.setUser({
+			id: data.session.user.id,
+			email: data.session.user.email
+		});
+	});
 </script>
 
 <div class="[--header-height:calc(--spacing(14))]">

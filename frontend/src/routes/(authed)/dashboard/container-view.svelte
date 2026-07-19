@@ -48,6 +48,7 @@
 
 	const deleteContainer = async () => {
 		buttonState.delete = true;
+		deleteConfirmOpen = false;
 		await trpc.user.delete.mutate();
 		await invalidateAll();
 		buttonState.delete = false;

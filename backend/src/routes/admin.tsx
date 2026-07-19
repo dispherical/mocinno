@@ -108,7 +108,7 @@ app.post('/invites/create', async (c) => {
 	const body = await c.req.json();
 	const code = crypto.randomBytes(8).toString('hex');
 	const maxUses = parseInt(body.maxUses) || 0;
-	const expiresAt = body.expiresAt || null;
+	const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
 
 	const invite = await db.createInvite({
 		code,

@@ -91,6 +91,10 @@ export const applicationsRelations = relations(applicationsTable, ({ one }) => (
 	user: one(auth.user, {
 		fields: [applicationsTable.user_id],
 		references: [auth.user.id]
+	}),
+	reviewer: one(auth.user, {
+		fields: [applicationsTable.reviewed_by],
+		references: [auth.user.id]
 	})
 }));
 

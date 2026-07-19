@@ -14,6 +14,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import Button from '../ui/button/button.svelte';
 	import * as InputGroup from '$lib/components/ui/input-group/index.js';
+	import * as Pagination from '$lib/components/ui/pagination/index.js';
 	import SearchIcon from '@lucide/svelte/icons/search';
 
 	type DataTableProps<TData, TValue> = {
@@ -28,12 +29,14 @@
 		rowCount = undefined,
 		onPageChange = undefined,
 		searchQuery = $bindable(''),
+		shouldShowSearchInput = true,
 		isManualPagination = false
 	}: DataTableProps<TData, TValue> & {
 		pageCount?: number;
 		rowCount?: number;
 		onPageChange?: (updater: PaginationState) => void;
-		searchQuery: string;
+		searchQuery?: string;
+		shouldShowSearchInput?: boolean;
 		isManualPagination?: boolean;
 	} = $props();
 
@@ -97,16 +100,26 @@
 			}
 		}
 	});
+
+	function getPage() {
+		return pagination.pageIndex + 1;
+	}
+
+	function setPage(newPage: number) {
+		table.setPageIndex(newPage - 1);
+	}
 </script>
 
 <div>
 	<div class="flex items-center py-4">
-		<InputGroup.Root class="max-w-sm">
-			<InputGroup.Input placeholder="Search..." bind:value={searchQuery} />
-			<InputGroup.Addon>
-				<SearchIcon />
-			</InputGroup.Addon>
-		</InputGroup.Root>
+		{#if shouldShowSearchInput}
+			<InputGroup.Root class="max-w-sm">
+				<InputGroup.Input placeholder="Search..." bind:value={searchQuery} />
+				<InputGroup.Addon>
+					<SearchIcon />
+				</InputGroup.Addon>
+			</InputGroup.Root>
+		{/if}
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
@@ -161,21 +174,35 @@
 		</Table.Root>
 	</div>
 	<div class="flex items-center justify-end space-x-2 py-4">
-		<Button
-			variant="outline"
-			size="sm"
-			onclick={() => table.previousPage()}
-			disabled={!table.getCanPreviousPage()}
+		<Pagination.Root
+			class="justify-end"
+			bind:page={getPage, setPage}
+			count={rowCount || 0}
+			perPage={10}
 		>
-			Previous
-		</Button>
-		<Button
-			variant="outline"
-			size="sm"
-			onclick={() => table.nextPage()}
-			disabled={!table.getCanNextPage()}
-		>
-			Next
-		</Button>
+			{#snippet children({ pages, currentPage })}
+				<Pagination.Content>
+					<Pagination.Item>
+						<Pagination.Previous />
+					</Pagination.Item>
+					{#each pages as page (page.key)}
+						{#if page.type === 'ellipsis'}
+							<Pagination.Item>
+								<Pagination.Ellipsis />
+							</Pagination.Item>
+						{:else}
+							<Pagination.Item>
+								<Pagination.Link {page} isActive={currentPage === page.value}>
+									{page.value}
+								</Pagination.Link>
+							</Pagination.Item>
+						{/if}
+					{/each}
+					<Pagination.Item>
+						<Pagination.Next />
+					</Pagination.Item>
+				</Pagination.Content>
+			{/snippet}
+		</Pagination.Root>
 	</div>
 </div>
