@@ -395,7 +395,8 @@ const adminRouter = router({
 
 					await db
 						.update(schema.applicationsTable)
-						.set({ status: 'approved', reviewed_by: ctx.user.id, reviewed_at: new Date() });
+						.set({ status: 'approved', reviewed_by: ctx.user.id, reviewed_at: new Date() })
+						.where(eq(schema.applicationsTable.id, application.id));
 
 					await transporter.sendMail({
 						from: SMTP_FROM,
@@ -418,7 +419,8 @@ const adminRouter = router({
 				case 'reject': {
 					await db
 						.update(schema.applicationsTable)
-						.set({ status: 'rejected', reviewed_by: ctx.user.id, reviewed_at: new Date() });
+						.set({ status: 'rejected', reviewed_by: ctx.user.id, reviewed_at: new Date() })
+						.where(eq(schema.applicationsTable.id, application.id));
 
 					await transporter.sendMail({
 						from: SMTP_FROM,
@@ -430,14 +432,14 @@ const adminRouter = router({
 			}
 		}),
 	createInvite: adminProcedure
-		.input(z.object({ uses: z.int(), expires: z.date().optional() }))
+		.input(z.object({ uses: z.int().optional(), expires: z.date().optional() }))
 		.mutation(async ({ ctx, input }) => {
 			const code = randomBytes(8).toString('hex');
 
 			await dbHelpers.createInvite({
 				code,
 				adminEmail: ctx.user.email,
-				maxUses: input.uses,
+				maxUses: input.uses || null,
 				expiresAt: input.expires || null
 			});
 

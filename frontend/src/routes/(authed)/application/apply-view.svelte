@@ -61,7 +61,9 @@
 	{/if}
 	<Card.Root
 		class={[
-			(!eligible.eligible || eligible.hackatime_ban) && 'bg-destructive/10 shadow-sm',
+			(!eligible.eligible || eligible.hackatime_ban) &&
+				application?.status === 'rejected' &&
+				'bg-destructive/10 shadow-sm',
 			'container w-full flex-1 flex-col'
 		]}
 	>

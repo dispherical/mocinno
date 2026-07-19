@@ -438,7 +438,7 @@ export async function createInvite({
 }: {
 	code: string;
 	adminEmail: string;
-	maxUses: number;
+	maxUses: number | null;
 	expiresAt: Date | null;
 }) {
 	const [invite] = await db

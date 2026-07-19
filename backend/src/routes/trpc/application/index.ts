@@ -47,16 +47,29 @@ const applicationRouter = router({
 
 		// eslint-disable-next-line no-useless-assignment
 		let failReason = '';
+		let eligible = ctx.user.verification_status === 'verified';
+
+		const inviteCode = ctx.session.invite_code;
+		if (inviteCode && !eligible) {
+			const invite = await dbHelpers.getInvite(inviteCode);
+			if (
+				invite &&
+				(!invite.max_uses || invite.uses < invite.max_uses) &&
+				(!invite.expires_at || new Date() <= new Date(invite.expires_at))
+			) {
+				eligible = true;
+			}
+		}
 		// This is dumb but i felt like it would be funny - Lara
 		switch (true) {
-			case ctx.user.verification_status !== 'verified' && !hackatime_ban:
+			case !eligible && !hackatime_ban:
 				failReason = 'Please provide identity documents to Hack Club Auth to confirm eligibility.';
 				break;
-			case hackatime_ban && ctx.user.verification_status === 'verified':
+			case hackatime_ban && eligible:
 				failReason =
 					'You currently have an active hackatime/fraud ban. If you believe this ban is a mistake please contact @fraudsquad on Slack.';
 				break;
-			case hackatime_ban && ctx.user.verification_status !== 'verified':
+			case hackatime_ban && !eligible:
 				// Unlikely to happen but hell, if somebody manages this, i'd be amazed
 				failReason =
 					'You currently have an active hackatime/fraud ban and are not verified on Hack Club Auth.';
@@ -66,7 +79,7 @@ const applicationRouter = router({
 				break;
 		}
 
-		return { hackatime_ban, eligible: ctx.user.verification_status === 'verified', failReason };
+		return { hackatime_ban, eligible, failReason };
 	}),
 	submitApplication: authedProcedure
 		.input(

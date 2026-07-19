@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/env';
+	import { page } from '$app/state';
 	import authClient from '$lib/auth';
 
 	import Head from '$lib/components/head.svelte';
@@ -9,7 +10,7 @@
 			providerId: 'hackclub',
 			callbackURL: '/dashboard',
 			additionalData: {
-				invite: null
+				invite_code: page.url.searchParams.get('invite')
 			}
 		});
 	}
