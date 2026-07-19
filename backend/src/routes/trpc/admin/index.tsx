@@ -172,7 +172,8 @@ const adminRouter = router({
 				offset,
 				orderBy: [desc(schema.applicationsTable.created_at)],
 				with: {
-					user: true
+					user: true,
+					reviewer: true
 				}
 			});
 
@@ -208,7 +209,8 @@ const adminRouter = router({
 				where: eq(schema.applicationsTable.status, 'pending'),
 				orderBy: [desc(schema.applicationsTable.created_at)],
 				with: {
-					user: true
+					user: true,
+					reviewer: true
 				}
 			});
 
