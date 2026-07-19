@@ -5,12 +5,13 @@
 	"scripts": {
 		"start": "bun run --env-file .env --filter \"*\" start",
 		"build": "bun run --env-file .env --filter \"*\" build",
-		"start:prod": "bun run --env-file .env --filter \"*\" build && bun run --env-file .env --filter \"*\" start",
+		"start:prod": "bun run --env-file .env --filter \"*\" build && bun run --env-file .env --filter \"*\" start && bun run --env-file .env --filter \"*\" bastion",
 		"db:push": "bun run --env-file .env --filter \"*\" db:push",
 		"db:migrate": "bun run --env-file .env --filter \"*\" db:migrate",
 		"db:generate": "bun run --env-file .env --filter \"*\" db:generate",
 		"db:studio": "bun run --env-file .env --filter \"*\" db:studio",
 		"dev": "bun run --parallel --env-file .env --filter \"*\" dev",
+		"bastion": "bun run --env-file .env --filter \"*\" bastion",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write ."
 	},
