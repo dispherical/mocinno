@@ -6,6 +6,10 @@
 	import type { RouterOutput } from '$lib/trpc';
 	import trpc from '$lib/trpc';
 	import { invalidateAll } from '$app/navigation';
+	import { getFlash } from 'sveltekit-flash-message';
+	import { page } from '$app/state';
+
+	const flash = getFlash(page);
 
 	type Backups = RouterOutput['user']['backups'];
 
@@ -15,17 +19,21 @@
 
 	const restoreBackup = async (volId: string) => {
 		restoring = true;
-		await trpc.user.restoreBackup.mutate({ volId });
+		const result = await trpc.user.restoreBackup.mutate({ volId });
 		await invalidateAll();
+		$flash = {
+			message: result.message,
+			type: result.success ? 'success' : 'error'
+		};
 		restoring = false;
 	};
 </script>
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Backups</h2>
-	<p class="text-muted-foreground mt-1">View and restore your container backups.</p>
+	<p class="mt-1 text-muted-foreground">View and restore your container backups.</p>
 	<Separator class="my-4" />
-	<Table.Root class="border-border border rounded-lg overflow-hidden shadow-sm bg-muted/25">
+	<Table.Root class="overflow-hidden rounded-lg border border-border bg-muted/25 shadow-sm">
 		<Table.Header>
 			<Table.Row>
 				<Table.Head>Backup ID</Table.Head>
@@ -40,7 +48,7 @@
 					<Table.Cell
 						>{new Date((backup.ctime || Date.now() / 1000) * 1000).toLocaleString()}</Table.Cell
 					>
-					<Table.Cell class="text-end flex justify-end">
+					<Table.Cell class="flex justify-end text-end">
 						<Button
 							variant="outline"
 							size="sm"

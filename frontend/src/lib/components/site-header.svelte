@@ -12,7 +12,7 @@
 	const container = getContainerContext();
 </script>
 
-<header class="bg-background sticky top-0 z-50 flex w-full items-center border-b">
+<header class="sticky top-0 z-50 flex w-full items-center border-b bg-background">
 	<div class="flex h-(--header-height) w-full items-center gap-2 px-4">
 		<span class="font-bold">{page.url.pathname.startsWith('/admin') ? 'Nest Admin' : 'Nest'}</span>
 		<NavigationMenu.Root>

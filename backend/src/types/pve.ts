@@ -243,3 +243,12 @@ export type Backup = {
 	};
 	vmid?: number;
 };
+
+export type BackupAttrs = {
+	format: string;
+	path: string;
+	size: number;
+	used: number;
+	notes: string;
+	protected: boolean;
+};

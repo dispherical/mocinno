@@ -14,5 +14,9 @@ export const variables = defineEnvVars({
 	SENTRY_DSN: {
 		public: true,
 		schema: building ? z.optional(z.string()) : z.string()
+	},
+	NODE_ENV: {
+		public: true,
+		schema: building ? z.optional(z.string()) : z.string()
 	}
 });

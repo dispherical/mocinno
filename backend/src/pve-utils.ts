@@ -1,5 +1,6 @@
 import {
 	type Backup,
+	type BackupAttrs,
 	type NodeLXC,
 	type NodeLXCConfig,
 	type NodeLXCInterfaces,
@@ -210,5 +211,18 @@ export async function getContainerBackups(ct: {
 	} catch (err) {
 		console.error(`Failed to fetch backups for container ${ct.vmid} on node ${ct.node}:`, err);
 		return [];
+	}
+}
+
+export async function getBackupAttrs(node: string | null, volid: string) {
+	if (!node) return null;
+	try {
+		const backup: { data: BackupAttrs } = await pveFetch(
+			`/nodes/${node}/storage/pbs/content/${volid}`
+		);
+		return backup.data;
+	} catch (err) {
+		console.error(`Failed to fetch backup attrs for volid ${volid} on node ${node}:`, err);
+		return null;
 	}
 }

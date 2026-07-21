@@ -11,7 +11,8 @@ import {
 	getContainerBackups,
 	isContainerSuspended,
 	pveFetch,
-	waitForTask
+	waitForTask,
+	getBackupAttrs
 } from '@/pve-utils';
 import { utils as sshutils } from 'ssh2';
 import { BASTION_PROXY_PUB_KEY } from '@/env';
@@ -534,6 +535,15 @@ const userRouter = router({
 				return {
 					success: false,
 					message: 'Your container is suspended. Contact an admin.'
+				};
+			}
+
+			const backupAttrs = await getBackupAttrs(container.node, input.volId);
+
+			if (!backupAttrs || backupAttrs.notes !== container.username) {
+				return {
+					success: false,
+					message: 'Backup not found'
 				};
 			}
 
