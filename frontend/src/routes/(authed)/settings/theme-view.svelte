@@ -39,11 +39,13 @@
 				<span class="text-[11px] font-semibold">lp0 on fire</span>
 			</div>
 			<div class="mt-2 grid grid-cols-3 items-center gap-2">
-				<Button size="sm" class="text-[9px] font-semibold" variant="secondary" href="#"
+				<Button size="sm" disabled class="text-[9px] font-semibold" variant="secondary" href="#"
 					>Stop Container</Button
 				>
-				<Button size="sm" class="text-[8px] font-semibold" href="#">Restart Container</Button>
-				<Button size="sm" variant="destructive" class="text-[8px] font-semibold" href="#"
+				<Button size="sm" disabled class="text-[8px] font-semibold" href="#"
+					>Restart Container</Button
+				>
+				<Button size="sm" disabled variant="destructive" class="text-[8px] font-semibold" href="#"
 					>Delete Container</Button
 				>
 			</div>
