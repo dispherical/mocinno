@@ -47,7 +47,8 @@ export const themeInfo: Record<
 	},
 	nord: {
 		name: 'Nord',
-		description: 'An arctic, north-bluish color palette.'
+		description:
+			'An arctic, north-bluish color palette. Inspired by the beauty of the arctic, the colors reflect the cold, yet harmonious world of ice.'
 	},
 	gruvbox: {
 		name: 'gruvbox',
