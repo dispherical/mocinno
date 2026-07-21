@@ -5,7 +5,6 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { getContainerContext } from '$lib/user';
 	import { page } from '$app/state';
-	//import { setTheme } from 'mode-watcher';
 
 	let { admin }: { admin: boolean } = $props();
 
@@ -107,9 +106,7 @@
 		</NavigationMenu.Root>
 		<div class="w-full sm:ms-auto sm:w-auto">
 			{#if !page.url.pathname.startsWith('/admin')}
-				<!--<Button onclick={() => setTheme('catppuccin-macchiato')} class="cursor-pointer"
-					>Set theme to Catppuccin Macchiato</Button
-				>-->
+				<Button href={resolve('/(authed)/settings')} class="cursor-pointer">Theme</Button>
 				{#if admin}
 					<Button href={resolve('/(authed)/admin')}
 						><span class="rainbow-text">Admin Panel</span></Button

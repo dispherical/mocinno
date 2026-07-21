@@ -5,6 +5,7 @@
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import AlertCircleIcon from '@lucide/svelte/icons/alert-circle';
 	import CheckCircle2Icon from '@lucide/svelte/icons/check-circle-2';
+	import { setTheme, theme } from 'mode-watcher';
 	import { getFlash } from 'sveltekit-flash-message';
 	import { page } from '$app/state';
 
@@ -24,27 +25,33 @@
 			email: data.session.user.email
 		});
 	});
+
+	$effect(() => {
+		if (data.session.user.theme && data.session.user.theme !== theme.current) {
+			setTheme(data.session.user.theme);
+		}
+	});
 </script>
 
 <div class="[--header-height:calc(--spacing(14))]">
 	<SiteHeader admin={data.admin} />
-	<div class="flex flex-1 flex-col max-w-4xl w-full mx-auto py-4 md:px-0">
+	<div class="mx-auto flex w-full max-w-4xl flex-1 flex-col py-4 md:px-0">
 		{#if $flash}
 			{@const message = $flash.message}
 			{@const status = $flash.type}
 			<Alert.Root
 				class={[
 					status === 'success'
-						? 'bg-primary/10 border-primary/40'
-						: 'bg-destructive/10 border-destructive/40',
-					'self-start border rounded-xl mb-4 shadow-sm'
+						? 'border-primary/40 bg-primary/10'
+						: 'border-destructive/40 bg-destructive/10',
+					'mb-4 self-start rounded-xl border shadow-sm'
 				]}
 			>
 				<Alert.Description
 					class={[
 						status === 'error' && 'text-destructive',
 						'font-medium',
-						'flex flex-row gap-2 items-center'
+						'flex flex-row items-center gap-2'
 					]}
 					>{#if status === 'success'}
 						<CheckCircle2Icon />

@@ -36,6 +36,12 @@ export const auth = betterAuth({
 				type: ['verified', 'pending', 'ineligible', 'needs_submission'],
 				required: true,
 				input: true
+			},
+			theme: {
+				type: 'string',
+				defaultValue: 'system',
+				required: false,
+				input: true
 			}
 		}
 	},
