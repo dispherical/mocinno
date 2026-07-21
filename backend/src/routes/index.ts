@@ -2,11 +2,11 @@ import { route } from '@/middleware';
 import { auth } from '@/modules/auth';
 import { trpcServer } from '@hono/trpc-server';
 
-import adminRoutes from './admin';
-import authRoutes from './auth';
-import userRoutes from './user';
+//import adminRoutes from './admin';
+//import authRoutes from './auth';
+//import userRoutes from './user';
 import publicRoutes from './public';
-import applicationRoutes from './application';
+//import applicationRoutes from './application';
 import internalRoutes from './internal';
 
 import { appRouter } from './trpc';
@@ -48,11 +48,11 @@ app.use(
 	})
 );
 
-app.route('/admin', adminRoutes);
-app.route('/authorization', authRoutes);
-app.route('/user', userRoutes);
+//app.route('/admin', adminRoutes);
+//app.route('/authorization', authRoutes);
+//app.route('/user', userRoutes);
 app.route('/public', publicRoutes);
-app.route('/application', applicationRoutes);
+//app.route('/application', applicationRoutes);
 app.route('/internal', internalRoutes);
 
 export default app;

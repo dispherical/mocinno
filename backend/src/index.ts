@@ -1,16 +1,16 @@
-import { CookieStore, sessionMiddleware } from 'hono-sessions';
+//import { CookieStore, sessionMiddleware } from 'hono-sessions';
 import * as env from './env';
 import { route } from './middleware';
-import { Liquid } from 'liquidjs';
+//import { Liquid } from 'liquidjs';
 
 import '@/proxy/index.ts';
 
-import webRoutes from '@/routes/web';
+//import webRoutes from '@/routes/web';
 import routes from '@/routes';
 
 const app = route.createApp();
 
-const store = new CookieStore();
+/* const store = new CookieStore();
 
 app.use(
 	'*',
@@ -43,7 +43,7 @@ app.use('*', async (c, next) => {
 	await next();
 });
 
-app.route('', webRoutes);
+app.route('', webRoutes); */
 app.route('', routes);
 
 process.on('uncaughtException', (error) => {
