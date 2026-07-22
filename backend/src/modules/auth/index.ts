@@ -15,7 +15,7 @@ import {
 } from '@/env';
 import { isContainerSuspended } from '@/pve-utils';
 
-const OAUTH_REDIRECT_URI = `${APP_SECURE ? 'https' : 'http'}://${APP_DOMAIN}/api/authorization/goalpost`;
+const OAUTH_REDIRECT_URI = `${APP_SECURE ? 'https' : 'http'}://${APP_DOMAIN}/api/flow/authorization/goalpost`;
 
 export const auth = betterAuth({
 	secret: ENCRYPTION_KEY,
