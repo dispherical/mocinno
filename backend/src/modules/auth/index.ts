@@ -15,6 +15,8 @@ import {
 } from '@/env';
 import { isContainerSuspended } from '@/pve-utils';
 
+const OAUTH_REDIRECT_URI = `${APP_SECURE ? 'https' : 'http'}://${APP_DOMAIN}/api/authorization/goalpost`;
+
 export const auth = betterAuth({
 	secret: ENCRYPTION_KEY,
 	baseURL: {
@@ -68,6 +70,7 @@ export const auth = betterAuth({
 					providerId: 'hackclub',
 					clientId: OAUTH_CLIENT_ID,
 					clientSecret: OAUTH_CLIENT_SECRET,
+					redirectURI: OAUTH_REDIRECT_URI,
 					discoveryUrl: 'https://auth.hackclub.com/.well-known/openid-configuration',
 					scopes: ['openid', 'profile', 'email', 'verification_status', 'slack_id'],
 					prompt: 'consent',
