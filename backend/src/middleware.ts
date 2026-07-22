@@ -1,8 +1,6 @@
 import { getConnInfo } from 'hono/bun';
 import { ipRestriction } from 'hono/ip-restriction';
 import { createMiddleware, createFactory } from 'hono/factory';
-import type { Liquid } from 'liquidjs';
-import type { Session } from 'hono-sessions';
 import { auth } from '@/modules/auth';
 
 export const localOnly = ipRestriction(
@@ -36,10 +34,30 @@ export const denyForward = createMiddleware(async (c, next) => {
 
 export const route = createFactory<{
 	Variables: {
-		session: Session;
-		session_key_rotation: boolean;
-		engine: Liquid;
 		user: typeof auth.$Infer.Session.user | null;
 		sessionNew: typeof auth.$Infer.Session.session | null;
 	};
 }>();
+
+export const authMiddleware = createMiddleware<{
+	Variables: {
+		user: typeof auth.$Infer.Session.user | null;
+		sessionNew: typeof auth.$Infer.Session.session | null;
+	};
+}>(async (c, next) => {
+	try {
+		const session = await auth.api.getSession({ headers: c.req.raw.headers });
+		if (!session) {
+			c.set('user', null);
+			c.set('sessionNew', null);
+			await next();
+			return;
+		}
+		c.set('user', session.user);
+		c.set('sessionNew', session.session);
+		await next();
+	} catch (error) {
+		console.error(error);
+		await next();
+	}
+});

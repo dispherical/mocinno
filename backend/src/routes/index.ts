@@ -1,4 +1,4 @@
-import { route } from '@/middleware';
+import { route, authMiddleware } from '@/middleware';
 import { auth } from '@/modules/auth';
 import { trpcServer } from '@hono/trpc-server';
 
@@ -13,23 +13,8 @@ import { appRouter } from './trpc';
 
 const app = route.createApp().basePath('/api');
 
-app.use('*', async (c, next) => {
-	try {
-		const session = await auth.api.getSession({ headers: c.req.raw.headers });
-		if (!session) {
-			c.set('user', null);
-			c.set('sessionNew', null);
-			await next();
-			return;
-		}
-		c.set('user', session.user);
-		c.set('sessionNew', session.session);
-		await next();
-	} catch (error) {
-		console.error(error);
-		await next();
-	}
-});
+app.use('/trpc/*', authMiddleware);
+app.use('/auth/*', authMiddleware);
 
 app.on(['POST', 'GET'], '/auth/*', (c) => {
 	return auth.handler(c.req.raw);
