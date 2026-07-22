@@ -5,7 +5,6 @@
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
 	import type { RouterOutput } from '$lib/trpc';
-	import { APP_DOMAIN } from '$app/env/public';
 	import trpc from '$lib/trpc';
 	import { getUserContext } from '$lib/user';
 	import authClient from '$lib/auth';
@@ -138,7 +137,7 @@
 		<div>
 			<span class="font-medium">SSH Access:</span>
 			<code class="text-sm font-mono border border-border px-2.5 py-1.5 rounded-md"
-				>ssh {container?.username}@{APP_DOMAIN}</code
+				>ssh {container?.username}@hackclub.app</code
 			>
 		</div>
 	</div>
