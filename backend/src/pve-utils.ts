@@ -21,7 +21,6 @@ export async function pveFetch<T>(
 	const url = `${process.env.PVE_URL}${path}`;
 	const options: RequestInit & { tls: { rejectUnauthorized: boolean } } = {
 		method,
-		signal: AbortSignal.timeout(8000),
 		headers: {
 			Authorization: `PVEAPIToken=${process.env.PVE_TOKEN}`,
 			'Content-Type': 'application/x-www-form-urlencoded',
