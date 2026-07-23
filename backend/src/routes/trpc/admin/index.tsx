@@ -368,6 +368,7 @@ const adminRouter = router({
 						unprivileged: 1,
 						features: 'nesting=1',
 						cores: 2,
+						cpulimit: 2,
 						memory: 2048,
 						swap: 512,
 						net0,
