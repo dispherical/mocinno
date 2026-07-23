@@ -9,6 +9,49 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 PREFIX = "2a01:4f9:3081:399c"
 API_KEY = os.environ.get("NDP_API_KEY", "")
 
+RESERVED_CPUS = 4
+
+
+def pin_cpuset(vmid):
+    ncpus = os.cpu_count()
+    if not ncpus or ncpus <= RESERVED_CPUS:
+        return
+
+    cpuset = f"{RESERVED_CPUS}-{ncpus - 1}"
+    line = f"lxc.cgroup2.cpuset.cpus: {cpuset}"
+
+    conf_path = f"/etc/pve/lxc/{vmid}.conf"
+    try:
+        with open(conf_path) as f:
+            lines = f.read().splitlines()
+
+        out = []
+        inserted = False
+        for l in lines:
+            if l.startswith("lxc.cgroup2.cpuset.cpus:"):
+                continue
+            if l.startswith("[") and not inserted:
+                out.append(line)
+                inserted = True
+            out.append(l)
+        if not inserted:
+            out.append(line)
+
+        with open(conf_path, "w") as f:
+            f.write("\n".join(out) + "\n")
+    except Exception:
+        pass
+
+    for path in (
+        f"/sys/fs/cgroup/lxc/{vmid}/cpuset.cpus",
+        f"/sys/fs/cgroup/lxc/{vmid}/ns/cpuset.cpus",
+    ):
+        try:
+            with open(path, "w") as f:
+                f.write(cpuset)
+        except Exception:
+            pass
+
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -27,6 +70,9 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         vmid = m.group(1)
+
+        pin_cpuset(vmid)
+
         try:
             cfg = subprocess.check_output(
                 ["pct", "config", vmid], stderr=subprocess.DEVNULL
