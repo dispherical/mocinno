@@ -6,7 +6,8 @@ import {
 	applicationsTable,
 	certificatesTable,
 	settingsTable,
-	invitesTable
+	invitesTable,
+	user
 } from './db/schema.ts';
 import { exec } from 'child_process';
 import * as env from './env.ts';
@@ -145,6 +146,15 @@ export async function updateUserSSHKeys(sub: string, keys: string[]) {
 		.where(eq(containersTable.sub, sub))
 		.returning();
 	return user ?? null;
+}
+
+export async function updateVerificationStatus(userId: string, status: string) {
+	const [updated] = await db
+		.update(user)
+		.set({ verification_status: status })
+		.where(eq(user.id, userId))
+		.returning();
+	return updated ?? null;
 }
 
 export async function deleteUser(sub: string) {

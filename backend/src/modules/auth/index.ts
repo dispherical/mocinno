@@ -74,6 +74,7 @@ export const auth = betterAuth({
 					discoveryUrl: 'https://auth.hackclub.com/.well-known/openid-configuration',
 					scopes: ['openid', 'profile', 'email', 'verification_status', 'slack_id'],
 					prompt: 'consent',
+					overrideUserInfoOnSignIn: true,
 					// @ts-expect-error types should be getting inferred but i have no idea why they aren't
 					mapProfileToUser: (profile) => ({
 						slack_id: profile.slack_id as string,

@@ -17,6 +17,44 @@ const applicationRouter = router({
 		return getTemplates();
 	}),
 	checkEligible: authedProcedure.query(async ({ ctx }) => {
+		let verification_status = ctx.user.verification_status;
+
+		try {
+			const result = await fetch(
+				`https://auth.hackclub.com/api/external/check?email=${encodeURIComponent(ctx.user.email)}`,
+				{
+					headers: {
+						'User-Agent': 'Nest/1.0 (+https://hackclub.app)'
+					}
+				}
+			);
+
+			if (result.ok) {
+				const data = (await result.json()) as { result: string };
+
+				const mapped: Record<string, string> = {
+					verified_eligible: 'verified',
+					verified_but_ineligible: 'ineligible',
+					ineligible: 'ineligible',
+					pending: 'pending',
+					needs_submission: 'needs_submission'
+				};
+
+				const newStatus = mapped[data.result];
+
+				if (newStatus && newStatus !== verification_status) {
+					await dbHelpers.updateVerificationStatus(ctx.user.id, newStatus);
+					verification_status = newStatus as typeof verification_status;
+				}
+			} else {
+				console.error(
+					`Failed to check HCA verification status: ${result.status} - ${await result.text()}`
+				);
+			}
+		} catch (err) {
+			console.error(`Error checking HCA verification status: ${err}`);
+		}
+
 		let hackatime_ban = false;
 
 		try {
@@ -47,7 +85,7 @@ const applicationRouter = router({
 
 		// eslint-disable-next-line no-useless-assignment
 		let failReason = '';
-		let eligible = ctx.user.verification_status === 'verified';
+		let eligible = verification_status === 'verified';
 
 		const inviteCode = ctx.session.invite_code;
 		if (inviteCode && !eligible) {
