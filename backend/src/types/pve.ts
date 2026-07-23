@@ -119,6 +119,15 @@ interface FullNodeLXCStatusCurrent {
 
 export type NodeLXCStatusCurrent = Partial<FullNodeLXCStatusCurrent>;
 
+interface FullNodeLXCPending {
+	key: string;
+	delete: number;
+	pending: string;
+	value: string;
+}
+
+export type NodeLXCPending = Array<Partial<FullNodeLXCPending>>;
+
 interface FullNodeTaskStatus {
 	id: string;
 	node: string;

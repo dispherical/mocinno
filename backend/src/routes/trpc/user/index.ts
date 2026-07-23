@@ -12,7 +12,8 @@ import {
 	isContainerSuspended,
 	pveFetch,
 	waitForTask,
-	getBackupAttrs
+	getBackupAttrs,
+	getContainerPending
 } from '@/pve-utils';
 import { utils as sshutils } from 'ssh2';
 import { BASTION_PROXY_PUB_KEY } from '@/env';
@@ -30,6 +31,19 @@ import { checkDNSVerification, isWhitelisted } from '@/utils';
 const domainString = z.stringFormat('domain', z.regexes.domain);
 
 const userRouter = router({
+	pending: authedProcedure.query(async ({ ctx }) => {
+		const container = await db.query.containersTable.findFirst({
+			where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+		});
+
+		if (!container) {
+			return null;
+		}
+
+		const pending = await getContainerPending(container);
+
+		return pending;
+	}),
 	container: authedProcedure.query(async ({ ctx }) => {
 		const container = await db.query.containersTable.findFirst({
 			where: (container, { eq }) => eq(container.user_id, ctx.user.id)

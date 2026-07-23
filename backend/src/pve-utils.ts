@@ -7,7 +7,8 @@ import {
 	type NodeLXCStatusCurrent,
 	type NodeStatus,
 	type NodeStorageStatus,
-	type NodeTaskStatus
+	type NodeTaskStatus,
+	type NodeLXCPending
 } from './types/pve';
 
 import * as env from './env';
@@ -109,6 +110,18 @@ export async function getContainerStatus(ct: { node: string | null; vmid: number
 	try {
 		const status: { data: NodeLXCStatusCurrent } = await pveFetch(
 			`/nodes/${ct.node}/lxc/${ct.vmid}/status/current`
+		);
+		return status.data;
+	} catch {
+		return null;
+	}
+}
+
+export async function getContainerPending(ct: { node: string | null; vmid: number | null }) {
+	if (!ct.node || !ct.vmid) return null;
+	try {
+		const status: { data: NodeLXCPending } = await pveFetch(
+			`/nodes/${ct.node}/lxc/${ct.vmid}/pending`
 		);
 		return status.data;
 	} catch {
