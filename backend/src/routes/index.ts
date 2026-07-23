@@ -20,15 +20,6 @@ app.on(['POST', 'GET'], '/auth/*', (c) => {
 	return auth.handler(c.req.raw);
 });
 
-// The hackclub OAuth callback is exposed at /api/flow/authorization/goalpost
-// (see OAUTH_REDIRECT_URI in modules/auth). Forward it to better-auth's internal
-// callback handler at /api/auth/oauth2/callback/hackclub.
-app.get('/flow/authorization/goalpost', (c) => {
-	const url = new URL(c.req.raw.url);
-	url.pathname = '/api/auth/oauth2/callback/hackclub';
-	return auth.handler(new Request(url, c.req.raw));
-});
-
 app.use(
 	'/trpc/*',
 	trpcServer({
