@@ -4,7 +4,15 @@ import { adminProcedure } from '@/modules/trpc';
 import { z } from 'zod';
 import { db, schema } from '@/db';
 import { desc, eq, or, inArray, sql, ilike, count } from 'drizzle-orm';
-import { CONFIG, ROOTFS, OS_TEMPLATE, BASTION_PROXY_PUB_KEY, SMTP_FROM, APP_DOMAIN } from '@/env';
+import {
+	CONFIG,
+	ROOTFS,
+	OS_TEMPLATE,
+	PVE_HOOKSCRIPT,
+	BASTION_PROXY_PUB_KEY,
+	SMTP_FROM,
+	APP_DOMAIN
+} from '@/env';
 import {
 	disableStartOnBoot,
 	enableStartOnBoot,
@@ -361,6 +369,8 @@ const adminRouter = router({
 					console.log('net0: ', net0);
 					console.log('ipv6 config: ', serverConfig.ipv6);
 
+					const hookscript = serverConfig.hookscript || PVE_HOOKSCRIPT;
+
 					const result = await pveFetch<{ data: NodeLXCPost }>(`/nodes/${node}/lxc`, 'POST', {
 						vmid,
 						ostemplate: templateConfig?.template || OS_TEMPLATE,
@@ -375,7 +385,8 @@ const adminRouter = router({
 						'ssh-public-keys': `${BASTION_PROXY_PUB_KEY}\n${application.ssh_key}`,
 						password,
 						start: 1,
-						onboot: 1
+						onboot: 1,
+						...(hookscript ? { hookscript } : {})
 					});
 
 					await waitForTask(node, result.data);

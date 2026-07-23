@@ -14,6 +14,7 @@ interface ServerConfig {
 		gateway: string;
 	};
 	rootfs: string;
+	hookscript?: string;
 	templates: {
 		name: string;
 		template: string;
