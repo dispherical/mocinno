@@ -126,7 +126,7 @@ const applicationRouter = router({
 					.string()
 					.min(3, 'Username must be at least 3 characters long.')
 					.max(32, 'Username cannot exceed 32 characters.')
-					.regex(/^[a-zA-Z]+$/),
+					.regex(/^[a-zA-Z0-9-]+$/),
 				sshKey: z.string(),
 				reason: z.string().min(10, 'Reason must be at least 10 characters long.'),
 				template: z.string()

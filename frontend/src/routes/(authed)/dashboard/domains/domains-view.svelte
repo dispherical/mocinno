@@ -42,11 +42,11 @@
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Domains</h2>
-	<p class="text-muted-foreground mt-1">
+	<p class="mt-1 text-muted-foreground">
 		From here you may configure custom domains to point towards your container.
 	</p>
 	<Separator class="my-4" />
-	<Table.Root class="border-border border rounded-lg overflow-hidden shadow-sm bg-muted/25">
+	<Table.Root class="overflow-hidden rounded-lg border border-border bg-muted/25 shadow-sm">
 		<Table.Header>
 			<Table.Row>
 				<Table.Head>Domain</Table.Head>
@@ -75,7 +75,7 @@
 		</Table.Body>
 	</Table.Root>
 
-	<Card.Root class="container w-full flex-1 flex-col my-4">
+	<Card.Root class="container my-4 w-full flex-1 flex-col">
 		<form use:enhance method="POST">
 			<Card.Content>
 				{#if $errors._errors || $message}
@@ -97,7 +97,7 @@
 					</Alert.Root>
 				{/if}
 				<div class="flex items-start gap-x-4">
-					<div class="grid gap-3 space-y-1 w-64 mb-2">
+					<div class="mb-2 grid w-64 gap-3 space-y-1">
 						<Form.Field {form} name="domain">
 							<Form.Control>
 								{#snippet children({ props })}
@@ -108,7 +108,7 @@
 							<Form.FieldErrors />
 						</Form.Field>
 					</div>
-					<div class="grid gap-3 space-y-1 flex-1 mb-2">
+					<div class="mb-2 grid flex-1 gap-3 space-y-1">
 						<Form.Field {form} name="proxy">
 							<Form.Control>
 								{#snippet children({ props })}
@@ -116,9 +116,6 @@
 									<Input type="number" {...props} bind:value={$formData.proxy} />
 								{/snippet}
 							</Form.Control>
-							<Form.Description
-								>Must be 3-32 characters: letters, numbers, hyphens.</Form.Description
-							>
 							<Form.FieldErrors />
 						</Form.Field>
 					</div>
