@@ -3,7 +3,11 @@
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { invalidateAll } from '$app/navigation';
 	import { APP_DOMAIN, APP_SECURE } from '$app/env/public';
+	import { getFlash } from 'sveltekit-flash-message';
+	import { page } from '$app/state';
 	import trpc from '$lib/trpc';
+
+	const flash = getFlash(page);
 
 	let { code }: { code: string } = $props();
 
@@ -11,10 +15,14 @@
 
 	const deleteInvite = async () => {
 		deleteWorking = true;
-		await trpc.admin.deleteInvite.mutate({
+		const result = await trpc.admin.deleteInvite.mutate({
 			code
 		});
 		await invalidateAll();
+		$flash = {
+			message: result.message,
+			type: result.success ? 'success' : 'error'
+		};
 		deleteWorking = false;
 	};
 

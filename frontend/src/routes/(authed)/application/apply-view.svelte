@@ -40,19 +40,19 @@
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Apply for Nest</h2>
-	<p class="text-muted-foreground mt-1">
+	<p class="mt-1 text-muted-foreground">
 		Apply for a container on Nest by filling out the details below.<br />
 		Confused? Consider
 		<a
 			href="https://guides.hackclub.app/index.php/Quickstart"
-			class="hover:underline text-primary"
+			class="text-primary hover:underline"
 			rel="external">checking out the quickstart guide</a
 		>
 	</p>
 	<Separator class="my-4" />
 	{#if application && application.status === 'rejected'}
 		<Card.Root
-			class="border border-destructive/40 rounded-xl bg-destructive/10 mb-6 shadow-sm text-destructive font-medium"
+			class="mb-6 rounded-xl border border-destructive/40 bg-destructive/10 font-medium text-destructive shadow-sm"
 		>
 			<Card.Content
 				>Your previous application was rejected. You may submit a new one below.</Card.Content
@@ -163,11 +163,11 @@
 					<span
 						>By clicking "Submit Application", I agree to the <a
 							href="https://guides.hackclub.app/index.php/Acceptable_Use_Policy"
-							class="hover:underline text-primary"
+							class="text-primary hover:underline"
 							rel="external">Acceptable Use Policy</a
 						>
 						and
-						<a href="/privacy.pdf" class="hover:underline text-primary" rel="external"
+						<a href="/privacy.pdf" class="text-primary hover:underline" rel="external"
 							>Privacy Policy</a
 						></span
 					>
@@ -176,8 +176,8 @@
 			</form>
 		{:else if application?.status === 'pending'}
 			<Card.Content class="text-center">
-				<h3 class="font-semibold text-lg mb-2">Application Pending Review</h3>
-				<p class="text-sm text-muted-foreground mb-4">
+				<h3 class="mb-2 text-lg font-semibold">Application Pending Review</h3>
+				<p class="mb-4 text-sm text-muted-foreground">
 					You have already submitted a request. An admin will review it soon.
 				</p>
 				<ul class="list-inside list-disc pl-5 text-sm text-muted-foreground">
@@ -187,14 +187,14 @@
 			</Card.Content>
 		{:else}
 			<Card.Content class="text-center">
-				<p class="mb-4 text-destructive font-medium">You are not currently eligible for Nest.</p>
+				<p class="mb-4 font-medium text-destructive">You are not currently eligible for Nest.</p>
 
 				<p class="text-sm text-muted-foreground">
 					{eligible.failReason}
 				</p>
 
 				{#if eligible.hackatime_ban}
-					<p class="text-sm text-muted-foreground mt-2">
+					<p class="mt-2 text-sm text-muted-foreground">
 						If you believe you are not banned then please contact an admin in #nest-help on Slack.
 					</p>
 				{/if}

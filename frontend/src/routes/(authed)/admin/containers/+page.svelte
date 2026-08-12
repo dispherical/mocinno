@@ -41,7 +41,7 @@
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Containers</h2>
-	<p class="text-muted-foreground mt-1">
+	<p class="mt-1 text-muted-foreground">
 		People being dumb? <br />Send them to the void here
 	</p>
 	<Separator class="my-4" />

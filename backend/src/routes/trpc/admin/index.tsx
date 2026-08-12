@@ -450,6 +450,11 @@ const adminRouter = router({
 						subject: 'Nest account rejected',
 						html: await render(<RejectedEmail username={application.username} />)
 					});
+
+					return { success: true, message: 'Application rejected' };
+				}
+				default: {
+					return { success: false, message: 'Invalid action' };
 				}
 			}
 		}),

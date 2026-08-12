@@ -12,7 +12,11 @@
 	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
 	import BadgeXIcon from '@lucide/svelte/icons/badge-x';
 	import { invalidateAll } from '$app/navigation';
+	import { getFlash } from 'sveltekit-flash-message';
+	import { page } from '$app/state';
 	import trpc from '$lib/trpc';
+
+	const flash = getFlash(page);
 
 	let { suspended, id }: { suspended: boolean; id: number } = $props();
 
@@ -22,11 +26,15 @@
 
 	const toggleSuspend = async () => {
 		suspendWorking = true;
-		await trpc.admin.toggleSuspend.mutate({
+		const result = await trpc.admin.toggleSuspend.mutate({
 			id,
 			reason: suspendReason
 		});
 		await invalidateAll();
+		$flash = {
+			message: result.message,
+			type: result.success ? 'success' : 'error'
+		};
 		suspendWorking = false;
 	};
 </script>
@@ -62,7 +70,7 @@
 {/snippet}
 
 <Dialog.Root bind:open={suspendConfirm}>
-	<Dialog.Content class="sm:max-w-[425px]">
+	<Dialog.Content class="sm:max-w-106.25">
 		<form
 			onsubmit={(e) => {
 				e.preventDefault();
@@ -77,7 +85,7 @@
 				</Dialog.Description>
 			</Dialog.Header>
 			<div class="flex items-start gap-x-4">
-				<div class="grid gap-3 space-y-1 flex-1 mb-2">
+				<div class="mb-2 grid flex-1 gap-3 space-y-1">
 					<Label for="reason">Reason</Label>
 					<Input
 						id="reason"

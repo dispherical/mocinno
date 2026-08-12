@@ -6,6 +6,8 @@
 	import type { RouterOutput } from '$lib/trpc';
 	import trpc from '$lib/trpc';
 	import { invalidateAll } from '$app/navigation';
+	import { getFlash } from 'sveltekit-flash-message';
+	import { page } from '$app/state';
 	import * as Form from '$lib/components/ui/form/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
@@ -15,6 +17,8 @@
 	import { formSchema, type FormSchema } from './schema';
 	import { type SuperValidated, type Infer, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
+
+	const flash = getFlash(page);
 
 	type Domains = RouterOutput['user']['domains'];
 	type Container = RouterOutput['user']['container'];
@@ -26,8 +30,12 @@
 	}: { domains: Domains; container: Container; form: SuperValidated<Infer<FormSchema>> } = $props();
 
 	const removeDomain = async (domain: string) => {
-		await trpc.user.removeDomain.mutate({ domain });
+		const result = await trpc.user.removeDomain.mutate({ domain });
 		await invalidateAll();
+		$flash = {
+			message: result.message,
+			type: result.success ? 'success' : 'error'
+		};
 	};
 
 	const form = $derived.by(() =>

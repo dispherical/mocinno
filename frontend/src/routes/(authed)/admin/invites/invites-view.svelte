@@ -93,7 +93,7 @@
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Invites</h2>
-	<p class="text-muted-foreground mt-1">
+	<p class="mt-1 text-muted-foreground">
 		An invite can bypass ID verification. This is useful for hackathons, large gatherings, etc.
 	</p>
 	<Separator class="my-4" />
@@ -107,7 +107,7 @@
 		isManualPagination={true}
 	/>
 
-	<Card.Root class="container w-full flex-1 flex-col my-4">
+	<Card.Root class="container my-4 w-full flex-1 flex-col">
 		<form use:enhance method="POST">
 			<Card.Content>
 				{#if $errors._errors || $message}
@@ -129,7 +129,7 @@
 					</Alert.Root>
 				{/if}
 				<div class="flex items-start gap-x-4">
-					<div class="grid gap-3 space-y-1 mb-2">
+					<div class="mb-2 grid gap-3 space-y-1">
 						<Form.Field {form} name="uses">
 							<Form.Control>
 								{#snippet children({ props })}
@@ -145,7 +145,7 @@
 							<Form.FieldErrors />
 						</Form.Field>
 					</div>
-					<div class="grid gap-3 space-y-1 flex-1 mb-2">
+					<div class="mb-2 grid flex-1 gap-3 space-y-1">
 						<Form.Field {form} name="expires">
 							<Form.Control>
 								{#snippet children({ props })}

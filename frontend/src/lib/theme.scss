@@ -1,44 +1,44 @@
-@use "sass:map";
-@use "@catppuccin/palette/scss/catppuccin";
+@use 'sass:map';
+@use '@catppuccin/palette/scss/catppuccin';
 @use 'nord/src/sass/nord.scss';
 
 @each $flavor, $color in catppuccin.$palette {
-	*[data-theme="catppuccin_#{$flavor}"] {
-			--background: #{map.get($color, 'base')};
-			--foreground: #{map.get($color, 'text')};
-			--card: #{map.get($color, 'base')};
-			--card-foreground: #{map.get($color, 'text')};
-			--popover: #{map.get($color, 'base')};
-			--popover-foreground: #{map.get($color, 'text')};
-			--primary: #{map.get($color, 'lavender')};
-			--primary-foreground: #{map.get($color, 'base')};
-			--secondary: #{map.get($color, 'surface0')};
-			--secondary-foreground: #{map.get($color, 'text')};
-			--muted: #{map.get($color, 'surface0')};
-			--muted-foreground: #{map.get($color, 'subtext1')};
-			--accent: #{map.get($color, 'surface0')};
-			--accent-foreground: #{map.get($color, 'text')};
-			--destructive: #{map.get($color, 'red')};
-			--border: #{map.get($color, 'surface1')};
-			--input: #{map.get($color, 'surface1')};
-			--ring: #{map.get($color, 'text')};
-			--chart-1: #{map.get($color, 'red')};
-			--chart-2: #{map.get($color, 'teal')};
-			--chart-3: #{map.get($color, 'blue')};
-			--chart-4: #{map.get($color, 'yellow')};
-			--chart-5: #{map.get($color, 'green')};
-			--sidebar: #{map.get($color, 'base')};
-			--sidebar-foreground: #{map.get($color, 'text')};
-			--sidebar-primary: #{map.get($color, 'lavender')};
-			--sidebar-primary-foreground: #{map.get($color, 'base')};
-			--sidebar-accent: #{map.get($color, 'surface0')};
-			--sidebar-accent-foreground: #{map.get($color, 'text')};
-			--sidebar-border: #{map.get($color, 'surface1')};
-			--sidebar-ring: #{map.get($color, 'text')};
-		}
+	*[data-theme='catppuccin_#{$flavor}'] {
+		--background: #{map.get($color, 'base')};
+		--foreground: #{map.get($color, 'text')};
+		--card: #{map.get($color, 'base')};
+		--card-foreground: #{map.get($color, 'text')};
+		--popover: #{map.get($color, 'base')};
+		--popover-foreground: #{map.get($color, 'text')};
+		--primary: #{map.get($color, 'lavender')};
+		--primary-foreground: #{map.get($color, 'base')};
+		--secondary: #{map.get($color, 'surface0')};
+		--secondary-foreground: #{map.get($color, 'text')};
+		--muted: #{map.get($color, 'surface0')};
+		--muted-foreground: #{map.get($color, 'subtext1')};
+		--accent: #{map.get($color, 'surface0')};
+		--accent-foreground: #{map.get($color, 'text')};
+		--destructive: #{map.get($color, 'red')};
+		--border: #{map.get($color, 'surface1')};
+		--input: #{map.get($color, 'surface1')};
+		--ring: #{map.get($color, 'text')};
+		--chart-1: #{map.get($color, 'red')};
+		--chart-2: #{map.get($color, 'teal')};
+		--chart-3: #{map.get($color, 'blue')};
+		--chart-4: #{map.get($color, 'yellow')};
+		--chart-5: #{map.get($color, 'green')};
+		--sidebar: #{map.get($color, 'base')};
+		--sidebar-foreground: #{map.get($color, 'text')};
+		--sidebar-primary: #{map.get($color, 'lavender')};
+		--sidebar-primary-foreground: #{map.get($color, 'base')};
+		--sidebar-accent: #{map.get($color, 'surface0')};
+		--sidebar-accent-foreground: #{map.get($color, 'text')};
+		--sidebar-border: #{map.get($color, 'surface1')};
+		--sidebar-ring: #{map.get($color, 'text')};
+	}
 }
 
-*[data-theme="nord"] {
+*[data-theme='nord'] {
 	--background: #{nord.$nord0};
 	--foreground: #{nord.$nord7};
 	--card: #{nord.$nord1};
@@ -72,7 +72,7 @@
 	--sidebar-ring: #{nord.$nord4};
 }
 
-*[data-theme="gruvbox"] {
+*[data-theme='gruvbox'] {
 	--background: #fbf1c7;
 	--foreground: #3c3836;
 	--card: #ebdbb2;
@@ -106,7 +106,7 @@
 	--sidebar-ring: #3c3836;
 }
 
-.dark[data-theme="gruvbox"] {
+.dark[data-theme='gruvbox'] {
 	--background: #282828;
 	--foreground: #ebdbb2;
 	--card: #3c3836;

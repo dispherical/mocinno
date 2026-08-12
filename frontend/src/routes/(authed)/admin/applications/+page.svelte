@@ -41,7 +41,7 @@
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Applications</h2>
-	<p class="text-muted-foreground mt-1">Manage users, applications, and invites.</p>
+	<p class="mt-1 text-muted-foreground">Manage users, applications, and invites.</p>
 	<Separator class="my-4" />
 	<h3 class="text-lg font-medium">Pending applications ({applicationsList.pending.length})</h3>
 	<AdminTable
