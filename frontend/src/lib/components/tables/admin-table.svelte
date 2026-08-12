@@ -114,7 +114,13 @@
 	<div class="flex items-center py-4">
 		{#if shouldShowSearchInput}
 			<InputGroup.Root class="max-w-sm">
-				<InputGroup.Input placeholder="Search..." bind:value={searchQuery} />
+				<InputGroup.Input
+					placeholder="Search..."
+					bind:value={searchQuery}
+					oninput={() => {
+						table.setPageIndex(0);
+					}}
+				/>
 				<InputGroup.Addon>
 					<SearchIcon />
 				</InputGroup.Addon>
