@@ -427,6 +427,10 @@ const adminRouter = router({
 								.update(schema.applicationsTable)
 								.set({ status: 'pending', reviewed_by: null, reviewed_at: null })
 								.where(eq(schema.applicationsTable.id, application.id));
+
+							await db
+								.delete(schema.containersTable)
+								.where(eq(schema.containersTable.id, container.id));
 						});
 
 					return {
