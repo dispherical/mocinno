@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
+	import * as Alert from '$lib/components/ui/alert/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
@@ -91,99 +92,107 @@
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Your Nest container</h2>
-	<p class="text-muted-foreground mt-1">From here you may check on the status of your container.</p>
+	<p class="mt-1 text-muted-foreground">From here you may check on the status of your container.</p>
 	<Separator class="my-4" />
-	<Table.Root class="rounded-lg bg-muted/25">
-		<Table.Body>
-			<Table.Row>
-				<Table.Cell class="font-medium">Username</Table.Cell>
-				<Table.Cell>{container?.username}</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<Table.Cell class="font-medium">VMID</Table.Cell>
-				<Table.Cell>{container?.vmid}</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<Table.Cell class="font-medium">Private IPv4</Table.Cell>
-				<Table.Cell>{container?.ip}</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<Table.Cell class="font-medium">IPv6</Table.Cell>
-				<Table.Cell>{container?.ipv6}</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<Table.Cell class="font-medium">Status</Table.Cell>
-				<Table.Cell>{container?.status?.status}</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<Table.Cell class="font-medium">Hostname</Table.Cell>
-				<Table.Cell>{container?.status?.name}</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<Table.Cell class="font-medium">CPU</Table.Cell>
-				<Table.Cell>{container?.status?.cpus}</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<Table.Cell class="font-medium">Memory</Table.Cell>
-				<Table.Cell
-					>{Math.floor((container?.status?.mem || 0) / 1048576)} / {(container?.status?.maxmem ||
-						0) / 1048576} MB</Table.Cell
-				>
-			</Table.Row>
-		</Table.Body>
-	</Table.Root>
+	{#if container?.vmid}
+		<Table.Root class="rounded-lg bg-muted/25">
+			<Table.Body>
+				<Table.Row>
+					<Table.Cell class="font-medium">Username</Table.Cell>
+					<Table.Cell>{container?.username}</Table.Cell>
+				</Table.Row>
+				<Table.Row>
+					<Table.Cell class="font-medium">VMID</Table.Cell>
+					<Table.Cell>{container?.vmid}</Table.Cell>
+				</Table.Row>
+				<Table.Row>
+					<Table.Cell class="font-medium">Private IPv4</Table.Cell>
+					<Table.Cell>{container?.ip}</Table.Cell>
+				</Table.Row>
+				<Table.Row>
+					<Table.Cell class="font-medium">IPv6</Table.Cell>
+					<Table.Cell>{container?.ipv6}</Table.Cell>
+				</Table.Row>
+				<Table.Row>
+					<Table.Cell class="font-medium">Status</Table.Cell>
+					<Table.Cell>{container?.status?.status}</Table.Cell>
+				</Table.Row>
+				<Table.Row>
+					<Table.Cell class="font-medium">Hostname</Table.Cell>
+					<Table.Cell>{container?.status?.name}</Table.Cell>
+				</Table.Row>
+				<Table.Row>
+					<Table.Cell class="font-medium">CPU</Table.Cell>
+					<Table.Cell>{container?.status?.cpus}</Table.Cell>
+				</Table.Row>
+				<Table.Row>
+					<Table.Cell class="font-medium">Memory</Table.Cell>
+					<Table.Cell
+						>{Math.floor((container?.status?.mem || 0) / 1048576)} / {(container?.status?.maxmem ||
+							0) / 1048576} MB</Table.Cell
+					>
+				</Table.Row>
+			</Table.Body>
+		</Table.Root>
 
-	<div class="p-5 border bg-muted/25 rounded-xl flex items-center justify-between shadow-sm">
-		<div>
-			<span class="font-medium">SSH Access:</span>
-			<code class="text-sm font-mono border border-border px-2.5 py-1.5 rounded-md"
-				>ssh {container?.username}@hackclub.app</code
+		<div class="flex items-center justify-between rounded-xl border bg-muted/25 p-5 shadow-sm">
+			<div>
+				<span class="font-medium">SSH Access:</span>
+				<code class="rounded-md border border-border px-2.5 py-1.5 font-mono text-sm"
+					>ssh {container?.username}@hackclub.app</code
+				>
+			</div>
+		</div>
+		<div class="mt-4 flex gap-x-3 border-t border-border pt-6">
+			{#if container?.status?.status === 'running'}
+				<Button
+					size="lg"
+					variant="secondary"
+					class="cursor-pointer"
+					disabled={buttonState.stop || container?.suspended}
+					onclick={() => stopContainer()}
+					>{#if buttonState.stop}<Spinner />{/if}Stop Container</Button
+				>
+				<Button
+					size="lg"
+					class="cursor-pointer"
+					disabled={buttonState.reboot || container?.suspended}
+					onclick={() => rebootContainer()}
+					>{#if buttonState.reboot}<Spinner />{/if}Restart Container</Button
+				>
+			{:else}
+				<Button
+					size="lg"
+					class="cursor-pointer"
+					disabled={buttonState.start || container?.suspended}
+					onclick={() => startContainer()}
+					>{#if buttonState.start}<Spinner />{/if}Start Container</Button
+				>
+			{/if}
+			<div class="flex-1"></div>
+			{#if session().session.sudo && !container?.suspended}
+				<Button size="lg" class="cursor-pointer" onclick={() => exitSudo()}>Exit sudo</Button>
+			{/if}
+			<Button
+				size="lg"
+				variant="destructive"
+				class="cursor-pointer"
+				disabled={buttonState.delete || container?.suspended}
+				onclick={() => {
+					if (session().session.sudo) {
+						deleteConfirmOpen = true;
+					} else {
+						requestSudo();
+					}
+				}}
+				>{#if buttonState.delete}<Spinner />{/if}Delete Container</Button
 			>
 		</div>
-	</div>
-	<div class="flex gap-x-3 mt-4 pt-6 border-t border-border">
-		{#if container?.status?.status === 'running'}
-			<Button
-				size="lg"
-				variant="secondary"
-				class="cursor-pointer"
-				disabled={buttonState.stop || container?.suspended}
-				onclick={() => stopContainer()}
-				>{#if buttonState.stop}<Spinner />{/if}Stop Container</Button
-			>
-			<Button
-				size="lg"
-				class="cursor-pointer"
-				disabled={buttonState.reboot || container?.suspended}
-				onclick={() => rebootContainer()}
-				>{#if buttonState.reboot}<Spinner />{/if}Restart Container</Button
-			>
-		{:else}
-			<Button
-				size="lg"
-				class="cursor-pointer"
-				disabled={buttonState.start || container?.suspended}
-				onclick={() => startContainer()}
-				>{#if buttonState.start}<Spinner />{/if}Start Container</Button
-			>
-		{/if}
-		<div class="flex-1"></div>
-		{#if session().session.sudo && !container?.suspended}
-			<Button size="lg" class="cursor-pointer" onclick={() => exitSudo()}>Exit sudo</Button>
-		{/if}
-		<Button
-			size="lg"
-			variant="destructive"
-			class="cursor-pointer"
-			disabled={buttonState.delete || container?.suspended}
-			onclick={() => {
-				if (session().session.sudo) {
-					deleteConfirmOpen = true;
-				} else {
-					requestSudo();
-				}
-			}}
-			>{#if buttonState.delete}<Spinner />{/if}Delete Container</Button
-		>
-	</div>
+	{:else}
+		<Alert.Root class="mb-4 self-start rounded-xl border border-primary/40 bg-primary/10 shadow-sm">
+			<Alert.Description class="flex flex-row items-center gap-2 font-medium">
+				Your container is currently being provisioned, check back in a bit
+			</Alert.Description>
+		</Alert.Root>
+	{/if}
 </div>

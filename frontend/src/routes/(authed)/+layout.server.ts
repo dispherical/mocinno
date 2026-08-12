@@ -1,10 +1,11 @@
 import type { LayoutServerLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
 import { loadFlash } from 'sveltekit-flash-message/server';
 import { setFlash } from 'sveltekit-flash-message/server';
 import * as Sentry from '@sentry/sveltekit';
 
 import trpc from '$lib/server/trpc';
+import type { RouterOutput } from '$lib/trpc';
 
 export const load: LayoutServerLoad = loadFlash(async ({ locals, cookies }) => {
 	if (!locals.session || !locals.user) {
@@ -16,8 +17,17 @@ export const load: LayoutServerLoad = loadFlash(async ({ locals, cookies }) => {
 		email: locals.user.email
 	});
 
-	const container = await trpc.user.container.query();
+	let container: RouterOutput['user']['container'] = null;
 
+	try {
+		container = await trpc.user.container.query();
+	} catch (err) {
+		Sentry.captureException(err);
+		error(500, {
+			message:
+				"If you're seeing this there's a potential outage with Proxmox, please check the status page"
+		});
+	}
 	if (locals.session?.sudo && !container?.suspended) {
 		setFlash(
 			{

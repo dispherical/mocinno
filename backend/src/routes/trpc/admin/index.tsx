@@ -361,7 +361,26 @@ const adminRouter = router({
 					console.log('net0: ', net0);
 					console.log('ipv6 config: ', serverConfig.ipv6);
 
-					const result = await pveFetch<{ data: NodeLXCPost }>(`/nodes/${node}/lxc`, 'POST', {
+					const container = await dbHelpers.createContainer({
+						user_id: application.user_id,
+						sub: application.sub,
+						username: application.username,
+						sshKeys: [application.ssh_key],
+						ip: allocated.ip,
+						ipv6: serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : null,
+						node
+					});
+
+					if (!container) {
+						return { success: false, message: 'Failed to create database entry' };
+					}
+
+					await db
+						.update(schema.applicationsTable)
+						.set({ status: 'approved', reviewed_by: ctx.user.id, reviewed_at: new Date() })
+						.where(eq(schema.applicationsTable.id, application.id));
+
+					pveFetch<{ data: NodeLXCPost }>(`/nodes/${node}/lxc`, 'POST', {
 						vmid,
 						ostemplate: templateConfig?.template || OS_TEMPLATE,
 						rootfs: serverConfig.rootfs || ROOTFS,
@@ -377,42 +396,38 @@ const adminRouter = router({
 						password,
 						start: 1,
 						onboot: 1
-					});
+					})
+						.then(async (result) => {
+							await waitForTask(node, result.data);
+							await fetch(`http://${serverConfig.hostIP}:9191/add/${vmid}`, {
+								headers: { Authorization: `Bearer ${process.env.NDP_API_KEY}` }
+							});
 
-					await waitForTask(node, result.data);
+							await db
+								.update(schema.containersTable)
+								.set({ vmid })
+								.where(eq(schema.containersTable.id, container.id));
 
-					await fetch(`http://${serverConfig.hostIP}:9191/add/${vmid}`, {
-						headers: { Authorization: `Bearer ${process.env.NDP_API_KEY}` }
-					});
-
-					await dbHelpers.createContainer({
-						user_id: application.user_id,
-						sub: application.sub,
-						username: application.username,
-						sshKeys: [application.ssh_key],
-						vmid: vmid,
-						ip: allocated.ip,
-						ipv6: serverConfig.ipv6 ? `${serverConfig.ipv6.prefix}${vmid}` : null,
-						node
-					});
-
-					await db
-						.update(schema.applicationsTable)
-						.set({ status: 'approved', reviewed_by: ctx.user.id, reviewed_at: new Date() })
-						.where(eq(schema.applicationsTable.id, application.id));
-
-					await transporter.sendMail({
-						from: SMTP_FROM,
-						to: application.user?.email ?? application.email!, // This situation might happen in-between migrations but not in the near future
-						subject: 'Nest account approved!',
-						html: await render(
-							<ApprovedEmail
-								username={application.username}
-								domain={APP_DOMAIN || 'hackclub.app'}
-								url={APP_DOMAIN || 'https://dashboard.hackclub.app'}
-							/>
-						)
-					});
+							await transporter.sendMail({
+								from: SMTP_FROM,
+								to: application.user?.email ?? application.email!, // This situation might happen in-between migrations but not in the near future
+								subject: 'Nest account approved!',
+								html: await render(
+									<ApprovedEmail
+										username={application.username}
+										domain={APP_DOMAIN || 'hackclub.app'}
+										url={APP_DOMAIN || 'https://dashboard.hackclub.app'}
+									/>
+								)
+							});
+						})
+						.catch(async (err) => {
+							console.error('Failed to create container:', err);
+							await db
+								.update(schema.applicationsTable)
+								.set({ status: 'pending', reviewed_by: null, reviewed_at: null })
+								.where(eq(schema.applicationsTable.id, application.id));
+						});
 
 					return {
 						success: true,

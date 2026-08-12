@@ -118,7 +118,7 @@ export async function createContainer({
 	user_id: string | null;
 	username: string;
 	sshKeys: string[];
-	vmid: number;
+	vmid?: number;
 	ip: string | null;
 	ipv6: string | null;
 	node: string | null;
