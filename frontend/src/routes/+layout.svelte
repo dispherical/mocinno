@@ -2,17 +2,12 @@
 	import './layout.css';
 	import '$lib/theme.scss';
 	import { ModeWatcher } from 'mode-watcher';
+	import favicon from '$lib/assets/favicon.png';
 
 	let { children } = $props();
 </script>
 
-<svelte:head
-	><link
-		rel="icon"
-		type="image/svg+xml"
-		href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📦</text></svg>"
-	/></svelte:head
->
+<svelte:head><link rel="icon" type="image/png" href={favicon} /></svelte:head>
 
 <ModeWatcher />
 

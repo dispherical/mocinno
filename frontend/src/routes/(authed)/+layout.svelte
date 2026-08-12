@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SiteHeader from '$lib/components/site-header.svelte';
+	import SiteHeader from '$lib/components/dashboard-header.svelte';
 	import * as Sentry from '@sentry/sveltekit';
 	import { setUserContext, setContainerContext } from '$lib/user';
 	import * as Alert from '$lib/components/ui/alert/index.js';

@@ -1,19 +1,35 @@
 <script lang="ts">
 	interface HeadProps {
 		title: string;
+		noSuffix?: boolean;
+		suffix?: string;
 		ogDescription?: string;
+		ogTitle?: string;
 		ogImage?: string;
 		ogUrl?: string;
 		articleAuthor?: string;
 	}
 
-	let { title, ogDescription, ogImage, ogUrl, articleAuthor }: HeadProps = $props();
+	let {
+		title,
+		noSuffix,
+		suffix,
+		ogDescription,
+		ogTitle,
+		ogImage,
+		ogUrl,
+		articleAuthor
+	}: HeadProps = $props();
 
-	let titleDerived = $derived(`${title} | Nest`);
+	let titleDerived = $derived(noSuffix ? title : `${title} | ${suffix || 'Nest'}`);
 </script>
 
 <svelte:head>
-	<meta property="og:title" content={titleDerived} />
+	{#if ogTitle}
+		<meta property="og:title" content={ogTitle} />
+	{:else}
+		<meta property="og:title" content={titleDerived} />
+	{/if}
 	{#if ogDescription}
 		<meta property="og:description" content={ogDescription} />
 	{/if}

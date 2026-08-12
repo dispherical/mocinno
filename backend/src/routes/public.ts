@@ -12,7 +12,7 @@ interface StatStructure {
 }
 
 // I'm not requesting stats on startup, while I could I feel that's not a good idea - Laura
-let nodeStats: StatStructure | null = null;
+export let nodeStats: StatStructure | null = null;
 
 // requests every 3 minutes, clarification because cron expressions can be confusing
 Bun.cron('*/3 * * * *', async () => {
