@@ -1,5 +1,5 @@
 <script lang="ts">
-	import NestLogo from '$lib/assets/nest.svg';
+	import NestLogo from '$lib/components/nestlogo.svelte';
 	import Menu from '@lucide/svelte/icons/menu';
 	import Terminal from '@lucide/svelte/icons/terminal';
 	import House from '@lucide/svelte/icons/house';
@@ -56,13 +56,13 @@
 >
 	<div class="right-0 flex items-end gap-x-4 lg:hidden">
 		<a href={resolve('/')} class="transition-transform hover:scale-105">
-			<img src={NestLogo} alt="Nest logo" width={70} height={70} />
+			<NestLogo width={70} height={70} class="text-foreground" />
 		</a>
 	</div>
 
 	<div class="hidden items-end gap-x-4 font-dm-mono md:gap-x-9 lg:flex">
 		<a href={resolve('/')} class="shrink-0 transition-transform hover:scale-105">
-			<img src={NestLogo} alt="Nest logo" width={85} height={85} />
+			<NestLogo width={85} height={85} class="text-foreground" />
 		</a>
 		{#each navItems as item (item.href)}
 			<a

@@ -163,8 +163,8 @@
 		dedicated servers, located in Helsinki, Finland. Users each get a
 		<span class="italic">LXC container</span> on one of the server.
 	</p>
-	<div class="w-11/12 overflow-hidden rounded-lg bg-muted/50 shadow-lg 2xl:max-w-7xl">
-		<div class="flex flex-wrap border-b border-violet-950">
+	<div class="w-11/12 overflow-hidden rounded-lg bg-muted/80 shadow-lg 2xl:max-w-7xl">
+		<div class="flex flex-wrap border-b border-chart-3/40">
 			{#each Object.keys(tabContent) as tab (tab)}
 				<button
 					class={`grow px-4 py-2 text-sm transition-colors sm:px-6 sm:py-3 sm:text-base ${
@@ -181,15 +181,13 @@
 		<div
 			class="relative h-100 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900 overflow-hidden p-4 sm:h-125 sm:p-6"
 		>
-			{#key activeTab}
-				<div class="shellText mb-4 font-mono text-green-400">
-					<span class="text-blue-400">nest@hackclub:~$</span> cat
-					{activeTab?.toLowerCase()}.txt
-				</div>
-				<div class="tabContent">
-					{@render tabContent[activeTab]?.()}
-				</div>
-			{/key}
+			<div class="shellText mb-4 font-mono text-green-400">
+				<span class="text-blue-400">nest@hackclub:~$</span> cat
+				{activeTab?.toLowerCase()}.txt
+			</div>
+			<div class="tabContent">
+				{@render tabContent[activeTab]?.()}
+			</div>
 		</div>
 	</div>
 </section>
