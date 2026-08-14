@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Head from '$lib/components/head.svelte';
 	import NestLogo from '$lib/assets/nest.webp';
-	import ClickMeArrow from '$lib/assets/arrow.svg';
 	import CodeXml from '@lucide/svelte/icons/code-xml';
 	import Book from '@lucide/svelte/icons/book';
 	import ButtonLink from '$lib/components/button-link.svelte';
@@ -154,7 +153,7 @@
 							});
 						}
 					}}
-					class="bg-primary/90 px-2 text-sm text-primary-foreground hover:bg-primary"
+					class="cursor-pointer bg-primary/90 px-2 text-sm text-primary-foreground hover:bg-primary"
 				>
 					<CodeXml class="text-xl" />
 					<span>Join Nest!</span>
@@ -172,12 +171,15 @@
 		<div
 			class={[
 				'relative z-10 col-span-2 hidden w-full flex-col gap-x-10 rounded-lg py-10 font-dm-mono sm:flex',
-				isExpanded ? 'bg-linear-to-b from-[#1a1a2e] to-[#16213e] px-5' : 'self-start'
+				isExpanded ? 'bg-muted/50 px-5' : 'self-start'
 			]}
 		>
 			<div class={['gap-x-5 sm:flex']}>
 				<button
-					class="cursor-pointer self-start font-medium sm:text-xl md:text-2xl 2xl:text-4xl"
+					class={[
+						'self-start font-medium sm:text-xl md:text-2xl 2xl:text-4xl',
+						!isExpanded && 'cursor-pointer'
+					]}
 					disabled={isExpanded}
 					onclick={() => (isExpanded = true)}
 					aria-expanded={isExpanded}
@@ -186,7 +188,13 @@
 				</button>
 				{#if !isExpanded}
 					<div class="flex gap-x-3 self-start transition-all duration-300">
-						<img src={ClickMeArrow} alt="Click me arrow" width={85} height={85} />
+						<svg width="126" height="29" viewBox="0 0 126 29" xmlns="http://www.w3.org/2000/svg">
+							<path
+								d="M0.248928 17.0342C-0.284508 18.0014 0.0671454 19.218 1.03437 19.7514L16.7962 28.4442C17.7634 28.9777 18.9799 28.626 19.5134 27.6588C20.0468 26.6916 19.6951 25.4751 18.7279 24.9416L4.71742 17.2146L12.4444 3.20416C12.9778 2.23694 12.6262 1.02041 11.659 0.486975C10.6917 -0.0464612 9.47521 0.305192 8.94178 1.27241L0.248928 17.0342ZM123.834 13.1143C108.229 18.6279 96.9277 20.3835 87.7797 20.2676C78.6338 20.1517 71.5179 18.168 64.1668 16C56.8214 13.8336 49.2124 11.4722 39.3961 10.8638C29.5658 10.2546 17.6186 11.4035 1.44485 16.0788L2.55563 19.9214C18.3819 15.3466 29.8641 14.2808 39.1487 14.8562C48.4474 15.4325 55.6388 17.6552 63.0353 19.8366C70.4263 22.0164 77.9938 24.144 87.729 24.2673C97.462 24.3906 109.239 22.5132 125.167 16.8858L123.834 13.1143Z"
+								class="text-foreground"
+								fill="currentColor"
+							/>
+						</svg>
 						<p class="font-medium sm:text-xl md:text-2xl">click me!</p>
 					</div>
 				{/if}

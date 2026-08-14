@@ -39,6 +39,23 @@
 
 	let activeTab = $state<TabType>('Specs');
 
+	function switchTab(tab: TabType) {
+		if (tab === activeTab) return;
+
+		const doc = document as Document & {
+			startViewTransition?: (update: () => void) => void;
+		};
+
+		if (!doc.startViewTransition) {
+			activeTab = tab;
+			return;
+		}
+
+		doc.startViewTransition(() => {
+			activeTab = tab;
+		});
+	}
+
 	let { stats }: { stats: RouterOutput['getStats'] | null } = $props();
 </script>
 
@@ -146,18 +163,16 @@
 		dedicated servers, located in Helsinki, Finland. Users each get a
 		<span class="italic">LXC container</span> on one of the server.
 	</p>
-	<div
-		class="w-11/12 overflow-hidden rounded-lg bg-linear-to-b from-[#1a1a2e] to-[#16213e] shadow-lg 2xl:max-w-7xl"
-	>
+	<div class="w-11/12 overflow-hidden rounded-lg bg-muted/50 shadow-lg 2xl:max-w-7xl">
 		<div class="flex flex-wrap border-b border-violet-950">
 			{#each Object.keys(tabContent) as tab (tab)}
 				<button
 					class={`grow px-4 py-2 text-sm transition-colors sm:px-6 sm:py-3 sm:text-base ${
 						activeTab === tab
-							? 'bg-opacity-50 bg-gray-800 text-primary'
-							: 'bg-opacity-30 hover:bg-opacity-40 bg-gray-900 text-white hover:bg-gray-800'
+							? 'bg-opacity-50 bg-primary text-primary-foreground'
+							: 'bg-opacity-30 hover:bg-opacity-40 bg-muted hover:bg-accent/40'
 					}`}
-					onclick={() => (activeTab = tab as TabType)}
+					onclick={() => switchTab(tab as TabType)}
 				>
 					{tab}
 				</button>
@@ -166,9 +181,91 @@
 		<div
 			class="relative h-100 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900 overflow-hidden p-4 sm:h-125 sm:p-6"
 		>
-			<div>
-				{@render tabContent[activeTab]?.()}
-			</div>
+			{#key activeTab}
+				<div class="shellText mb-4 font-mono text-green-400">
+					<span class="text-blue-400">nest@hackclub:~$</span> cat
+					{activeTab?.toLowerCase()}.txt
+				</div>
+				<div class="tabContent">
+					{@render tabContent[activeTab]?.()}
+				</div>
+			{/key}
 		</div>
 	</div>
 </section>
+
+<style>
+	.tabContent {
+		view-transition-name: tab-content;
+	}
+
+	.shellText {
+		view-transition-name: shell-text;
+	}
+
+	::view-transition-old(tab-content) {
+		animation-name: tab-slide-out, tab-fade-out;
+		animation-duration: 300ms, 300ms;
+		animation-timing-function: ease-in-out, ease-in-out;
+		animation-fill-mode: forwards, forwards;
+	}
+
+	::view-transition-old(shell-text) {
+		animation-name: tab-slide-out, tab-fade-out;
+		animation-duration: 300ms, 300ms;
+		animation-timing-function: ease-in-out, ease-in-out;
+		animation-fill-mode: forwards, forwards;
+	}
+
+	::view-transition-new(tab-content) {
+		animation-name: tab-fade-in;
+		animation-duration: 300ms;
+		animation-timing-function: ease-in-out;
+		animation-delay: 600ms;
+		animation-fill-mode: both;
+	}
+
+	::view-transition-new(shell-text) {
+		animation-name: shelltext-slide-in, tab-fade-in;
+		animation-duration: 300ms, 300ms;
+		animation-timing-function: ease-in-out, ease-in-out;
+		animation-delay: 300ms, 300ms;
+		animation-fill-mode: both, both;
+	}
+
+	@keyframes tab-fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes tab-fade-out {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+
+	@keyframes tab-slide-out {
+		from {
+			transform: translateY(0);
+		}
+		to {
+			transform: translateY(-30px);
+		}
+	}
+
+	@keyframes shelltext-slide-in {
+		from {
+			transform: translateY(20px);
+		}
+		to {
+			transform: translateY(0);
+		}
+	}
+</style>

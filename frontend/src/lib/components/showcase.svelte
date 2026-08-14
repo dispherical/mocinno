@@ -51,7 +51,7 @@
 					});
 				}
 			}}
-			class="bg-primary text-primary-foreground"
+			class="cursor-pointer bg-primary text-primary-foreground"
 		>
 			Start your project <CodeXml class="ml-2" />
 		</ButtonLink>
