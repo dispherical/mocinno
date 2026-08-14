@@ -7,12 +7,16 @@
 	import { page } from '$app/state';
 	import authClient from '$lib/auth';
 	import { goto } from '$app/navigation';
+	import type { Project } from '../../routes/(overview)/data.remote';
+	import ProjectCard from './projectCard.svelte';
 
 	let {
 		stats,
+		projects,
 		user
 	}: {
 		stats: RouterOutput['getStats'] | null;
+		projects: Project[];
 		user: typeof authClient.$Infer.Session.user | null;
 	} = $props();
 </script>
@@ -27,15 +31,17 @@
 	<p class="p-4 text-center text-lg 2xl:text-xl">
 		See what fellow &quot;birds&quot; are hosting on Nest!
 	</p>
-	{#if false}
+	{#each projects as project (project.name)}
 		<div
 			class="grid w-full grid-cols-1 gap-7 px-5 md:grid-cols-2 lg:w-11/12 lg:grid-cols-3 2xl:w-4/5"
-		></div>
+		>
+			<ProjectCard {project} />
+		</div>
 	{:else}
 		<div class="flex w-full items-center justify-center text-center">
 			No projects here yet, submit your project for a chance to be featured on the showcase!
 		</div>
-	{/if}
+	{/each}
 	<div class="mt-8 flex flex-col items-center gap-4 sm:flex-row">
 		<ButtonLink
 			onclick={() => {

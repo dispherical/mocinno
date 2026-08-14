@@ -3,6 +3,21 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 
+import { z } from 'zod';
+import Airtable from 'airtable';
+import { AIRTABLE_BASE, AIRTABLE_API_KEY } from '$app/env/private';
+
+export type Project = {
+	name: string;
+	description: string;
+	repo: string;
+	authorName: string;
+	authorPfp: string;
+	image: string;
+	featured: boolean;
+	category: string;
+};
+
 export interface SystemInfo {
 	hostname: string;
 	os: string;
@@ -200,3 +215,33 @@ export const getSystemInfo = query(async (): Promise<SystemInfo> => {
 
 	return systemInfo;
 });
+
+export const getProjects = query(
+	z.boolean().default(false),
+	async (featured: boolean): Promise<Project[]> => {
+		try {
+			const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE!);
+
+			const projects = await base
+				.table('Showcase')
+				.select({
+					filterByFormula: `{Featured} = ${featured ? 'TRUE' : 'FALSE'}()`
+				})
+				.all();
+
+			return projects.map((p) => ({
+				name: p.get('Name'),
+				description: p.get('Description'),
+				repo: p.get('Repo'),
+				authorName: p.get('Author Name'),
+				authorPfp: p.get('Author PFP'),
+				image: p.get('Image'),
+				featured: p.get('Featured') ?? false,
+				category: p.get('Category') || 'Other'
+			})) as Project[];
+		} catch (err) {
+			console.error('Error fetching projects from Airtable:', err);
+			return [];
+		}
+	}
+);

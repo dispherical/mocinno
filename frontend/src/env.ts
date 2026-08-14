@@ -18,5 +18,13 @@ export const variables = defineEnvVars({
 	NODE_ENV: {
 		public: true,
 		schema: building ? z.optional(z.string()) : z.string()
+	},
+	AIRTABLE_API_KEY: {
+		public: false,
+		schema: building ? z.optional(z.string()) : z.string()
+	},
+	AIRTABLE_BASE: {
+		public: false,
+		schema: building ? z.optional(z.string()) : z.string()
 	}
 });

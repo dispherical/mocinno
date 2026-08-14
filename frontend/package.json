@@ -26,6 +26,7 @@
 		"@trpc/client": "catalog:",
 		"@trpc/server": "catalog:",
 		"@types/bun": "catalog:",
+		"airtable": "^0.12.2",
 		"better-auth": "catalog:",
 		"bits-ui": "^2.16.3",
 		"clsx": "^2.1.1",

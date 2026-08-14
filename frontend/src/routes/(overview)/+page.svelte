@@ -6,7 +6,7 @@
 	import ButtonLink from '$lib/components/button-link.svelte';
 	import { page } from '$app/state';
 	import authClient from '$lib/auth';
-	import { type SystemInfo, getSystemInfo } from './data.remote';
+	import { type SystemInfo, getSystemInfo, getProjects } from './data.remote';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Info from '$lib/components/info.svelte';
@@ -224,5 +224,5 @@
 		</div>
 	</section>
 	<Info stats={data.stats} />
-	<Showcase stats={data.stats} user={data.user} />
+	<Showcase stats={data.stats} user={data.user} projects={await getProjects(true)} />
 </div>
