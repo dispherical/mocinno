@@ -225,7 +225,7 @@ export const getProjects = query(
 			const projects = await base
 				.table('Showcase')
 				.select({
-					filterByFormula: `{Featured} = ${featured ? 'TRUE' : 'FALSE'}()`
+					filterByFormula: featured ? '{Featured} = TRUE()' : '{Show}'
 				})
 				.all();
 

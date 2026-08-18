@@ -67,7 +67,7 @@
 		</div>
 	</div>
 	<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-		{#each filteredProjects as project (project.name)}
+		{#each filteredProjects as project, i (i)}
 			<div>
 				<ProjectCard {project} />
 			</div>
