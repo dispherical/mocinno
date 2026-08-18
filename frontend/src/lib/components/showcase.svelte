@@ -31,17 +31,19 @@
 	<p class="p-4 text-center text-lg 2xl:text-xl">
 		See what fellow &quot;birds&quot; are hosting on Nest!
 	</p>
-	{#each projects as project (project.name)}
+	{#if projects.length > 0}
 		<div
-			class="grid w-full grid-cols-1 gap-7 px-5 md:grid-cols-2 lg:w-11/12 lg:grid-cols-3 2xl:w-4/5"
+			class="grid w-full grid-cols-1 gap-7 px-5 sm:grid-cols-2 md:grid-cols-3 lg:w-11/12 2xl:w-4/5"
 		>
-			<ProjectCard {project} />
+			{#each projects as project (project.name)}
+				<ProjectCard {project} />
+			{/each}
 		</div>
 	{:else}
 		<div class="flex w-full items-center justify-center text-center">
 			No projects here yet, submit your project for a chance to be featured on the showcase!
 		</div>
-	{/each}
+	{/if}
 	<div class="mt-8 flex flex-col items-center gap-4 sm:flex-row">
 		<ButtonLink
 			onclick={() => {
