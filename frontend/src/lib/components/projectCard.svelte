@@ -44,18 +44,18 @@
 					<h2 class="text-sm font-medium sm:text-base lg:text-lg 2xl:text-xl">
 						{project.name}
 					</h2>
-					<a href={project.repo} aria-label={`View ${project.name} repository`}>
-						<CodeXml size={16} class="text-HCPurpleText hover:text-HCPurple transition-colors" />
+					<a href={project.repo} rel="external" aria-label={`View ${project.name} repository`}>
+						<CodeXml size={16} class="text-primary" />
 					</a>
 				</div>
-				<p class="text-xs sm:text-sm 2xl:text-base">
+				<p
+					class="text-xs sm:text-sm 2xl:text-base"
+					style={expanded || !isLongDescription
+						? undefined
+						: 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;'}
+				>
 					{project.description}
 				</p>
-				{#if !expanded && isLongDescription}
-					<div
-						class="from-bg absolute right-0 bottom-0 left-0 h-8 bg-linear-to-t to-transparent sm:h-10"
-					></div>
-				{/if}
 			</div>
 			{#if isLongDescription}
 				{@render expandButton({ expanded, onclick: () => (expanded = !expanded) })}
