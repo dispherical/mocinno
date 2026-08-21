@@ -18,7 +18,7 @@ import { isContainerSuspended } from '@/pve-utils';
 export const auth = betterAuth({
 	secret: ENCRYPTION_KEY,
 	baseURL: {
-		allowedHosts: ['dashboard.hackclub.app', 'dashboard.nest.hackclub.com', APP_DOMAIN || ''],
+		allowedHosts: ['dashboard.hackclub.app', 'nest.hackclub.com', APP_DOMAIN || ''],
 		protocol: APP_SECURE ? 'https' : 'http'
 	},
 	database: drizzleAdapter(db, {
