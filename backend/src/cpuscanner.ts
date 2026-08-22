@@ -7,8 +7,8 @@ import type { NodeLXCIndex } from './types/pve.js';
 const CPU_THRESHOLD = 0.9;
 const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const NOTIFY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-const WINDOW_SECONDS = 6 * 60 * 60;
-const MIN_DATA_POINTS = 12;
+const WINDOW_SECONDS = 12 * 60 * 60;
+const MIN_DATA_POINTS = 24;
 const lastNotified = new Map();
 
 async function notifySlack(vmid: number, username: string, avgCpu: number, cores: string) {
@@ -19,7 +19,7 @@ async function notifySlack(vmid: number, username: string, avgCpu: number, cores
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				text: `Container ${vmid} (${username}) averaging ${(avgCpu * 100).toFixed(1)}% CPU over 6h`,
+				text: `Container ${vmid} (${username}) averaging ${(avgCpu * 100).toFixed(1)}% CPU over 12h`,
 				blocks: [
 					{
 						type: 'section',
@@ -32,7 +32,7 @@ async function notifySlack(vmid: number, username: string, avgCpu: number, cores
 							{ type: 'mrkdwn', text: `*VMID*\n${vmid}` },
 							{
 								type: 'mrkdwn',
-								text: `*6h avg*\n${(avgCpu * 100).toFixed(1)}% of ${cores} core(s)`
+								text: `*12h avg*\n${(avgCpu * 100).toFixed(1)}% of ${cores} core(s)`
 							}
 						]
 					}
