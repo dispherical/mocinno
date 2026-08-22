@@ -1,5 +1,5 @@
 import * as db from './db-helpers.js';
-import config from 'config';
+import config from '../../config.ts';
 import * as env from './env';
 import { pveFetch } from './pve-utils.js';
 import type { NodeLXCIndex } from './types/pve.js';
