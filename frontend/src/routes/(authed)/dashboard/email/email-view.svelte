@@ -59,7 +59,7 @@
 
 <div class="flex flex-1 flex-col gap-4">
 	<h2 class="text-2xl font-bold tracking-tight">Email</h2>
-	<p class="mt-1 text-muted-foreground">Manage your @user.hackclub.app email.</p>
+	<p class="mt-1 text-muted-foreground">Manage your @user.hackclub.app email. You will need to reset the password after creating an account. Any type of abusive behaviour will lead to a ban</p>
 	<Separator class="my-4" />
 
 	{#if password}
@@ -92,7 +92,7 @@
 				<div class="flex-1 space-y-1">
 					<p class="font-medium">{email.address}</p>
 					<p class="text-sm text-muted-foreground">
-						Use your mail <a href="https://mail.hackclub.app" class="text-primary">here</a>, add mx.user.hackclub.app SMTP+IMAP to your email client of choice.
+						Use your mail <a href="https://mail.hackclub.app" class="text-primary underline">mail.hackclub.app</a>, or add mx.user.hackclub.app SMTP+IMAP to your email client of choice.
 					</p>
 				</div>
 				<Button
