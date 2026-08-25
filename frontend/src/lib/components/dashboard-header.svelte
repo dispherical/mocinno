@@ -48,6 +48,15 @@
 					<NavigationMenu.Item>
 						<NavigationMenu.Link>
 							{#snippet child()}
+								<a href={resolve('/(authed)/dashboard/email')} class={navigationMenuTriggerStyle()}
+									>Email</a
+								>
+							{/snippet}
+						</NavigationMenu.Link>
+					</NavigationMenu.Item>
+					<NavigationMenu.Item>
+						<NavigationMenu.Link>
+							{#snippet child()}
 								<a
 									href={resolve('/(authed)/dashboard/backups')}
 									class={navigationMenuTriggerStyle()}>Backups</a

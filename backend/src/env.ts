@@ -113,6 +113,12 @@ export const ZEROSSL_EAB_HMAC_KEY = (() => {
 	return process.env.ZEROSSL_EAB_HMAC_KEY as string;
 })();
 
+export const STALWART_DOMAIN = isUndefinedOrEmpty(process.env.STALWART_DOMAIN, undefined);
+
+export const STALWART_API_KEY = isUndefinedOrEmpty(process.env.STALWART_API_KEY, undefined);
+
+export const STALWART_MAIL_DOMAIN = isUndefinedOrEmpty(process.env.STALWART_MAIL_DOMAIN, undefined);
+
 export const CONFIG = await (async () => {
 	const CONFIG_FILE = isUndefinedOrEmpty(
 		process.env.CONFIG_FILE,

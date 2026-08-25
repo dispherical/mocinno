@@ -27,6 +27,7 @@ import type {
 	NodeLXCStatusStop
 } from '@/types/pve';
 import { checkDNSVerification, isWhitelisted } from '@/utils';
+import { createEmailAccount, getEmailAccount, resetEmailPassword } from '@/stalwart';
 
 const domainString = z.stringFormat('domain', z.regexes.domain);
 
@@ -607,7 +608,73 @@ const userRouter = router({
 				success: true,
 				message: 'Backup restored.'
 			};
-		})
+		}),
+
+	email: authedProcedure.query(async ({ ctx }) => {
+		const container = await db.query.containersTable.findFirst({
+			where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+		});
+
+		if (!container) {
+			return null;
+		}
+
+		return await getEmailAccount(container.username);
+	}),
+
+  createEmail: authedProcedure.mutation(async ({ ctx }) => {
+    const container = await db.query.containersTable.findFirst({
+      where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+    });
+
+    if (!container) {
+      return {
+        success: false,
+        message: 'No container found'
+      };
+    }
+
+    if (await isContainerSuspended(container)) {
+      return {
+        success: false,
+        message: 'Your container is suspended. Contact an admin.'
+      };
+    }
+
+    if (await getEmailAccount(container.username)) {
+      return { success: false, message: 'You already have a mailbox' };
+    }
+
+    try {
+			const account = await createEmailAccount(container.username);
+			return { success: true, message: `${account.address} created`, account };
+		} catch (e) {
+			console.error(`Failed to create mailbox for ${container.username}:`, e);
+			return { success: false, message: 'Failed to create mailbox' };
+		}
+  }),
+
+  resetEmailPassword: authedProcedure.mutation(async ({ ctx }) => {
+		const container = await db.query.containersTable.findFirst({
+			where: (container, { eq }) => eq(container.user_id, ctx.user.id)
+		});
+
+		if (!container) return { success: false, message: 'No container found' };
+		if (await isContainerSuspended(container)) {
+			return { success: false, message: 'Your container is suspended. Contact an admin.' };
+		}
+
+		const account = await getEmailAccount(container.username);
+		if (!account) return { success: false, message: 'No mailbox found' };
+
+		try {
+			const password = await resetEmailPassword(account.id);
+			return { success: true, message: 'Password reset', password };
+		} catch (e) {
+			console.error(`Failed to reset password for ${container.username}:`, e);
+			return { success: false, message: 'Failed to reset password' };
+		}
+	}),
 });
 
 export default userRouter;
