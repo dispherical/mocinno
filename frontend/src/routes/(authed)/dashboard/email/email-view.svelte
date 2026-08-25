@@ -92,7 +92,7 @@
 				<div class="flex-1 space-y-1">
 					<p class="font-medium">{email.address}</p>
 					<p class="text-sm text-muted-foreground">
-						Use your mail <a href="https://mail.hackclub.app" class="text-primary underline">mail.hackclub.app</a>, or add mx.user.hackclub.app SMTP+IMAP to your email client of choice.
+						Use your mail via <a href="https://mail.hackclub.app" class="text-primary underline">mail.hackclub.app</a>, or add mx.user.hackclub.app SMTP+IMAP to your email client of choice.
 					</p>
 				</div>
 				<Button
