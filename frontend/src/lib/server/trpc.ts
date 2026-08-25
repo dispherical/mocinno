@@ -12,7 +12,7 @@ const trpc = createTRPCClient<AppRouter>({
 			transformer: superjson,
 			headers() {
 				return {
-					Authorization: `Bearer ${getRequestEvent().cookies.get('__Secure-mocinno.session_token')}`
+					Authorization: `Bearer ${getRequestEvent().cookies.get(APP_SECURE ? '__Secure-mocinno.session_token' : 'mocinno.session_token')}`
 				};
 			}
 		})

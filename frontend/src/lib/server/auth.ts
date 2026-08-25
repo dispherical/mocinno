@@ -14,18 +14,25 @@ const authServer = createAuthClient({
 		onSuccess: (ctx) => {
 			const authToken = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
 			if (authToken) {
-				getRequestEvent().cookies.set('__Secure-mocinno.session_token', authToken, {
-					httpOnly: true,
-					secure: true,
-					sameSite: 'lax',
-					path: '/',
-					maxAge: 60 * 60 * 24 * 7 // 7 days
-				});
+				getRequestEvent().cookies.set(
+					APP_SECURE ? '__Secure-mocinno.session_token' : 'mocinno.session_token',
+					authToken,
+					{
+						httpOnly: true,
+						secure: APP_SECURE,
+						sameSite: 'lax',
+						path: '/',
+						maxAge: 60 * 60 * 24 * 7 // 7 days
+					}
+				);
 			}
 		},
 		auth: {
 			type: 'Bearer',
-			token: () => getRequestEvent().cookies.get('__Secure-mocinno.session_token')
+			token: () =>
+				getRequestEvent().cookies.get(
+					APP_SECURE ? '__Secure-mocinno.session_token' : 'mocinno.session_token'
+				)
 		}
 	}
 });
