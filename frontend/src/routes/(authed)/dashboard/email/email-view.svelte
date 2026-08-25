@@ -5,6 +5,8 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
 	import CheckCircle2Icon from '@lucide/svelte/icons/check-circle-2';
 	import type { RouterOutput } from '$lib/trpc';
 	import trpc from '$lib/trpc';
@@ -23,6 +25,7 @@
 	let resetting = $state(false);
 	let confirmOpen = $state(false);
 	let password = $state<string | null>(null);
+	let aupAgreed = $state(false);
 
 	const address = $derived(`${container?.username}@user.hackclub.app`);
 
@@ -80,8 +83,19 @@
 					<p class="text-sm text-muted-foreground">
 						Create a mailbox to start receiving mail at this address.
 					</p>
+					<div class="flex items-center gap-2 pt-2">
+						<Checkbox id="aup-agreed" bind:checked={aupAgreed} />
+						<Label for="aup-agreed" class="text-sm font-normal text-muted-foreground">
+							I have read the <a
+								href="https://guides.hackclub.app/index.php/Acceptable_Use_Policy"
+								class="text-primary hover:underline"
+								rel="external"
+								target="_blank">Acceptable Use Policy</a
+							> and acknowledge that any violation is a permanent suspension
+						</Label>
+					</div>
 				</div>
-				<Button onclick={create} disabled={creating} class="w-full sm:w-auto">
+				<Button onclick={create} disabled={creating || !aupAgreed} class="w-full sm:w-auto">
 					{#if creating}<Spinner />{/if} Create
 				</Button>
 			</Card.Content>
